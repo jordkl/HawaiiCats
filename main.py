@@ -18,7 +18,8 @@ app = Flask(__name__,
 # Configure CORS
 CORS(app, resources={
     r"/*": {
-        "origins": ["https://hawaiicats.org", "https://hawaiicats.com", "http://hawaiicats.com", "http://localhost:5001"],
+        "origins": ["https://hawaiicats.org", "https://hawaiicats.com", "http://hawaiicats.com", 
+                   "http://localhost:5001", "http://localhost:5000", "http://127.0.0.1:5001", "http://127.0.0.1:5000"],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"],
         "supports_credentials": True
@@ -37,13 +38,14 @@ logger = logging.getLogger('debug')
 
 # Add CORS headers
 @app.after_request
-def add_cors_headers(response):
-    origin = request.headers.get('Origin', '')
-    if origin in ["https://hawaiicats.org", "https://hawaiicats.com", "http://hawaiicats.com", "http://localhost:5001"]:
-        response.headers['Access-Control-Allow-Origin'] = origin
-        response.headers['Access-Control-Allow-Credentials'] = 'true'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+def after_request(response):
+    origin = request.headers.get('Origin')
+    if origin in ["https://hawaiicats.org", "https://hawaiicats.com", "http://hawaiicats.com", 
+                 "http://localhost:5001", "http://localhost:5000", "http://127.0.0.1:5001", "http://127.0.0.1:5000"]:
+        response.headers.add('Access-Control-Allow-Origin', origin)
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
 
 @app.route('/')
@@ -56,7 +58,12 @@ def calculator():
 
 @app.route('/about')
 def about():
-    return render_template('about.html')
+    try:
+        return render_template('about.html')
+    except Exception as e:
+        log_debug('ERROR', f"Error in about route: {str(e)}")
+        log_debug('ERROR', traceback.format_exc())
+        return f"Internal Server Error: {str(e)}", 500
 
 @app.route("/calculate_population", methods=['POST', 'OPTIONS'])
 def calculate_population():

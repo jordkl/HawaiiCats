@@ -1,5 +1,5 @@
-// Use production URL
-const baseUrl = 'https://hawaiicats.org';
+// Use production URL if not localhost, otherwise use localhost
+const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5001' : 'https://hawaiicats.org';
 
 // Remove duplicate toggleAdvancedMode function since it's already in script.js
 
