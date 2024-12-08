@@ -44,8 +44,8 @@ def initialize_colony_with_ages(total_cats, sterilized, params):
             if kitten_count > 0:
                 # Use triangular distribution to favor younger kittens
                 ages = np.random.triangular(0, 0, maturity_months, kitten_count)
-                ages = ages.astype(int)
-                age_counts = np.bincount(ages)
+                ages = np.clip(ages, 0, maturity_months - 1).astype(int)  # Ensure ages are within bounds
+                age_counts = np.bincount(ages, minlength=maturity_months)  # Ensure minimum length
                 for age, count in enumerate(age_counts):
                     if count > 0:
                         colony['young_kittens'].append([int(count), int(age)])
@@ -73,10 +73,11 @@ def initialize_colony_with_ages(total_cats, sterilized, params):
                 if senior > 0:
                     ages.extend(np.random.randint(72, 96, senior))
                 
-                age_counts = np.bincount(ages)
-                for age, count in enumerate(age_counts):
-                    if count > 0:
-                        colony['reproductive'].append([int(count), int(age)])
+                if ages:  # Only process if we have ages
+                    age_counts = np.bincount(ages, minlength=96)  # Ensure minimum length up to max age
+                    for age, count in enumerate(age_counts):
+                        if count > 0:
+                            colony['reproductive'].append([int(count), int(age)])
         
         # Add sterilized cats with similar age distribution
         if sterilized > 0:
@@ -96,10 +97,11 @@ def initialize_colony_with_ages(total_cats, sterilized, params):
             if senior > 0:
                 ages.extend(np.random.randint(72, 96, senior))
             
-            age_counts = np.bincount(ages)
-            for age, count in enumerate(age_counts):
-                if count > 0:
-                    colony['sterilized'].append([int(count), int(age)])
+            if ages:  # Only process if we have ages
+                age_counts = np.bincount(ages, minlength=96)  # Ensure minimum length up to max age
+                for age, count in enumerate(age_counts):
+                    if count > 0:
+                        colony['sterilized'].append([int(count), int(age)])
         
         # Calculate initial pregnancies (reduced probability)
         female_ratio = float(params.get('female_ratio', 0.5))
