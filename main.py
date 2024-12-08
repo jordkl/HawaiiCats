@@ -149,8 +149,27 @@ def calculate_population():
             # Monte Carlo parameters with type conversion
             try:
                 use_monte_carlo = bool(data.get('use_monte_carlo', False))
-                num_simulations = int(float(data.get('num_simulations', 1000)))
-                variation_coefficient = float(data.get('variation_coefficient', 0.1))
+                if use_monte_carlo:
+                    num_simulations = min(int(float(data.get('num_simulations', 100))), 1000)  # Cap at 1000
+                    variation_coefficient = min(float(data.get('variation_coefficient', 0.1)), 0.5)  # Cap at 0.5
+                    
+                    # Validate Monte Carlo parameters
+                    if num_simulations < 1:
+                        return jsonify({'error': 'Number of simulations must be at least 1'}), 400
+                    if variation_coefficient <= 0:
+                        return jsonify({'error': 'Variation coefficient must be positive'}), 400
+                    
+                    # Add Monte Carlo specific parameters to params
+                    params.update({
+                        'num_simulations': num_simulations,
+                        'variation_coefficient': variation_coefficient,
+                        'kitten_maturity_months': float(params.get('kitten_maturity_months', 5)),
+                        'peak_breeding_month': int(params.get('peak_breeding_month', 4)),
+                        'density_impact_threshold': float(params.get('density_impact_threshold', 1.2)),
+                        'base_breeding_success': float(params.get('base_breeding_success', 0.95)),
+                        'age_breeding_factor': float(params.get('age_breeding_factor', 0.06)),
+                        'stress_impact': float(params.get('stress_impact', 0.12))
+                    })
             except (TypeError, ValueError) as e:
                 return jsonify({'error': f'Invalid Monte Carlo parameters: {str(e)}'}), 400
 
@@ -160,40 +179,49 @@ def calculate_population():
         # Run simulation
         try:
             if use_monte_carlo:
-                summary, all_results = run_monte_carlo(
-                    base_params=params,
-                    current_size=current_size,
-                    months=months,
-                    sterilized_count=sterilized_count,
-                    monthly_sterilization=monthly_sterilization,
-                    num_simulations=num_simulations,
-                    variation_coefficient=variation_coefficient
-                )
-                
-                if not all_results:
-                    return jsonify({'error': 'No valid Monte Carlo results generated'}), 500
+                try:
+                    summary, all_results = run_monte_carlo(
+                        base_params=params,
+                        current_size=current_size,
+                        months=months,
+                        sterilized_count=sterilized_count,
+                        monthly_sterilization=monthly_sterilization,
+                        num_simulations=num_simulations,
+                        variation_coefficient=variation_coefficient
+                    )
                     
-                # Use median simulation for visualization
-                result = all_results[len(all_results)//2]  # Middle simulation
-                
-                # Add Monte Carlo summary data
-                result['monte_carlo_data'] = {
-                    'final_population': {
-                        'lower': float(summary['population']['ci_lower']),
-                        'upper': float(summary['population']['ci_upper'])
-                    },
-                    'sterilization_rate': {
-                        'lower': (float(summary['sterilized']['ci_lower']) / float(summary['population']['ci_lower']) * 100) if float(summary['population']['ci_lower']) > 0 else 0,
-                        'upper': (float(summary['sterilized']['ci_upper']) / float(summary['population']['ci_upper']) * 100) if float(summary['population']['ci_upper']) > 0 else 0
-                    },
-                    'population_change': {
-                        'lower': float(summary['population']['ci_lower']) - current_size,
-                        'upper': float(summary['population']['ci_upper']) - current_size
-                    },
-                    'mortality': summary['mortality']
-                }
-                
-                result['monte_carlo_summary'] = summary
+                    if not summary or not all_results:
+                        return jsonify({'error': 'Monte Carlo simulation failed to generate results'}), 500
+                    
+                    if len(all_results) < num_simulations * 0.5:  # Require at least 50% success rate
+                        return jsonify({'error': 'Too few successful Monte Carlo simulations. Try reducing the number of simulations.'}), 500
+                        
+                    # Use median simulation for visualization
+                    result = all_results[len(all_results)//2]  # Middle simulation
+                    
+                    # Add Monte Carlo summary data
+                    result['monte_carlo_data'] = {
+                        'final_population': {
+                            'lower': float(summary['population']['ci_lower']),
+                            'upper': float(summary['population']['ci_upper'])
+                        },
+                        'sterilization_rate': {
+                            'lower': (float(summary['sterilized']['ci_lower']) / float(summary['population']['ci_lower']) * 100) if float(summary['population']['ci_lower']) > 0 else 0,
+                            'upper': (float(summary['sterilized']['ci_upper']) / float(summary['population']['ci_upper']) * 100) if float(summary['population']['ci_upper']) > 0 else 0
+                        },
+                        'population_change': {
+                            'lower': float(summary['population']['ci_lower']) - current_size,
+                            'upper': float(summary['population']['ci_upper']) - current_size
+                        },
+                        'mortality': summary['mortality']
+                    }
+                    
+                    result['monte_carlo_summary'] = summary
+                    
+                except Exception as e:
+                    logger.error(f"Monte Carlo simulation error: {str(e)}")
+                    logger.error(traceback.format_exc())
+                    return jsonify({'error': 'Monte Carlo simulation failed. Try reducing the number of simulations.'}), 500
                 
             else:
                 result = simulate_population(

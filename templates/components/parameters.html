@@ -52,9 +52,34 @@
     </div>
 
     <!-- Monte Carlo Toggle -->
-    <div class="flex items-center space-x-2">
+    <div class="flex items-center space-x-2 mb-4">
         <input type="checkbox" id="useMonteCarlo" class="form-checkbox">
         <label for="useMonteCarlo" class="parameter-label">Use Monte Carlo Simulation</label>
+    </div>
+
+    <!-- Monte Carlo Parameters -->
+    <div class="space-y-4" id="monteCarloParams" style="display: none;">
+        <h4 class="text-base font-medium text-gray-700">Monte Carlo Parameters</h4>
+        
+        <!-- Number of Simulations -->
+        <div>
+            <label class="parameter-label" for="numSimulations">Number of Simulations</label>
+            <input type="range" id="numSimulations" min="100" max="1000" value="500" step="100" class="slider">
+            <div class="flex justify-between">
+                <span class="parameter-value" id="numSimulationsValue">500</span>
+                <span class="parameter-description">simulations</span>
+            </div>
+        </div>
+
+        <!-- Variation Coefficient -->
+        <div>
+            <label class="parameter-label" for="variationCoefficient">Variation Coefficient</label>
+            <input type="range" id="variationCoefficient" min="0" max="1" value="0.2" step="0.05" class="slider">
+            <div class="flex justify-between">
+                <span class="parameter-value" id="variationCoefficientValue">0.2</span>
+                <span class="parameter-description">coefficient</span>
+            </div>
+        </div>
     </div>
 </div>
 

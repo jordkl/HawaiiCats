@@ -180,8 +180,9 @@ async function handleCalculate() {
         };
 
         // Add Monte Carlo specific parameters if enabled
-        if (useMonteCarlo) {
-            data.num_simulations = validateInput(document.getElementById('numSimulations')?.value, 'Number of Simulations', 100, 10000);
+        if (document.getElementById('monteCarloParams').style.display !== 'none') {
+            data.use_monte_carlo = true;
+            data.num_simulations = validateInput(document.getElementById('numSimulations')?.value, 'Number of Simulations', 100, 1000);
             data.variation_coefficient = validateInput(document.getElementById('variationCoefficient')?.value, 'Variation Coefficient', 0, 1);
         } else {
             data.num_simulations = 1;
@@ -234,7 +235,7 @@ async function handleCalculate() {
             result = JSON.parse(responseText);
         } catch (e) {
             console.error('Error parsing response:', e);
-            throw new Error('Invalid response from server. Please try again.');
+            throw new Error('Invalid response from server');
         }
 
         if (!result) {
@@ -245,13 +246,21 @@ async function handleCalculate() {
         
         // Ensure we have the correct data structure
         if (useMonteCarlo) {
-            if (!result.monte_carlo_summary || !result.monte_carlo_data) {
+            if (!result.result || !result.result.monte_carlo_data) {
                 console.warn('Monte Carlo simulation was requested but data is missing');
                 throw new Error('Monte Carlo simulation failed. Please try again with fewer simulations.');
             }
+            
+            // Validate the Monte Carlo data structure
+            const monteCarloData = result.result.monte_carlo_data;
+            if (!monteCarloData.final_population || !monteCarloData.mortality || 
+                !monteCarloData.population_change || !monteCarloData.sterilization_rate) {
+                console.warn('Monte Carlo data is incomplete:', monteCarloData);
+                throw new Error('Monte Carlo simulation returned incomplete data. Please try again.');
+            }
         }
 
-        await displayResults(result);
+        await displayResults(result.result);
         
     } catch (error) {
         console.error('Error:', error);
@@ -342,8 +351,7 @@ async function calculatePopulation(data) {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(data),
             credentials: 'include'
@@ -375,7 +383,7 @@ async function calculatePopulation(data) {
     }
 }
 
-function displayResults(data) {
+async function displayResults(data) {
     try {
         console.log('Starting displayResults with data:', JSON.stringify(data, null, 2));
         
@@ -605,8 +613,7 @@ function displayResults(data) {
         safeSetContent('urbanDeaths', urbanDeaths);
         safeSetContent('diseaseDeaths', diseaseDeaths);
 
-        // Plot the population graph
-        plotPopulationGraph(resultData);
+        await plotPopulationGraph(resultData);
         
         console.log('displayResults completed successfully');
     } catch (error) {
@@ -616,163 +623,176 @@ function displayResults(data) {
     }
 }
 
-function plotPopulationGraph(data) {
-    try {
-        console.log('Plotting population graph with data:', data);
-        
-        // Extract the actual result data, handling both direct results and nested results
-        const resultData = data.result || data;
-        
-        if (!resultData || !resultData.monthly_populations || !Array.isArray(resultData.monthly_populations)) {
-            console.error('Invalid data format for population graph:', resultData);
-            return;
-        }
-
-        const months = Array.from({length: resultData.monthly_populations.length}, (_, i) => i);
-        const totalPopulation = resultData.monthly_populations;
-        const sterilized = resultData.monthly_sterilized;
-        const reproductive = resultData.monthly_reproductive;
-        const kittens = resultData.monthly_kittens;
-
-        console.log('Processed data for graph:', {
-            months,
-            totalPopulation,
-            sterilized,
-            reproductive,
-            kittens
-        });
-
-        // Calculate confidence intervals if Monte Carlo data is available
-        let ciUpper = null;
-        let ciLower = null;
-        if (resultData.monte_carlo_data && resultData.monte_carlo_data.final_population) {
-            const startPop = totalPopulation[0];
-            const endPop = totalPopulation[totalPopulation.length - 1];
-            const ciStartUpper = startPop;
-            const ciStartLower = startPop;
-            const ciEndUpper = resultData.monte_carlo_data.final_population.upper;
-            const ciEndLower = resultData.monte_carlo_data.final_population.lower;
-            
-            // Linear interpolation for confidence intervals
-            ciUpper = months.map(month => {
-                const progress = month / (months.length - 1);
-                return ciStartUpper + (ciEndUpper - ciStartUpper) * progress;
-            });
-            ciLower = months.map(month => {
-                const progress = month / (months.length - 1);
-                return ciStartLower + (ciEndLower - ciStartLower) * progress;
-            });
-        }
-
-        const traces = [
-            {
-                name: 'Total Population',
-                x: months,
-                y: totalPopulation,
-                mode: 'lines',
-                line: {
-                    color: '#4F46E5',
-                    width: 3
-                }
-            },
-            {
-                name: 'Sterilized',
-                x: months,
-                y: sterilized,
-                mode: 'lines',
-                line: {
-                    color: '#10B981',
-                    width: 2
-                }
-            },
-            {
-                name: 'Reproductive',
-                x: months,
-                y: reproductive,
-                mode: 'lines',
-                line: {
-                    color: '#EF4444',
-                    width: 2
-                }
-            },
-            {
-                name: 'Kittens',
-                x: months,
-                y: kittens,
-                mode: 'lines',
-                line: {
-                    color: '#F59E0B',
-                    width: 2
-                }
-            }
-        ];
-
-        // Add confidence interval if available
-        if (ciUpper && ciLower) {
-            traces.push({
-                name: '95% Confidence Interval',
-                x: [...months, ...months.slice().reverse()],
-                y: [...ciUpper, ...ciLower.slice().reverse()],
-                fill: 'toself',
-                fillcolor: 'rgba(79, 70, 229, 0.1)',
-                line: { color: 'transparent' },
-                showlegend: true,
-                hoverinfo: 'skip'
-            });
-        }
-
-        const layout = {
-            title: '',
-            xaxis: {
-                title: 'Months',
-                showgrid: true,
-                zeroline: false
-            },
-            yaxis: {
-                title: 'Number of Cats',
-                showgrid: true,
-                zeroline: false
-            },
-            showlegend: true,
-            legend: {
-                x: 0,
-                y: 1.1,
-                orientation: 'h'
-            },
-            margin: { t: 20 },
-            hovermode: 'x unified'
-        };
-
-        const config = {
-            responsive: true,
-            displayModeBar: false
-        };
-
-        console.log('Attempting to plot graph with:', {
-            element: document.getElementById('populationGraph'),
-            traces,
-            layout,
-            config
-        });
-
-        if (!document.getElementById('populationGraph')) {
-            console.error('Population graph element not found in DOM');
-            return;
-        }
-
-        // Add a small delay to ensure the DOM is ready
-        setTimeout(() => {
-            try {
-                Plotly.newPlot('populationGraph', traces, layout, config)
-                    .then(() => console.log('Graph plotted successfully'))
-                    .catch(error => console.error('Error plotting graph:', error));
-            } catch (error) {
-                console.error('Error in Plotly.newPlot:', error);
-            }
-        }, 100);
-    } catch (error) {
-        console.error('Error in plotPopulationGraph:', error);
+async function plotPopulationGraph(data) {
+    const canvas = document.getElementById('populationGraph');
+    if (!canvas) {
+        console.error('Population graph canvas element not found');
+        return;
     }
+
+    const ctx = canvas.getContext('2d');
+    
+    // Clear any existing chart
+    if (window.populationChart) {
+        window.populationChart.destroy();
+    }
+
+    // Extract data
+    const resultData = data.result || data;
+    if (!resultData || !resultData.monthly_populations) {
+        console.error('Invalid data format for population graph:', resultData);
+        return;
+    }
+
+    const months = Array.from({length: resultData.monthly_populations.length}, (_, i) => i);
+    
+    let datasets = [
+        {
+            label: 'Total Population',
+            data: resultData.monthly_populations,
+            borderColor: 'rgb(79, 70, 229)', // Indigo
+            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: false,
+            order: 1
+        },
+        {
+            label: 'Sterilized',
+            data: resultData.monthly_sterilized,
+            borderColor: 'rgb(16, 185, 129)', // Green
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: false,
+            order: 2
+        },
+        {
+            label: 'Unsterilized',
+            data: resultData.monthly_reproductive,
+            borderColor: 'rgb(239, 68, 68)', // Red
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: false,
+            order: 3
+        },
+        {
+            label: 'Kittens',
+            data: resultData.monthly_kittens,
+            borderColor: 'rgb(245, 158, 11)', // Amber
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: false,
+            order: 4
+        }
+    ];
+
+    // Add confidence intervals if Monte Carlo data is available
+    if (resultData.monte_carlo_data) {
+        const mcData = resultData.monte_carlo_data;
+        if (mcData.final_population && mcData.population_change) {
+            // Calculate the variation as a proportion of the final population
+            const basePopulation = resultData.monthly_populations[0];
+            const finalPopulation = resultData.monthly_populations[resultData.monthly_populations.length - 1];
+            const totalChange = finalPopulation - basePopulation;
+            
+            // Calculate lower and upper bounds for each month
+            const lowerBound = resultData.monthly_populations.map((pop, i) => {
+                if (i === 0) return pop; // First month is always actual
+                const progress = (pop - basePopulation) / totalChange;
+                const lowerChange = mcData.population_change.lower * progress;
+                return Math.max(basePopulation + lowerChange, basePopulation);
+            });
+            
+            const upperBound = resultData.monthly_populations.map((pop, i) => {
+                if (i === 0) return pop; // First month is always actual
+                const progress = (pop - basePopulation) / totalChange;
+                const upperChange = mcData.population_change.upper * progress;
+                return basePopulation + upperChange;
+            });
+
+            // Add confidence interval area
+            datasets.push({
+                label: 'Population Range',
+                data: upperBound,
+                borderColor: 'rgba(79, 70, 229, 0.3)',
+                backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                fill: '+1',
+                pointRadius: 0,
+                order: 0
+            });
+
+            datasets.push({
+                label: '_hidden',  // Hide this from legend
+                data: lowerBound,
+                borderColor: 'rgba(79, 70, 229, 0.3)',
+                backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                fill: false,
+                pointRadius: 0,
+                order: 0
+            });
+        }
+    }
+
+    window.populationChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        filter: function(legendItem, data) {
+                            // Don't show legend items that start with '_'
+                            return !legendItem.text.startsWith('_');
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label.startsWith('_')) return null;
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += Math.round(context.parsed.y);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Months'
+                    }
+                },
+                y: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Population'
+                    },
+                    min: 0
+                }
+            }
+        }
+    });
 }
 
 async function downloadLogs() {
@@ -1208,130 +1228,3 @@ const memoizedPlot = (() => {
         return lastPlot;
     };
 })();
-
-function plotPopulationGraph(data) {
-    try {
-        console.log('Plotting population graph with data:', data);
-        
-        // Extract the actual result data, handling both direct results and nested results
-        const resultData = data.result || data;
-        
-        if (!resultData || !resultData.monthly_populations || !Array.isArray(resultData.monthly_populations)) {
-            console.error('Invalid data format for population graph:', resultData);
-            return;
-        }
-
-        const months = Array.from({length: resultData.monthly_populations.length}, (_, i) => i);
-        const totalPopulation = resultData.monthly_populations;
-        const sterilized = resultData.monthly_sterilized;
-        const reproductive = resultData.monthly_reproductive;
-        const kittens = resultData.monthly_kittens;
-
-        // Prepare graph data
-        const graphData = {
-            traces: [
-                {
-                    name: 'Total Population',
-                    x: months,
-                    y: totalPopulation,
-                    mode: 'lines',
-                    line: { color: '#4F46E5', width: 3 }
-                },
-                {
-                    name: 'Sterilized',
-                    x: months,
-                    y: sterilized,
-                    mode: 'lines',
-                    line: { color: '#10B981', width: 2 }
-                },
-                {
-                    name: 'Reproductive',
-                    x: months,
-                    y: reproductive,
-                    mode: 'lines',
-                    line: { color: '#EF4444', width: 2 }
-                },
-                {
-                    name: 'Kittens',
-                    x: months,
-                    y: kittens,
-                    mode: 'lines',
-                    line: { color: '#F59E0B', width: 2 }
-                }
-            ],
-            layout: {
-                title: '',
-                xaxis: {
-                    title: 'Months',
-                    showgrid: true,
-                    zeroline: false
-                },
-                yaxis: {
-                    title: 'Number of Cats',
-                    showgrid: true,
-                    zeroline: false
-                },
-                showlegend: true,
-                legend: {
-                    x: 0,
-                    y: 1.1,
-                    orientation: 'h'
-                },
-                margin: { t: 20 },
-                hovermode: 'x unified'
-            },
-            config: {
-                responsive: true,
-                displayModeBar: false
-            }
-        };
-
-        // Add confidence intervals if available
-        if (resultData.monte_carlo_data?.final_population) {
-            const { upper, lower } = resultData.monte_carlo_data.final_population;
-            const ciUpper = months.map(month => {
-                const progress = month / (months.length - 1);
-                return totalPopulation[0] + (upper - totalPopulation[0]) * progress;
-            });
-            const ciLower = months.map(month => {
-                const progress = month / (months.length - 1);
-                return totalPopulation[0] + (lower - totalPopulation[0]) * progress;
-            });
-
-            graphData.traces.push({
-                name: '95% Confidence Interval',
-                x: [...months, ...months.slice().reverse()],
-                y: [...ciUpper, ...ciLower.slice().reverse()],
-                fill: 'toself',
-                fillcolor: 'rgba(79, 70, 229, 0.1)',
-                line: { color: 'transparent' },
-                showlegend: true,
-                hoverinfo: 'skip'
-            });
-        }
-
-        const graphElement = document.getElementById('populationGraph');
-        if (!graphElement) {
-            console.error('Population graph element not found in DOM');
-            return;
-        }
-
-        // Use memoized plotting
-        memoizedPlot(graphData, graphElement)
-            .then(() => console.log('Graph plotted successfully'))
-            .catch(error => console.error('Error plotting graph:', error));
-
-    } catch (error) {
-        console.error('Error in plotPopulationGraph:', error);
-        // Show user-friendly error message
-        const graphElement = document.getElementById('populationGraph');
-        if (graphElement) {
-            graphElement.innerHTML = `
-                <div class="text-center p-4 text-red-600">
-                    <p>Failed to plot graph. Please try again with different parameters.</p>
-                    <p class="text-sm mt-2">Error: ${error.message}</p>
-                </div>
-            `;
-        }
-    }
-}

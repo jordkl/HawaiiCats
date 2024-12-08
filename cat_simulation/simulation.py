@@ -78,19 +78,39 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
     try:
         log_simulation_start(simulation_id, current_size)
         
-        monthly_data = []
-        monthly_populations = [current_size]
-        monthly_sterilized = [sterilized_count]
-        monthly_reproductive = [current_size - sterilized_count]
-        monthly_kittens = [0]
-        monthly_deaths_natural = [0]
-        monthly_deaths_urban = [0]
-        monthly_deaths_disease = [0]
-        monthly_deaths_kittens = [0]
-        monthly_deaths_adults = [0]
-        monthly_deaths_other = [0]
+        # Initialize tracking variables
+        total_population = current_size
+        sterilized = sterilized_count
+        reproductive = total_population - sterilized
+        kittens = 0
+        
+        # Initialize lists to track monthly values
+        monthly_populations = []
+        monthly_sterilized = []
+        monthly_reproductive = []
+        monthly_kittens = []
+        monthly_deaths_natural = []
+        monthly_deaths_urban = []
+        monthly_deaths_disease = []
+        monthly_deaths_kittens = []
+        monthly_deaths_adults = []
+        monthly_deaths_other = []
         monthly_costs = []
         monthly_densities = []
+        
+        # Add initial values to monthly tracking
+        monthly_populations.append(total_population)
+        monthly_sterilized.append(sterilized)
+        monthly_reproductive.append(reproductive)
+        monthly_kittens.append(kittens)
+        monthly_deaths_natural.append(0)
+        monthly_deaths_urban.append(0)
+        monthly_deaths_disease.append(0)
+        monthly_deaths_kittens.append(0)
+        monthly_deaths_adults.append(0)
+        monthly_deaths_other.append(0)
+        monthly_costs.append(0)
+        monthly_densities.append(current_size / params.get('territory_size', 1000))
         
         # Initialize colony structure with age distribution
         colony, initial_pregnant = initialize_colony_with_ages(current_size, sterilized_count, params)
@@ -360,31 +380,33 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
                 colony[category] = [[count, age + 1] for count, age in colony[category]]
             
             # Recalculate current population after all monthly changes
-            current_population = (
-                sum(count for count, _ in colony['young_kittens']) +
-                sum(count for count, _ in colony['reproductive']) +
-                sum(count for count, _ in colony['sterilized'])
-            )
+            total_population = sum(count for count, _ in colony['young_kittens']) + \
+                             sum(count for count, _ in colony['reproductive']) + \
+                             sum(count for count, _ in colony['sterilized'])
+            
+            sterilized = sum(count for count, _ in colony['sterilized'])
+            reproductive = sum(count for count, _ in colony['reproductive'])
+            kittens = sum(count for count, _ in colony['young_kittens'])
+            
+            # Update monthly tracking arrays
+            monthly_populations.append(total_population)
+            monthly_sterilized.append(sterilized)
+            monthly_reproductive.append(reproductive)
+            monthly_kittens.append(kittens)
+            monthly_costs.append(month_cost)
+            monthly_densities.append(total_population / params.get('territory_size', 1000))
             
             log_debug('DEBUG', f'Month {month} population breakdown:')
             log_debug('DEBUG', f'  Young kittens: {sum(count for count, _ in colony["young_kittens"])}')
             log_debug('DEBUG', f'  Reproductive: {sum(count for count, _ in colony["reproductive"])}')
             log_debug('DEBUG', f'  Sterilized: {sum(count for count, _ in colony["sterilized"])}')
-            log_debug('DEBUG', f'  Total population: {current_population}')
-            
-            # Store monthly statistics
-            monthly_populations.append(current_population)
-            monthly_sterilized.append(sum(count for count, _ in colony['sterilized']))
-            monthly_reproductive.append(sum(count for count, _ in colony['reproductive']))
-            monthly_kittens.append(sum(count for count, _ in colony['young_kittens']))
+            log_debug('DEBUG', f'  Total population: {total_population}')
             
             # Store death statistics
             monthly_deaths_other.append(0)  # Add other deaths to monthly data
-            monthly_costs.append(month_cost)
             
             # Calculate density relative to territory
-            density = current_population / params['territory_size'] if params['territory_size'] > 0 else float('inf')
-            monthly_densities.append(density)
+            density = total_population / params['territory_size'] if params['territory_size'] > 0 else float('inf')
             
         duration = time.time() - start_time
         log_simulation_end(simulation_id, duration, monthly_populations[-1])
