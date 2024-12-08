@@ -159,6 +159,12 @@ async function handleCalculate() {
         const isAdvanced = document.getElementById('advancedMode')?.checked || false;
         const useMonteCarlo = document.getElementById('useMonteCarlo')?.checked || false;
         
+        // Show Monte Carlo loading indicator if Monte Carlo is enabled
+        const monteCarloLoading = document.getElementById('monteCarloLoading');
+        if (useMonteCarlo && monteCarloLoading) {
+            monteCarloLoading.classList.add('active');
+        }
+        
         // Input validation with specific error messages
         const validateInput = (value, fieldName, min = 0, max = Infinity) => {
             const num = parseFloat(value);
@@ -285,11 +291,17 @@ async function handleCalculate() {
             alert(error.message);
         }
     } finally {
-        // Re-enable calculate button
+        // Re-enable calculate button and hide loading indicator
         const calculateButton = document.getElementById('calculateButton');
+        const monteCarloLoading = document.getElementById('monteCarloLoading');
+        
         if (calculateButton) {
             calculateButton.disabled = false;
             calculateButton.textContent = 'Calculate';
+        }
+        
+        if (monteCarloLoading) {
+            monteCarloLoading.classList.remove('active');
         }
     }
 }

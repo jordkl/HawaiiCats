@@ -43,6 +43,6 @@ DEFAULT_PARAMS = {
     'human_interference': 0.3,    # Reduced from 0.5 for less negative impact
     
     # Abandonment factors
-    'monthly_abandonment': 1,
+    'monthly_abandonment': 0,  # Default to no monthly abandonment
     'abandoned_sterilized_ratio': 0.2
 }

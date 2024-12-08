@@ -93,37 +93,114 @@ def calculate_resource_impact(resource_availability):
 def calculate_monthly_mortality(params, colony):
     """Calculate monthly mortality rates with improved biological realism."""
     try:
-        # Convert survival rates to monthly probabilities
-        base_adult_mortality = 1.0 - np.power(float(params.get('adult_survival_rate', 0.95)), 1.0/12)
-        base_kitten_mortality = 1.0 - np.power(float(params.get('kitten_survival_rate', 0.85)), 1.0/12)
+        # Base mortality rates (annual rates converted to monthly)
+        # 15% annual mortality = ~1.3% monthly for adults
+        # 25% annual mortality = ~2.1% monthly for kittens
+        base_adult_mortality = 0.013  # Monthly base rate
+        base_kitten_mortality = 0.021  # Monthly base rate for kittens
         
-        # Combine risks multiplicatively with dampening
-        risk_multiplier = (1 + float(params.get('urban_risk', 0.03))) * \
-                         (1 + float(params.get('disease_risk', 0.03))) * \
-                         (1 + float(params.get('natural_risk', 0.02)))
-        risk_multiplier = min(1.5, risk_multiplier)  # Cap maximum risk
-        
-        # Calculate environmental protection with smoother scaling
-        protection = min(1.0, (
-            float(params.get('shelter_quality', 0.8)) * 
-            float(params.get('caretaker_support', 0.8)) * 
-            float(params.get('feeding_consistency', 0.8))
-        ) ** 0.3)  # Cube root for gentler scaling
-        
-        # Calculate density-dependent disease risk
+        # Calculate total population
         total_cats = (
             sum(int(float(count)) for count, _ in colony['young_kittens']) +
             sum(int(float(count)) for count, _ in colony['reproductive']) +
             sum(int(float(count)) for count, _ in colony['sterilized'])
         )
-        density_factor = min(1.5, 1.0 + total_cats / float(params.get('territory_size', 1000)))
         
-        # Apply all factors with proper bounds
-        adult_mortality = base_adult_mortality * risk_multiplier * (1 - protection * 0.8) * density_factor
-        kitten_mortality = base_kitten_mortality * risk_multiplier * (1 - protection * 0.7) * density_factor
+        # Environmental Factors - each scaled from 0 to 1
+        shelter_quality = float(params.get('shelter_quality', 0.8))
+        caretaker_support = float(params.get('caretaker_support', 0.8))
+        feeding_consistency = float(params.get('feeding_consistency', 0.8))
+        water_availability = float(params.get('water_availability', 0.9))
         
-        # Ensure reasonable bounds
-        return float(min(0.3, adult_mortality)), float(min(0.4, kitten_mortality))
+        # Calculate environmental stress
+        # More balanced weights and stronger impact
+        resource_stress = (
+            0.3 * (1 - feeding_consistency) +   # Food stress (30%)
+            0.2 * (1 - water_availability) +    # Water stress (20%)
+            0.3 * (1 - shelter_quality) +       # Shelter stress (30%)
+            0.2 * (1 - caretaker_support)       # Care stress (20%)
+        )
+        
+        # Risk factors with base rates
+        urban_risk = float(params.get('urban_risk', 0.05))
+        disease_risk = float(params.get('disease_risk', 0.05))
+        natural_risk = float(params.get('natural_risk', 0.05))
+        
+        # Calculate risk impacts with stronger environmental effects
+        # Poor conditions double the impact of risks
+        risk_multiplier = 1.0 + (urban_risk + disease_risk + natural_risk) * (2.0 - min(1.0, (
+            shelter_quality +
+            caretaker_support +
+            feeding_consistency +
+            water_availability
+        ) / 4))
+        
+        # Density impact calculation
+        territory_size = float(params.get('territory_size', 1000))
+        density = total_cats / territory_size
+        
+        # Density effect is stronger with poor environmental conditions
+        # Poor conditions effectively reduce the carrying capacity
+        density_factor = 1.0 + density * (1.0 + resource_stress)
+        density_factor = min(2.0, density_factor)  # Cap at 100% increase
+        
+        # Age-based mortality
+        # Older cats are more affected by poor conditions
+        age_factors = []
+        for group in ['reproductive', 'sterilized']:
+            for _, age in colony[group]:
+                age = float(age)
+                if age > 84:  # Cats over 7 years
+                    base_factor = 1.5
+                elif age > 60:  # Cats over 5 years
+                    base_factor = 1.3
+                elif age > 36:  # Cats over 3 years
+                    base_factor = 1.15
+                else:
+                    base_factor = 1.0
+                # Poor conditions affect older cats more
+                age_factors.append(base_factor * (1.0 + 0.5 * resource_stress))
+        
+        avg_age_factor = np.mean(age_factors) if age_factors else 1.0
+        
+        # Calculate final mortality rates
+        # Base rate increased by:
+        # 1. Risk multiplier (up to 3x in very poor conditions)
+        # 2. Density factor (up to 2x in overcrowded conditions)
+        # 3. Age factor (up to 2.25x for old cats in poor conditions)
+        # 4. Direct environmental stress (up to 2x in poor conditions)
+        
+        # Adult mortality
+        adult_mortality = (
+            base_adult_mortality *
+            risk_multiplier *
+            density_factor *
+            avg_age_factor *
+            (1.0 + resource_stress)
+        )
+        
+        # Kitten mortality (more sensitive to conditions)
+        kitten_mortality = (
+            base_kitten_mortality *
+            risk_multiplier *
+            density_factor *
+            (1.0 + 1.5 * resource_stress)  # 50% more sensitive
+        )
+        
+        # Cap mortality rates at reasonable maximums
+        # Max 20% monthly mortality for adults (92% annual)
+        # Max 30% monthly mortality for kittens (98% annual)
+        adult_mortality = min(0.20, adult_mortality)
+        kitten_mortality = min(0.30, kitten_mortality)
+        
+        # Ensure minimum mortality rates
+        # Min 1% monthly for adults (11% annual)
+        # Min 1.5% monthly for kittens (17% annual)
+        adult_mortality = max(0.01, adult_mortality)
+        kitten_mortality = max(0.015, kitten_mortality)
+        
+        return float(adult_mortality), float(kitten_mortality)
+        
     except Exception as e:
         logger.error(f"Error in calculate_monthly_mortality: {str(e)}")
         logger.error(traceback.format_exc())
@@ -165,7 +242,7 @@ def calculate_resource_limit(params, current_population):
         logger.error(traceback.format_exc())
         raise
 
-def calculate_breeding_success(params, colony, environment_factor):
+def calculate_breeding_success(params, colony, environment_factor, current_month=None):
     """Calculate breeding success rate with enhanced reproduction for Hawaii."""
     try:
         # Calculate total population and reproductive females
@@ -179,29 +256,36 @@ def calculate_breeding_success(params, colony, environment_factor):
         if reproductive_females == 0:
             return 0.0
             
-        # Environmental impact with higher minimum for Hawaii
-        effective_rate = float(params.get('breeding_rate', 0.85)) * (0.85 + 0.15 * environment_factor)
+        # Environmental impact with higher base rate for Hawaii
+        effective_rate = float(params.get('breeding_rate', 0.85)) * (0.9 + 0.1 * environment_factor)
         
         # Density-dependent effects with higher thresholds for Hawaii
-        density = total_cats / float(params.get('territory_size', 1000))
-        density_factor = max(0.5, 1.0 - (density / (float(params.get('density_impact_threshold', 1.2)) * 1.5)))
+        territory_size = float(params.get('territory_size', 50))  # Default to 50 instead of 1000
+        density = total_cats / territory_size if territory_size > 0 else float('inf')
+        density_threshold = float(params.get('density_impact_threshold', 1.2))
+        density_factor = max(0.7, 1.0 - (density / (density_threshold * 2.0)))  # Increased minimum and threshold
         
         # Social factors optimized for Hawaii colonies
         social_factor = 1.0
         if reproductive_females < 2:
-            social_factor = 0.85  # Less reduction for small colonies
-        elif reproductive_females > 15:  # Higher threshold
-            social_factor = max(0.75, 1.0 - (0.015 * (reproductive_females - 15)))
+            social_factor = 0.9  # Less reduction for small colonies
+        elif reproductive_females > 20:  # Higher threshold
+            social_factor = max(0.8, 1.0 - (0.01 * (reproductive_females - 20)))
         
         # Seasonal adjustment (reduced effect for Hawaii)
-        seasonal_amplitude = float(params.get('seasonal_breeding_amplitude', 0.2))
+        seasonal_amplitude = float(params.get('seasonal_breeding_amplitude', 0.1))  # Reduced default amplitude
         peak_month = int(params.get('peak_breeding_month', 3))
-        current_month = datetime.now().month
-        seasonal_factor = 1.0 - seasonal_amplitude * abs(((current_month - peak_month + 6) % 12) - 6) / 6.0
         
-        # Combine all factors with minimum threshold
+        # Use simulation month instead of real-world month
+        if current_month is None:
+            current_month = peak_month  # Default to peak month if not provided
+        month_in_cycle = current_month % 12
+        
+        seasonal_factor = 1.0 - seasonal_amplitude * abs(((month_in_cycle - peak_month + 6) % 12) - 6) / 6.0
+        
+        # Combine all factors with higher minimum threshold
         success_rate = effective_rate * density_factor * social_factor * seasonal_factor
-        return float(max(0.4, min(1.0, success_rate)))  # Ensure reasonable bounds
+        return float(max(0.6, min(1.0, success_rate)))  # Increased minimum success rate
         
     except Exception as e:
         logger.error(f"Error in calculate_breeding_success: {str(e)}")

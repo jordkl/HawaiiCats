@@ -41,3 +41,5 @@ logs/
 
 # Local data
 *.local
+logs/debug.log
+logs/debug.log

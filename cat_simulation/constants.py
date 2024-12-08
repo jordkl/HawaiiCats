@@ -20,12 +20,13 @@ DEFAULT_PARAMS = {
     "caretaker_support": 0.8,
     "feeding_consistency": 0.9,
     "sterilization_cost": 50.0,
-    "monthly_abandonment": 2,
+    "monthly_abandonment": 0,  # Default to no monthly abandonment
     "abandoned_sterilized_ratio": 0.2,
     "territory_size": 1000,
     "density_impact_threshold": 1.2
 }
 
-# Simulation constants
-MIN_BREEDING_AGE = 6  # months
-MAX_BREEDING_AGE = 84  # 7 years
+# Biological constants based on cat physiology
+MIN_BREEDING_AGE = 5    # Cats can breed at 5-6 months
+MAX_BREEDING_AGE = 84   # Cats can breed up to ~7 years (84 months)
+GESTATION_MONTHS = 2    # Cat pregnancy is ~63 days (2 months)
