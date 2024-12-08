@@ -40,86 +40,94 @@ def initialize_colony_with_ages(total_cats, sterilized, params):
         # Distribute unsterilized cats across age groups
         unsterilized = total_cats - sterilized
         if unsterilized > 0:
-            # Assume about 20% are under maturity age (reduced from 30%)
-            kitten_count = max(1, int(unsterilized * 0.2))
-            adult_count = unsterilized - kitten_count
-            
-            logger.debug(f"Distributing {unsterilized} unsterilized cats: {kitten_count} kittens, {adult_count} adults")
-            
-            # Distribute kittens across 0 to maturity months
-            if kitten_count > 0:
-                # Use triangular distribution to favor younger kittens
-                ages = np.random.triangular(0, 0, maturity_months, kitten_count)
-                ages = np.clip(ages, 0, maturity_months - 1).astype(int)  # Ensure ages are within bounds
-                age_counts = np.bincount(ages, minlength=maturity_months)  # Ensure minimum length
-                logger.debug(f"Kitten age distribution: {dict(enumerate(age_counts))}")
-                for age, count in enumerate(age_counts):
-                    if count > 0:
-                        colony['young_kittens'].append([int(count), int(age)])
-            
-            # Add reproductive adults with wider age distribution
-            if adult_count > 0:
-                # Create a more realistic age distribution
-                young_adults = int(adult_count * 0.4)
-                middle_aged = int(adult_count * 0.3)
-                mature = int(adult_count * 0.2)
-                senior = adult_count - young_adults - middle_aged - mature
+            # For very small colonies, ensure at least one reproductive adult
+            if unsterilized == 1:
+                colony['reproductive'].append([1, maturity_months])
+            else:
+                # Assume about 20% are under maturity age (reduced from 30%)
+                kitten_count = max(1, int(unsterilized * 0.2)) if unsterilized > 2 else 0
+                adult_count = unsterilized - kitten_count
                 
-                logger.debug(f"Adult distribution: young={young_adults}, middle={middle_aged}, mature={mature}, senior={senior}")
+                logger.debug(f"Distributing {unsterilized} unsterilized cats: {kitten_count} kittens, {adult_count} adults")
                 
-                ages = []
-                if young_adults > 0:
-                    young_ages = np.random.randint(maturity_months, 24, young_adults)
-                    logger.debug(f"Young adult ages: {young_ages.tolist()}")
-                    ages.extend(young_ages)
-                if middle_aged > 0:
-                    middle_ages = np.random.randint(24, 48, middle_aged)
-                    logger.debug(f"Middle-aged ages: {middle_ages.tolist()}")
-                    ages.extend(middle_ages)
-                if mature > 0:
-                    mature_ages = np.random.randint(48, 72, mature)
-                    logger.debug(f"Mature ages: {mature_ages.tolist()}")
-                    ages.extend(mature_ages)
-                if senior > 0:
-                    senior_ages = np.random.randint(72, 96, senior)
-                    logger.debug(f"Senior ages: {senior_ages.tolist()}")
-                    ages.extend(senior_ages)
+                # Distribute kittens across 0 to maturity months
+                if kitten_count > 0:
+                    # For very small numbers, just put them at random ages
+                    if kitten_count <= 3:
+                        for _ in range(kitten_count):
+                            age = np.random.randint(0, maturity_months)
+                            colony['young_kittens'].append([1, age])
+                    else:
+                        # Use triangular distribution for larger numbers
+                        ages = np.random.triangular(0, 0, maturity_months, kitten_count)
+                        ages = np.clip(ages, 0, maturity_months - 1).astype(int)
+                        age_counts = np.bincount(ages, minlength=maturity_months)
+                        for age, count in enumerate(age_counts):
+                            if count > 0:
+                                colony['young_kittens'].append([int(count), int(age)])
                 
-                if ages:
-                    age_counts = np.bincount(ages, minlength=96)
-                    logger.debug(f"Adult age counts: {dict([(i,c) for i,c in enumerate(age_counts) if c > 0])}")
-                    for age, count in enumerate(age_counts):
-                        if count > 0:
-                            colony['reproductive'].append([int(count), int(age)])
-                else:
-                    logger.warning("No adult ages generated despite adult_count > 0")
+                # Add reproductive adults with wider age distribution
+                if adult_count > 0:
+                    # For very small numbers, distribute evenly
+                    if adult_count <= 3:
+                        age_ranges = [(maturity_months, 24), (24, 48), (48, 72)]
+                        for i in range(adult_count):
+                            min_age, max_age = age_ranges[i % len(age_ranges)]
+                            age = np.random.randint(min_age, max_age)
+                            colony['reproductive'].append([1, age])
+                    else:
+                        # Create a more realistic age distribution for larger numbers
+                        young_adults = max(1, int(adult_count * 0.4))
+                        middle_aged = max(1, int(adult_count * 0.3))
+                        mature = max(1, int(adult_count * 0.2))
+                        senior = max(0, adult_count - young_adults - middle_aged - mature)
+                        
+                        logger.debug(f"Adult distribution: young={young_adults}, middle={middle_aged}, mature={mature}, senior={senior}")
+                        
+                        # Add each age group separately
+                        if young_adults > 0:
+                            age = np.random.randint(maturity_months, 24)
+                            colony['reproductive'].append([young_adults, age])
+                        if middle_aged > 0:
+                            age = np.random.randint(24, 48)
+                            colony['reproductive'].append([middle_aged, age])
+                        if mature > 0:
+                            age = np.random.randint(48, 72)
+                            colony['reproductive'].append([mature, age])
+                        if senior > 0:
+                            age = np.random.randint(72, 96)
+                            colony['reproductive'].append([senior, age])
         
         # Add sterilized cats with similar age distribution
         if sterilized > 0:
             logger.debug(f"Distributing {sterilized} sterilized cats")
-            young_adults = int(sterilized * 0.4)
-            middle_aged = int(sterilized * 0.3)
-            mature = int(sterilized * 0.2)
-            senior = sterilized - young_adults - middle_aged - mature
             
-            ages = []
-            if young_adults > 0:
-                ages.extend(np.random.randint(maturity_months, 24, young_adults))
-            if middle_aged > 0:
-                ages.extend(np.random.randint(24, 48, middle_aged))
-            if mature > 0:
-                ages.extend(np.random.randint(48, 72, mature))
-            if senior > 0:
-                ages.extend(np.random.randint(72, 96, senior))
-            
-            if ages:
-                age_counts = np.bincount(ages, minlength=96)
-                logger.debug(f"Sterilized age counts: {dict([(i,c) for i,c in enumerate(age_counts) if c > 0])}")
-                for age, count in enumerate(age_counts):
-                    if count > 0:
-                        colony['sterilized'].append([int(count), int(age)])
+            # For very small numbers, distribute evenly
+            if sterilized <= 3:
+                age_ranges = [(maturity_months, 24), (24, 48), (48, 72)]
+                for i in range(sterilized):
+                    min_age, max_age = age_ranges[i % len(age_ranges)]
+                    age = np.random.randint(min_age, max_age)
+                    colony['sterilized'].append([1, age])
             else:
-                logger.warning("No sterilized ages generated despite sterilized > 0")
+                young_adults = max(1, int(sterilized * 0.4))
+                middle_aged = max(1, int(sterilized * 0.3))
+                mature = max(1, int(sterilized * 0.2))
+                senior = max(0, sterilized - young_adults - middle_aged - mature)
+                
+                # Add each age group separately
+                if young_adults > 0:
+                    age = np.random.randint(maturity_months, 24)
+                    colony['sterilized'].append([young_adults, age])
+                if middle_aged > 0:
+                    age = np.random.randint(24, 48)
+                    colony['sterilized'].append([middle_aged, age])
+                if mature > 0:
+                    age = np.random.randint(48, 72)
+                    colony['sterilized'].append([mature, age])
+                if senior > 0:
+                    age = np.random.randint(72, 96)
+                    colony['sterilized'].append([senior, age])
         
         # Calculate initial pregnancies (reduced probability)
         female_ratio = float(params.get('female_ratio', 0.5))
