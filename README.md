@@ -72,6 +72,25 @@ The application will be available at `http://localhost:5001`
 - `/flag-scenario` - Flag notable scenarios
 - `/clear-logs` - Clear calculation logs
 
+## Deployment
+
+### Local Development
+1. Make changes locally
+2. Test using the local development server at `http://localhost:5001`
+3. Commit and push changes to GitHub:
+```bash
+git add .
+git commit -m "Description of changes"
+git push origin main
+```
+
+### Production Deployment
+The production site is hosted at [hawaiicats.org](https://hawaiicats.org). 
+
+Production deployment requires proper authentication and access credentials. Contact the repository owner for deployment access and instructions.
+
+**Note:** Always test changes thoroughly in the local environment before requesting a production deployment.
+
 ## Contributing
 
 1. Fork the repository
