@@ -16,10 +16,20 @@ app = Flask(__name__,
             static_folder='static')
 
 # Configure CORS
+ALLOWED_ORIGINS = [
+    "https://hawaiicats.org",
+    "https://hawaiicats.com",
+    "http://hawaiicats.com",
+    "http://localhost:5001",
+    "http://localhost:5000",
+    "http://127.0.0.1:5001",
+    "http://127.0.0.1:5000",
+    "http://192.168.1.169:5001"
+]
+
 CORS(app, resources={
     r"/*": {
-        "origins": ["https://hawaiicats.org", "https://hawaiicats.com", "http://hawaiicats.com", 
-                   "http://localhost:5001", "http://localhost:5000", "http://127.0.0.1:5001", "http://127.0.0.1:5000"],
+        "origins": ALLOWED_ORIGINS,
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"],
         "supports_credentials": True
@@ -40,8 +50,7 @@ logger = logging.getLogger('debug')
 @app.after_request
 def after_request(response):
     origin = request.headers.get('Origin')
-    if origin in ["https://hawaiicats.org", "https://hawaiicats.com", "http://hawaiicats.com", 
-                 "http://localhost:5001", "http://localhost:5000", "http://127.0.0.1:5001", "http://127.0.0.1:5000"]:
+    if origin in ALLOWED_ORIGINS:
         response.headers.add('Access-Control-Allow-Origin', origin)
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')

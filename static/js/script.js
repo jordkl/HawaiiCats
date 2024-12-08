@@ -96,8 +96,9 @@ function flagScenario() {
     const scenarioData = collectScenarioData();
     scenarioData.userNote = userNote;  // Add the user's note to the data
     
-    // Use production URL if not localhost, otherwise use localhost
-    const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5001' : 'https://hawaiicats.org';
+    // Determine the base URL based on the current environment
+    const isLocalhost = ['localhost', '127.0.0.1', '192.168.1.169'].includes(window.location.hostname);
+    const baseUrl = isLocalhost ? `http://${window.location.host}` : 'https://hawaiicats.org';
 
     // Send data to backend
     fetch(`${baseUrl}/flag_scenario`, {
