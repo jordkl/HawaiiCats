@@ -111,7 +111,11 @@ def calculate_monthly_mortality(params, colony):
         ) ** 0.3)  # Cube root for gentler scaling
         
         # Calculate density-dependent disease risk
-        total_cats = sum(int(float(count)) for group in colony.values() for count, _ in group)
+        total_cats = (
+            sum(int(float(count)) for count, _ in colony['young_kittens']) +
+            sum(int(float(count)) for count, _ in colony['reproductive']) +
+            sum(int(float(count)) for count, _ in colony['sterilized'])
+        )
         density_factor = min(1.5, 1.0 + total_cats / float(params.get('territory_size', 1000)))
         
         # Apply all factors with proper bounds
@@ -164,19 +168,19 @@ def calculate_resource_limit(params, current_population):
 def calculate_breeding_success(params, colony, environment_factor):
     """Calculate breeding success rate with enhanced reproduction for Hawaii."""
     try:
-        # Base parameters with safe conversion
-        breeding_rate = float(params.get('breeding_rate', 0.85))
-        female_ratio = float(params.get('female_ratio', 0.5))
-        
-        # Count reproductive population
-        total_cats = sum(count for group in colony.values() for count, _ in group)
-        reproductive_females = sum(count for count, _ in colony['reproductive']) * female_ratio
+        # Calculate total population and reproductive females
+        total_cats = (
+            sum(int(float(count)) for count, _ in colony['young_kittens']) +
+            sum(int(float(count)) for count, _ in colony['reproductive']) +
+            sum(int(float(count)) for count, _ in colony['sterilized'])
+        )
+        reproductive_females = sum(count for count, _ in colony['reproductive']) * float(params.get('female_ratio', 0.5))
         
         if reproductive_females == 0:
             return 0.0
             
         # Environmental impact with higher minimum for Hawaii
-        effective_rate = breeding_rate * (0.85 + 0.15 * environment_factor)
+        effective_rate = float(params.get('breeding_rate', 0.85)) * (0.85 + 0.15 * environment_factor)
         
         # Density-dependent effects with higher thresholds for Hawaii
         density = total_cats / float(params.get('territory_size', 1000))

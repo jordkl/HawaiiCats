@@ -272,16 +272,21 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
                 if current_pregnancies < max_pregnancies:
                     # Calculate available females for new pregnancies
                     available_females = float(breeding_females * (1 - current_pregnancies / breeding_females))
+                    
                     # Combine environmental factors more gently
                     environmental_factor = float((stress_factor + seasonal_factor + density_effect) / 3)
-                    # Extract ages from reproductive colony members
-                    reproductive_ages = [float(age) for _, age in colony['reproductive']]
-                    breeding_success = calculate_breeding_success(params, reproductive_ages, environmental_factor)
-                    new_pregnant = int(round(min(available_females * sum(breeding_success) / len(breeding_success) * monthly_breeding_rate, 
-                                        max_pregnancies - current_pregnancies)))
+                    
+                    # Calculate breeding success using the colony structure
+                    breeding_success = calculate_breeding_success(params, colony, environmental_factor)
+                    
+                    # Calculate new pregnancies
+                    new_pregnant = int(round(min(
+                        available_females * breeding_success * monthly_breeding_rate,
+                        max_pregnancies - current_pregnancies
+                    )))
                     
                     if new_pregnant > 0:
-                        log_debug('DEBUG', f'Month {month}: {new_pregnant} new females became pregnant (success rate: {sum(breeding_success) / len(breeding_success):.2f})')
+                        log_debug('DEBUG', f'Month {month}: {new_pregnant} new females became pregnant (success rate: {breeding_success:.2f})')
                         pregnant_females.append(new_pregnant)
             
             # Process births from previous pregnancies
