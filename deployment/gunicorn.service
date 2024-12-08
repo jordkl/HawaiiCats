@@ -1,0 +1,17 @@
+[Unit]
+Description=Gunicorn daemon for Hawaii Cats
+Before=nginx.service
+After=network.target
+
+[Service]
+WorkingDirectory=/home/flask/Hawaii_Cats
+ExecStart=/usr/bin/gunicorn3 --name=hawaii_cats --pythonpath=/home/flask/Hawaii_Cats --bind unix:/run/gunicorn/gunicorn.socket --config /etc/gunicorn.d/gunicorn.py main:app
+Restart=always
+SyslogIdentifier=gunicorn
+User=www-data
+Group=www-data
+RuntimeDirectory=gunicorn
+RuntimeDirectoryMode=0755
+
+[Install]
+WantedBy=multi-user.target
