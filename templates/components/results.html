@@ -1,0 +1,115 @@
+<!-- Initial Placeholder Section -->
+<div id="placeholderSection" class="space-y-6">
+    <div class="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No calculations yet</h3>
+        <p class="mt-1 text-sm text-gray-500">Adjust the parameters and click Calculate to see population projections</p>
+        <div class="mt-6">
+            <button type="button" onclick="handleCalculate()" class="primary-button">
+                Calculate Now
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Results Section -->
+<div id="resultsSection" class="hidden space-y-6">
+    <h3 class="text-lg font-medium text-gray-900">Simulation Results</h3>
+    
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <!-- Final Population -->
+        <div class="stat-card relative">
+            <span id="finalPopulation_lower" class="absolute text-xs text-gray-500 left-2 top-2 monte-carlo-ci hidden">-</span>
+            <span id="finalPopulation_upper" class="absolute text-xs text-gray-500 right-2 top-2 monte-carlo-ci hidden">-</span>
+            <h4 class="text-sm font-medium text-gray-500">Final Population</h4>
+            <p id="finalPopulation" class="text-2xl font-bold text-hawaii-blue">-</p>
+        </div>
+        
+        <!-- Population Change -->
+        <div class="stat-card relative">
+            <span id="populationChange_lower" class="absolute text-xs text-gray-500 left-2 top-2 monte-carlo-ci hidden">-</span>
+            <span id="populationChange_upper" class="absolute text-xs text-gray-500 right-2 top-2 monte-carlo-ci hidden">-</span>
+            <h4 class="text-sm font-medium text-gray-500">Population Change</h4>
+            <p id="populationChange" class="text-2xl font-bold text-hawaii-blue">-</p>
+        </div>
+        
+        <!-- Sterilization Rate -->
+        <div class="stat-card relative">
+            <span id="sterilizationRate_lower" class="absolute text-xs text-gray-500 left-2 top-2 monte-carlo-ci hidden">-</span>
+            <span id="sterilizationRate_upper" class="absolute text-xs text-gray-500 right-2 top-2 monte-carlo-ci hidden">-</span>
+            <h4 class="text-sm font-medium text-gray-500">Sterilization Rate</h4>
+            <p id="sterilizationRate" class="text-2xl font-bold text-hawaii-blue">-</p>
+        </div>
+        
+        <!-- Total Cost -->
+        <div class="stat-card relative">
+            <span id="totalCost_lower" class="absolute text-xs text-gray-500 left-2 top-2 monte-carlo-ci hidden">-</span>
+            <span id="totalCost_upper" class="absolute text-xs text-gray-500 right-2 top-2 monte-carlo-ci hidden">-</span>
+            <h4 class="text-sm font-medium text-gray-500">Total Cost</h4>
+            <p id="totalCost" class="text-2xl font-bold text-hawaii-blue">-</p>
+        </div>
+    </div>
+
+    <!-- Mortality Statistics -->
+    <div class="dashboard-card">
+        <h4 class="text-base font-medium text-gray-900 mb-4">Mortality Statistics</h4>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="stat-card relative">
+                <span id="totalDeaths_lower" class="absolute text-xs text-gray-500 left-2 top-2 monte-carlo-ci hidden">-</span>
+                <span id="totalDeaths_upper" class="absolute text-xs text-gray-500 right-2 top-2 monte-carlo-ci hidden">-</span>
+                <h5 class="text-sm font-medium text-gray-500">Total Deaths</h5>
+                <p id="totalDeaths" class="text-xl font-bold text-hawaii-blue">-</p>
+            </div>
+            <div class="stat-card relative">
+                <span id="kittenDeaths_lower" class="absolute text-xs text-gray-500 left-2 top-2 monte-carlo-ci hidden">-</span>
+                <span id="kittenDeaths_upper" class="absolute text-xs text-gray-500 right-2 top-2 monte-carlo-ci hidden">-</span>
+                <h5 class="text-sm font-medium text-gray-500">Kitten Deaths</h5>
+                <p id="kittenDeaths" class="text-xl font-bold text-hawaii-blue">-</p>
+            </div>
+            <div class="stat-card relative">
+                <span id="adultDeaths_lower" class="absolute text-xs text-gray-500 left-2 top-2 monte-carlo-ci hidden">-</span>
+                <span id="adultDeaths_upper" class="absolute text-xs text-gray-500 right-2 top-2 monte-carlo-ci hidden">-</span>
+                <h5 class="text-sm font-medium text-gray-500">Adult Deaths</h5>
+                <p id="adultDeaths" class="text-xl font-bold text-hawaii-blue">-</p>
+            </div>
+            <div class="stat-card relative">
+                <span id="mortalityRate_lower" class="absolute text-xs text-gray-500 left-2 top-2 monte-carlo-ci hidden">-</span>
+                <span id="mortalityRate_upper" class="absolute text-xs text-gray-500 right-2 top-2 monte-carlo-ci hidden">-</span>
+                <h5 class="text-sm font-medium text-gray-500">Mortality Rate</h5>
+                <p id="mortalityRate" class="text-xl font-bold text-hawaii-blue">-</p>
+            </div>
+        </div>
+        
+        <!-- Deaths by Cause -->
+        <h5 class="text-base font-medium text-gray-900 mt-4 mb-2">Deaths by Cause</h5>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="stat-card relative">
+                <span id="naturalDeaths_lower" class="absolute text-xs text-gray-500 left-2 top-2 monte-carlo-ci hidden">-</span>
+                <span id="naturalDeaths_upper" class="absolute text-xs text-gray-500 right-2 top-2 monte-carlo-ci hidden">-</span>
+                <h5 class="text-sm font-medium text-gray-500">Natural Deaths</h5>
+                <p id="naturalDeaths" class="text-xl font-bold text-hawaii-blue">-</p>
+            </div>
+            <div class="stat-card relative">
+                <span id="urbanDeaths_lower" class="absolute text-xs text-gray-500 left-2 top-2 monte-carlo-ci hidden">-</span>
+                <span id="urbanDeaths_upper" class="absolute text-xs text-gray-500 right-2 top-2 monte-carlo-ci hidden">-</span>
+                <h5 class="text-sm font-medium text-gray-500">Urban Deaths</h5>
+                <p id="urbanDeaths" class="text-xl font-bold text-hawaii-blue">-</p>
+            </div>
+            <div class="stat-card relative">
+                <span id="diseaseDeaths_lower" class="absolute text-xs text-gray-500 left-2 top-2 monte-carlo-ci hidden">-</span>
+                <span id="diseaseDeaths_upper" class="absolute text-xs text-gray-500 right-2 top-2 monte-carlo-ci hidden">-</span>
+                <h5 class="text-sm font-medium text-gray-500">Disease Deaths</h5>
+                <p id="diseaseDeaths" class="text-xl font-bold text-hawaii-blue">-</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Population Graph -->
+    <div class="dashboard-card">
+        <h4 class="text-base font-medium text-gray-900 mb-4">Population Over Time</h4>
+        <div id="populationGraph" style="width: 100%; height: 400px;"></div>
+    </div>
+</div>
