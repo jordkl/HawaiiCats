@@ -92,10 +92,12 @@ def run_monte_carlo(
     }
     
     # Initialize arrays to store monthly populations for all simulations
-    monthly_populations = [[] for _ in range(months + 1)]  # +1 for initial month
-    monthly_sterilized = [[] for _ in range(months + 1)]
-    monthly_reproductive = [[] for _ in range(months + 1)]
-    monthly_kittens = [[] for _ in range(months + 1)]
+    # Add extra safety margin to array sizes
+    array_size = months + 2  # Add extra month for safety
+    monthly_populations = [[] for _ in range(array_size)]
+    monthly_sterilized = [[] for _ in range(array_size)]
+    monthly_reproductive = [[] for _ in range(array_size)]
+    monthly_kittens = [[] for _ in range(array_size)]
     
     try:
         # Validate input parameters
@@ -142,25 +144,30 @@ def run_monte_carlo(
                 final_sterilized.append(result['final_sterilized'])
                 total_costs.append(result['total_cost'])
                 
-                # Store monthly populations for this simulation
-                for month, pop in enumerate(result['monthly_populations']):
-                    if month < len(monthly_populations):  # Ensure we don't exceed array bounds
-                        monthly_populations[month].append(pop)
-                
-                # Store monthly sterilized counts
-                for month, count in enumerate(result['monthly_sterilized']):
-                    if month < len(monthly_sterilized):
-                        monthly_sterilized[month].append(count)
-                
-                # Store monthly reproductive counts
-                for month, count in enumerate(result['monthly_reproductive']):
-                    if month < len(monthly_reproductive):
-                        monthly_reproductive[month].append(count)
-                
-                # Store monthly kitten counts
-                for month, count in enumerate(result['monthly_kittens']):
-                    if month < len(monthly_kittens):
-                        monthly_kittens[month].append(count)
+                # Store monthly data with bounds checking
+                try:
+                    # Store monthly populations for this simulation
+                    for month, pop in enumerate(result.get('monthly_populations', [])):
+                        if 0 <= month < array_size:  # Ensure we don't exceed array bounds
+                            monthly_populations[month].append(float(pop))
+                    
+                    # Store monthly sterilized counts
+                    for month, count in enumerate(result.get('monthly_sterilized', [])):
+                        if 0 <= month < array_size:
+                            monthly_sterilized[month].append(float(count))
+                    
+                    # Store monthly reproductive counts
+                    for month, count in enumerate(result.get('monthly_reproductive', [])):
+                        if 0 <= month < array_size:
+                            monthly_reproductive[month].append(float(count))
+                    
+                    # Store monthly kitten counts
+                    for month, count in enumerate(result.get('monthly_kittens', [])):
+                        if 0 <= month < array_size:
+                            monthly_kittens[month].append(float(count))
+                except Exception as e:
+                    logger.warning(f"Error storing monthly data: {str(e)}")
+                    continue
                 
                 # Extract mortality statistics
                 total_deaths.append(sum(result.get('monthly_deaths_natural', [0])) + 
