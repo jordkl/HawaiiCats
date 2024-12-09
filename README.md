@@ -84,6 +84,29 @@ git commit -m "Description of changes"
 git push origin main
 ```
 
+### Using the Deployment Script
+
+The repository includes a deployment script (`deploy.sh`) that automates the process of updating and configuring the application on the production server. This script:
+
+1. Pulls the latest changes from GitHub
+2. Sets correct file permissions
+3. Updates Nginx and Gunicorn configurations
+4. Restarts necessary services
+
+To use the deployment script:
+
+1. Make the script executable:
+```bash
+chmod +x deploy.sh
+```
+
+2. Run the script with sudo:
+```bash
+sudo ./deploy.sh
+```
+
+Note: The deployment script should only be used on the production server. It requires sudo privileges to modify system configurations and restart services.
+
 ### Production Deployment
 The production site is hosted at [hawaiicats.org](https://hawaiicats.org). 
 
