@@ -43,3 +43,5 @@ logs/
 *.local
 logs/debug.log
 logs/debug.log
+firebase-credentials.json
+logs/debug.log
