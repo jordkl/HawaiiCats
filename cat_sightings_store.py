@@ -139,7 +139,13 @@ class CatSightingsStore:
             
             # Normalize location data and remove user information
             for sighting in sightings:
-
+                # Normalize location
+                location = sighting.get('userLocation') or sighting.get('coordinate')
+                if location:
+                    sighting['coordinate'] = {
+                        'latitude': location.get('_latitude'),
+                        'longitude': location.get('_longitude')
+                    }
                 
                 # Normalize timestamp
                 timestamp_obj = sighting.get('timestamp')

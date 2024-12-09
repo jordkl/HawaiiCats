@@ -1,0 +1,483 @@
+[
+  {
+    "deviceIdentifier": "DDF01222-C30A-4DBD-A906-0C6076C53564",
+    "userName": "tammy t",
+    "userId": "PK8jv81DM0Tuelb23DcjP5Vre4O2",
+    "species": "cat",
+    "details": {
+      "notes": "",
+      "maxCount": 3,
+      "movementLevel": "moderate",
+      "locationType": "Residential",
+      "bestCount": 2,
+      "visibleCats": 2,
+      "uncertaintyLevel": "medium",
+      "minCount": 1,
+      "timeSpent": "quick",
+      "isFeeding": false
+    },
+    "userEmail": "frdv9vwxhz@privaterelay.appleid.com",
+    "isHidden": false,
+    "coordinate": {
+      "latitude": 21.394553523812935,
+      "longitude": -157.9334362978164
+    },
+    "userLocation": {
+      "latitude": 21.394553523812935,
+      "longitude": -157.9334362978164
+    },
+    "id": "1991CB57-5BE6-4E22-9F86-3DDFAE167C3A",
+    "editHistory": {
+      "original": {
+        "details": {
+          "movementLevel": "moderate",
+          "minCount": 1,
+          "uncertaintyLevel": "medium",
+          "isFeeding": false,
+          "maxCount": 3,
+          "visibleCats": 1,
+          "timeSpent": "quick",
+          "notes": "",
+          "locationType": "Residential",
+          "bestCount": 2
+        },
+        "coordinate": {
+          "latitude": 21.394553523812935,
+          "longitude": -157.9334362978164
+        }
+      },
+      "edited": {
+        "coordinate": {
+          "latitude": 21.394553523812935,
+          "longitude": -157.9334362978164
+        },
+        "editedBy": "frdv9vwxhz@privaterelay.appleid.com",
+        "timestamp": {
+          "_timestamp": "2024-11-25T05:16:44.657815+00:00",
+          "_type": "datetime"
+        },
+        "details": {
+          "visibleCats": 2,
+          "movementLevel": "moderate",
+          "bestCount": 2,
+          "uncertaintyLevel": "medium",
+          "isFeeding": false,
+          "notes": "",
+          "timeSpent": "quick",
+          "locationType": "Residential",
+          "maxCount": 3,
+          "minCount": 1
+        }
+      }
+    },
+    "timestamp": {
+      "_timestamp": "2024-11-25T05:14:39.275516+00:00",
+      "_type": "datetime"
+    }
+  },
+  {
+    "species": "cat",
+    "userId": "irf24FDvHFUhY8a9px758Rdcy763",
+    "coordinate": {
+      "latitude": 19.94740376044058,
+      "longitude": -155.79214464312042
+    },
+    "id": "4699C848-4B55-4D7F-94E6-44224BBB76B5",
+    "details": {
+      "minCount": 3,
+      "timeSpent": "moderate",
+      "maxCount": 19,
+      "isFeeding": true,
+      "notes": "Often see them eating cat food and cans left for them here. They also go into the bathrooms and drink off the water fountain ",
+      "movementLevel": "moderate",
+      "locationType": "Park",
+      "uncertaintyLevel": "high",
+      "bestCount": 11,
+      "visibleCats": 6
+    },
+    "isHidden": false,
+    "userEmail": "katie.cartee@colorado.edu",
+    "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6",
+    "userName": "katie.cartee",
+    "userLocation": {
+      "latitude": 19.923492296025707,
+      "longitude": -155.7918593384279
+    },
+    "timestamp": {
+      "_timestamp": "2024-11-25T04:09:06.821858+00:00",
+      "_type": "datetime"
+    }
+  },
+  {
+    "isHidden": false,
+    "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6",
+    "userName": "katie.cartee",
+    "userEmail": "katie.cartee@colorado.edu",
+    "userLocation": {
+      "latitude": 19.923492296025707,
+      "longitude": -155.7918593384279
+    },
+    "timestamp": {
+      "_timestamp": "2024-11-25T04:04:12.678617+00:00",
+      "_type": "datetime"
+    },
+    "species": "cat",
+    "userId": "irf24FDvHFUhY8a9px758Rdcy763",
+    "coordinate": {
+      "latitude": 19.913479917838554,
+      "longitude": -155.87873986225682
+    },
+    "id": "60E98515-EDFC-40B9-BFB8-6A9EE344837A",
+    "details": {
+      "movementLevel": "active",
+      "bestCount": 3,
+      "visibleCats": 1,
+      "uncertaintyLevel": "high",
+      "isFeeding": false,
+      "maxCount": 5,
+      "minCount": 1,
+      "locationType": "Park",
+      "notes": "Black cat. Near cat food. Not observed eating it.\n",
+      "timeSpent": "quick"
+    }
+  },
+  {
+    "coordinate": {
+      "latitude": 19.92349229602567,
+      "longitude": -155.79185933842794
+    },
+    "userName": "katie.cartee",
+    "id": "F036CFAD-9F1B-4D94-BC69-1E02E8F36E35",
+    "userEmail": "katie.cartee@colorado.edu",
+    "details": {
+      "minCount": 3,
+      "uncertaintyLevel": "high",
+      "bestCount": 9,
+      "movementLevel": "active",
+      "visibleCats": 5,
+      "notes": "Cats eating out of dumpster",
+      "timeSpent": "extended",
+      "isFeeding": false,
+      "locationType": "Residential",
+      "maxCount": 15
+    },
+    "userLocation": {
+      "latitude": 19.923492296025707,
+      "longitude": -155.7918593384279
+    },
+    "timestamp": {
+      "_timestamp": "2024-11-25T04:05:46.430603+00:00",
+      "_type": "datetime"
+    },
+    "species": "cat",
+    "isHidden": false,
+    "userId": "irf24FDvHFUhY8a9px758Rdcy763",
+    "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6"
+  },
+  {
+    "userEmail": "v7vhczhhjb@privaterelay.appleid.com",
+    "userId": "ZXBDqtARoTSnyKIQKE4PbSTxs1j1",
+    "species": "cat",
+    "isFeeding": true,
+    "photos": [],
+    "maxCount": 62,
+    "timeSpent": "quick",
+    "minCount": 25,
+    "details": {
+      "minCount": 25,
+      "timeSpent": "quick",
+      "movementLevel": "active",
+      "visibleCats": 32,
+      "isFeeding": true,
+      "uncertaintyLevel": "high",
+      "maxCount": 62,
+      "bestCount": 32,
+      "notes": "",
+      "locationType": "beach"
+    },
+    "visibleCats": 32,
+    "photoUrls": "",
+    "bestCount": 32,
+    "locationType": "beach",
+    "uncertaintyLevel": "high",
+    "coordinate": {
+      "latitude": 20.898526370300974,
+      "longitude": -156.4413053714732
+    },
+    "notes": "",
+    "isHidden": false,
+    "movementLevel": "active",
+    "id": "In4ufGYzITvxCkh3gxTy",
+    "deviceIdentifier": "C2E060A4-7B73-47F9-9101-C6710FBF99D6",
+    "userName": "jordan1",
+    "timestamp": {
+      "_timestamp": "2024-12-09T02:56:31.834808+00:00",
+      "_type": "datetime"
+    },
+    "userLocation": {
+      "longitude": -156.44153729577224,
+      "latitude": 20.898826370601206
+    }
+  },
+  {
+    "details": {
+      "uncertaintyLevel": "low",
+      "locationType": "beach",
+      "maxCount": 5,
+      "visibleCats": 3,
+      "movementLevel": "moderate",
+      "notes": "Varying sizes \nSeen up to 9 at once. Only 2 out today\n",
+      "timeSpent": "quick",
+      "bestCount": 3,
+      "isFeeding": true,
+      "minCount": 2
+    },
+    "coordinate": {
+      "latitude": 19.67038110938625,
+      "longitude": -156.02720609555058
+    },
+    "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6",
+    "userName": "katie.cartee",
+    "userEmail": "katie.cartee@colorado.edu",
+    "userId": "irf24FDvHFUhY8a9px758Rdcy763",
+    "photos": [
+      {
+        "url": "https://firebasestorage.googleapis.com:443/v0/b/catmap-e5581.firebasestorage.app/o/sighting_photos%2Fphoto_1733183576_43F85150-F695-4DA4-84B0-73FCBE3CBCF0.jpg?alt=media&token=60974205-a754-46a2-8302-8f957e48d65f",
+        "uploadedBy": "irf24FDvHFUhY8a9px758Rdcy763",
+        "metadata": {
+          "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6"
+        }
+      },
+      {
+        "metadata": {
+          "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6"
+        },
+        "uploadedBy": "irf24FDvHFUhY8a9px758Rdcy763",
+        "url": "https://firebasestorage.googleapis.com:443/v0/b/catmap-e5581.firebasestorage.app/o/sighting_photos%2Fphoto_1733184040_C25B40CC-1195-459A-B499-0FF416B85981.jpg?alt=media&token=97e4cac3-f3e5-48d9-99ab-8b5c64d329e6"
+      }
+    ],
+    "timestamp": {
+      "_timestamp": "2024-12-03T00:00:47.145000+00:00",
+      "_type": "datetime"
+    },
+    "species": "cat",
+    "userLocation": {
+      "latitude": 19.670381109386252,
+      "longitude": -156.02720609555058
+    },
+    "isHidden": false,
+    "id": "MQYhDh2j7l9jzPhItOys"
+  },
+  {
+    "species": "cat",
+    "editHistory": {
+      "edited": {
+        "details": {
+          "visibleCats": 6,
+          "movementLevel": "active",
+          "locationType": "Parking Lot",
+          "isFeeding": true,
+          "maxCount": 11,
+          "notes": "Saw car stop and feed the cats. ",
+          "bestCount": 6,
+          "timeSpent": "moderate",
+          "minCount": 5,
+          "uncertaintyLevel": "medium"
+        },
+        "coordinate": {
+          "latitude": 19.927142174001688,
+          "longitude": -155.78862953014283
+        },
+        "editedBy": "katie.cartee@colorado.edu",
+        "timestamp": {
+          "_timestamp": "2024-12-09T05:38:02.893931+00:00",
+          "_type": "datetime"
+        }
+      },
+      "original": {
+        "timestamp": {
+          "_timestamp": "2024-12-09T05:18:30.135999+00:00",
+          "_type": "datetime"
+        },
+        "coordinate": {
+          "latitude": 19.927142174001688,
+          "longitude": -155.78862953014283
+        },
+        "details": {
+          "isFeeding": true,
+          "visibleCats": 6,
+          "notes": "Saw car stop and feed the cats. ",
+          "bestCount": 6,
+          "minCount": 5,
+          "movementLevel": "active",
+          "timeSpent": "moderate",
+          "uncertaintyLevel": "medium",
+          "locationType": "residential",
+          "maxCount": 11
+        },
+        "editedBy": "katie.cartee@colorado.edu"
+      }
+    },
+    "timestamp": {
+      "_timestamp": "2024-12-09T05:18:30.135999+00:00",
+      "_type": "datetime"
+    },
+    "photos": [],
+    "userName": "katie.cartee",
+    "id": "NU7ILAt7LR3qiLMlt76d",
+    "userLocation": {
+      "latitude": 19.927142174001688,
+      "longitude": -155.78862953014283
+    },
+    "details": {
+      "locationType": "Parking Lot",
+      "minCount": 5,
+      "uncertaintyLevel": "medium",
+      "notes": "Saw car stop and feed the cats. ",
+      "movementLevel": "active",
+      "bestCount": 6,
+      "isFeeding": true,
+      "maxCount": 11,
+      "timeSpent": "moderate",
+      "visibleCats": 6
+    },
+    "userEmail": "katie.cartee@colorado.edu",
+    "isHidden": false,
+    "coordinate": {
+      "latitude": 19.927142174001688,
+      "longitude": -155.78862953014283
+    },
+    "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6",
+    "userId": "irf24FDvHFUhY8a9px758Rdcy763"
+  },
+  {
+    "details": {
+      "isFeeding": false,
+      "visibleCats": 5,
+      "movementLevel": "moderate",
+      "uncertaintyLevel": "medium",
+      "bestCount": 5,
+      "maxCount": 8,
+      "notes": "",
+      "minCount": 4,
+      "timeSpent": "quick",
+      "locationType": "residential"
+    },
+    "timestamp": {
+      "_timestamp": "2024-12-06T22:05:35.186851+00:00",
+      "_type": "datetime"
+    },
+    "deviceIdentifier": "C2E060A4-7B73-47F9-9101-C6710FBF99D6",
+    "species": "cat",
+    "userEmail": "v7vhczhhjb@privaterelay.appleid.com",
+    "coordinate": {
+      "latitude": 21.29367719730815,
+      "longitude": -157.83847346824462
+    },
+    "bestCount": 5,
+    "photos": [],
+    "movementLevel": "moderate",
+    "timeSpent": "quick",
+    "userName": "jordan1",
+    "isHidden": false,
+    "visibleCats": 5,
+    "notes": "",
+    "uncertaintyLevel": "medium",
+    "maxCount": 8,
+    "minCount": 4,
+    "locationType": "residential",
+    "isFeeding": false,
+    "userLocation": {
+      "latitude": 21.291954355758623,
+      "longitude": -157.84573829900768
+    },
+    "userId": "ZXBDqtARoTSnyKIQKE4PbSTxs1j1",
+    "id": "XNjhQk0xoxqg9bSt8Rro"
+  },
+  {
+    "coordinate": {
+      "latitude": 21.312085715759387,
+      "longitude": -157.88851119115503
+    },
+    "movementLevel": "active",
+    "species": "cat",
+    "isFeeding": true,
+    "visibleCats": 62,
+    "userEmail": "v7vhczhhjb@privaterelay.appleid.com",
+    "notes": "",
+    "userLocation": {
+      "latitude": 21.405660734467055,
+      "longitude": -157.9633615969664
+    },
+    "details": {
+      "timeSpent": "extended",
+      "movementLevel": "active",
+      "uncertaintyLevel": "high",
+      "visibleCats": 62,
+      "maxCount": 106,
+      "bestCount": 62,
+      "notes": "",
+      "minCount": 43,
+      "isFeeding": true,
+      "locationType": "residential"
+    },
+    "timeSpent": "extended",
+    "maxCount": 106,
+    "uncertaintyLevel": "high",
+    "timestamp": {
+      "_timestamp": "2024-12-06T20:00:54.985419+00:00",
+      "_type": "datetime"
+    },
+    "userId": "ZXBDqtARoTSnyKIQKE4PbSTxs1j1",
+    "deviceIdentifier": "C2E060A4-7B73-47F9-9101-C6710FBF99D6",
+    "locationType": "residential",
+    "minCount": 43,
+    "photos": [],
+    "userName": "jordan1",
+    "bestCount": 62,
+    "isHidden": false,
+    "id": "YhhFlED5CHDcBBhyAaas"
+  },
+  {
+    "timestamp": {
+      "_timestamp": "2024-12-02T23:54:18.118000+00:00",
+      "_type": "datetime"
+    },
+    "userEmail": "katie.cartee@colorado.edu",
+    "coordinate": {
+      "latitude": 19.669997712540518,
+      "longitude": -156.02418420530364
+    },
+    "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6",
+    "userLocation": {
+      "latitude": 19.669656681226893,
+      "longitude": -156.02467142911877
+    },
+    "details": {
+      "bestCount": 2,
+      "timeSpent": "quick",
+      "isFeeding": true,
+      "locationType": "beach",
+      "visibleCats": 2,
+      "maxCount": 3,
+      "minCount": 1,
+      "notes": "Varying sizes \nSeen up to 9 at once. Only 2 out today\n",
+      "movementLevel": "moderate",
+      "uncertaintyLevel": "low"
+    },
+    "isHidden": false,
+    "userId": "irf24FDvHFUhY8a9px758Rdcy763",
+    "photos": [
+      {
+        "url": "https://firebasestorage.googleapis.com:443/v0/b/catmap-e5581.firebasestorage.app/o/sighting_photos%2Fphoto_1733183576_43F85150-F695-4DA4-84B0-73FCBE3CBCF0.jpg?alt=media&token=60974205-a754-46a2-8302-8f957e48d65f",
+        "metadata": {
+          "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6"
+        },
+        "uploadedBy": "irf24FDvHFUhY8a9px758Rdcy763"
+      }
+    ],
+    "species": "cat",
+    "userName": "katie.cartee",
+    "id": "mchUSbRstWRvcNdYTK1a"
+  }
+]
