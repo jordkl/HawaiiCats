@@ -370,5 +370,132 @@
     "species": "cat",
     "userName": "katie.cartee",
     "id": "mchUSbRstWRvcNdYTK1a"
+  },
+  {
+    "maxCount": 62,
+    "id": "In4ufGYzITvxCkh3gxTy",
+    "movementLevel": "active",
+    "timeSpent": "quick",
+    "uncertaintyLevel": "high",
+    "userId": "ZXBDqtARoTSnyKIQKE4PbSTxs1j1",
+    "deviceIdentifier": "C2E060A4-7B73-47F9-9101-C6710FBF99D6",
+    "notes": "",
+    "bestCount": 32,
+    "timestamp": {
+      "_timestamp": "2024-12-09T02:56:31.834808+00:00",
+      "_type": "datetime"
+    },
+    "minCount": 25,
+    "isFeeding": true,
+    "photos": [],
+    "coordinate": {
+      "latitude": 20.898526370300974,
+      "longitude": -156.4413053714732
+    },
+    "userEmail": "v7vhczhhjb@privaterelay.appleid.com",
+    "details": {
+      "locationType": "beach",
+      "uncertaintyLevel": "high",
+      "minCount": 25,
+      "visibleCats": 32,
+      "movementLevel": "active",
+      "maxCount": 62,
+      "bestCount": 32,
+      "isFeeding": true,
+      "timeSpent": "quick",
+      "notes": ""
+    },
+    "species": "cat",
+    "isHidden": false,
+    "userName": "jordan1",
+    "locationType": "beach",
+    "visibleCats": 32,
+    "photoUrls": "",
+    "userLocation": {
+      "latitude": 20.898826370601206,
+      "longitude": -156.44153729577224
+    }
+  },
+  {
+    "coordinate": {
+      "latitude": 19.927142174001688,
+      "longitude": -155.78862953014283
+    },
+    "details": {
+      "isFeeding": true,
+      "visibleCats": 6,
+      "maxCount": 11,
+      "timeSpent": "moderate",
+      "uncertaintyLevel": "medium",
+      "notes": "Saw car stop and feed the cats. ",
+      "movementLevel": "active",
+      "locationType": "Parking Lot",
+      "minCount": 5,
+      "bestCount": 6
+    },
+    "userLocation": {
+      "latitude": 19.927142174001688,
+      "longitude": -155.78862953014283
+    },
+    "userEmail": "katie.cartee@colorado.edu",
+    "timestamp": {
+      "_timestamp": "2024-12-09T05:18:30.135999+00:00",
+      "_type": "datetime"
+    },
+    "photos": [],
+    "editHistory": {
+      "edited": {
+        "details": {
+          "maxCount": 11,
+          "timeSpent": "moderate",
+          "uncertaintyLevel": "medium",
+          "minCount": 5,
+          "isFeeding": true,
+          "notes": "Saw car stop and feed the cats. ",
+          "visibleCats": 6,
+          "bestCount": 6,
+          "locationType": "Parking Lot",
+          "movementLevel": "active"
+        },
+        "timestamp": {
+          "_timestamp": "2024-12-09T05:38:02.893931+00:00",
+          "_type": "datetime"
+        },
+        "coordinate": {
+          "latitude": 19.927142174001688,
+          "longitude": -155.78862953014283
+        },
+        "editedBy": "katie.cartee@colorado.edu"
+      },
+      "original": {
+        "details": {
+          "bestCount": 6,
+          "maxCount": 11,
+          "isFeeding": true,
+          "minCount": 5,
+          "notes": "Saw car stop and feed the cats. ",
+          "uncertaintyLevel": "medium",
+          "timeSpent": "moderate",
+          "visibleCats": 6,
+          "movementLevel": "active",
+          "locationType": "residential"
+        },
+        "editedBy": "katie.cartee@colorado.edu",
+        "timestamp": {
+          "_timestamp": "2024-12-09T05:18:30.135999+00:00",
+          "_type": "datetime"
+        },
+        "coordinate": {
+          "latitude": 19.927142174001688,
+          "longitude": -155.78862953014283
+        }
+      }
+    },
+    "isHidden": false,
+    "species": "cat",
+    "userName": "katie.cartee",
+    "userId": "irf24FDvHFUhY8a9px758Rdcy763",
+    "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6",
+    "id": "NU7ILAt7LR3qiLMlt76d"
   }
 ]
