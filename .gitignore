@@ -3,6 +3,10 @@
 .env.local
 .env.*
 
+# Firebase credentials
+firebase-credentials.json
+*-credentials.json
+
 # Python
 __pycache__/
 *.py[cod]
@@ -42,6 +46,4 @@ logs/
 # Local data
 *.local
 logs/debug.log
-logs/debug.log
-firebase-credentials.json
 logs/debug.log
