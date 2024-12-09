@@ -3,6 +3,10 @@
 .env.local
 .env.*
 
+# Firebase credentials
+firebase-credentials.json
+*-credentials.json
+
 # Python
 __pycache__/
 *.py[cod]
@@ -43,3 +47,7 @@ logs/
 *.local
 logs/debug.log
 logs/debug.log
+<<<<<<< Updated upstream
+=======
+logs/debug.log
+>>>>>>> Stashed changes
