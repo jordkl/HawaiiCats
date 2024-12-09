@@ -47,7 +47,3 @@ logs/
 *.local
 logs/debug.log
 logs/debug.log
-<<<<<<< Updated upstream
-=======
-logs/debug.log
->>>>>>> Stashed changes

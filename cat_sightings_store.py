@@ -139,36 +139,7 @@ class CatSightingsStore:
             
             # Normalize location data and remove user information
             for sighting in sightings:
-                # Get coordinates in priority order:
-                # 1. Top-level coordinate (edited location)
-                # 2. Details coordinate
-                # 3. User location (fallback)
-                coordinate = None
-                
-                # Check top-level coordinate first
-                if 'coordinate' in sighting and sighting['coordinate']:
-                    coordinate = sighting['coordinate']
-                # Then check details coordinate
-                elif 'details' in sighting and sighting['details'].get('coordinate'):
-                    coordinate = sighting['details']['coordinate']
-                # Finally, fall back to user location
-                elif 'userLocation' in sighting:
-                    coordinate = sighting['userLocation']
-                
-                if coordinate:
-                    # Ensure we have valid coordinates
-                    lat = coordinate.get('latitude')
-                    lng = coordinate.get('longitude')
-                    if lat and lng:
-                        sighting['coordinate'] = {
-                            'latitude': lat,
-                            'longitude': lng
-                        }
-                    else:
-                        print(f"Warning: Invalid coordinates in sighting {sighting.get('id')}: {coordinate}")
-                        sighting['coordinate'] = None
-                else:
-                    sighting['coordinate'] = None
+
                 
                 # Normalize timestamp
                 timestamp_obj = sighting.get('timestamp')

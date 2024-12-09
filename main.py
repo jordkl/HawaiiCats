@@ -10,10 +10,23 @@ import os
 from datetime import datetime
 import io
 import re
+from cat_simulation.colony import Colony, ColonyManager
+from dotenv import load_dotenv
+from cat_sightings_store import init_store, get_store
+
+# Load environment variables from .env.local
+load_dotenv('.env.local')
 
 app = Flask(__name__,
             template_folder='templates',
             static_folder='static')
+
+# Add Firebase configuration to Flask app
+app.config['FIREBASE_API_KEY'] = os.getenv('FIREBASE_API_KEY')
+app.config['FIREBASE_PROJECT_ID'] = os.getenv('FIREBASE_PROJECT_ID')
+app.config['FIREBASE_AUTH_DOMAIN'] = os.getenv('FIREBASE_AUTH_DOMAIN')
+app.config['FIREBASE_STORAGE_BUCKET'] = os.getenv('FIREBASE_STORAGE_BUCKET')
+app.config['FIREBASE_MESSAGING_SENDER_ID'] = os.getenv('FIREBASE_MESSAGING_SENDER_ID')
 
 # Configure CORS
 ALLOWED_ORIGINS = [
@@ -46,6 +59,13 @@ DEBUG_FILE = os.path.join(LOGS_DIR, 'debug.log')
 setup_logging(LOGS_DIR)
 logger = logging.getLogger('debug')
 
+# Initialize colony manager
+COLONY_DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'colonies.json')
+colony_manager = ColonyManager(COLONY_DATA_FILE)
+
+# Initialize the sightings store
+sightings_store = init_store()
+
 # Add CORS headers
 @app.after_request
 def after_request(response):
@@ -73,6 +93,10 @@ def about():
         log_debug('ERROR', f"Error in about route: {str(e)}")
         log_debug('ERROR', traceback.format_exc())
         return f"Internal Server Error: {str(e)}", 500
+
+@app.route('/catmap')
+def catmap():
+    return render_template('catmap.html')
 
 @app.route("/calculate_population", methods=['POST', 'OPTIONS'])
 def calculate_population():
@@ -567,6 +591,89 @@ def clear_logs():
         log_debug('ERROR', f"Error clearing logs: {str(e)}")
         log_debug('ERROR', traceback.format_exc())
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/colonies', methods=['GET'])
+def get_colonies():
+    """Get all colonies"""
+    colonies = colony_manager.get_colonies()
+    return jsonify([colony.to_dict() for colony in colonies])
+
+@app.route('/api/colonies', methods=['POST'])
+def add_colony():
+    """Add a new colony"""
+    try:
+        data = request.json
+        colony = Colony(
+            name=data['name'],
+            size=int(data['size']),
+            status=data['status'],
+            notes=data['notes'],
+            latitude=float(data['location'][0]),
+            longitude=float(data['location'][1]),
+            timestamp=datetime.now()
+        )
+        added_colony = colony_manager.add_colony(colony)
+        return jsonify(added_colony.to_dict()), 201
+    except (KeyError, ValueError) as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/colonies/<colony_id>', methods=['GET'])
+def get_colony(colony_id):
+    """Get a specific colony"""
+    colony = colony_manager.get_colony(colony_id)
+    if colony:
+        return jsonify(colony.to_dict())
+    return jsonify({'error': 'Colony not found'}), 404
+
+@app.route('/api/colonies/<colony_id>', methods=['PUT'])
+def update_colony(colony_id):
+    """Update a colony"""
+    try:
+        data = request.json
+        colony = Colony(
+            name=data['name'],
+            size=int(data['size']),
+            status=data['status'],
+            notes=data['notes'],
+            latitude=float(data['location'][0]),
+            longitude=float(data['location'][1]),
+            timestamp=datetime.now()
+        )
+        updated_colony = colony_manager.update_colony(colony_id, colony)
+        if updated_colony:
+            return jsonify(updated_colony.to_dict())
+        return jsonify({'error': 'Colony not found'}), 404
+    except (KeyError, ValueError) as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/colonies/<colony_id>', methods=['DELETE'])
+def delete_colony(colony_id):
+    """Delete a colony"""
+    if colony_manager.delete_colony(colony_id):
+        return '', 204
+    return jsonify({'error': 'Colony not found'}), 404
+
+@app.route('/api/sightings')
+def get_sightings():
+    """Get all sightings from local storage"""
+    try:
+        sightings = get_store().get_all_sightings()
+        return jsonify(sightings)
+    except Exception as e:
+        log_debug('ERROR', f"Error getting sightings: {str(e)}")
+        log_debug('ERROR', traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/sync', methods=['POST'])
+def force_sync():
+    """Force a sync with Firebase"""
+    try:
+        get_store().force_sync()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        log_debug('ERROR', f"Error syncing with Firebase: {str(e)}")
+        log_debug('ERROR', traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     try:

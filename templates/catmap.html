@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Cat Map{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+            border-radius: 0.5rem;
+        }
+        .colony-popup {
+            max-width: 300px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="md:col-span-2">
+        <div id="map"></div>
+    </div>
+    <div>
+        <div class="bg-white rounded-lg shadow p-4 mb-4">
+            <h2 class="text-lg font-semibold mb-4">Recent Sightings</h2>
+            <div id="connectionStatus" class="text-sm mb-4">
+                Checking API connection...
+            </div>
+            <div id="sightingsList" class="space-y-4">
+                <!-- Sightings will be populated here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize the map centered on Hawaii
+    const map = L.map('map').setView([21.3069, -157.8583], 10);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: ' OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Store markers
+    let markers = new Map();
+
+    // Function to format timestamp
+    function formatDate(timestamp) {
+        if (!timestamp) return 'Unknown';
+        
+        try {
+            // Handle Firebase Timestamp object
+            if (timestamp.toDate) {
+                const date = timestamp.toDate();
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            }
+            
+            // Handle ISO string timestamp
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return 'Unknown';
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Unknown';
+        }
+    }
+
+    // Function to format cat count information
+    function formatCatCount(data) {
+        if (data.bestCount) {
+            return `${data.bestCount} cats`;
+        } else if (data.minCount && data.maxCount) {
+            return `${data.minCount}-${data.maxCount} cats`;
+        } else if (data.minCount) {
+            return `At least ${data.minCount} cats`;
+        } else if (data.maxCount) {
+            return `Up to ${data.maxCount} cats`;
+        }
+        return 'Cats present';
+    }
+
+    // Function to format location information
+    function formatLocation(locationType) {
+        return locationType || 'Location not specified';
+    }
+
+    // Function to create popup content
+    function createPopupContent(sighting) {
+        // Helper function to safely get count with fallback
+        const getCount = (count) => count || 'Unknown';
+        
+        // Get details from either top-level or nested details object
+        const details = sighting.details || {};
+        const data = {
+            bestCount: sighting.bestCount || details.bestCount,
+            minCount: sighting.minCount || details.minCount,
+            maxCount: sighting.maxCount || details.maxCount,
+            locationType: sighting.locationType || details.locationType,
+            movementLevel: sighting.movementLevel || details.movementLevel,
+            timeSpent: sighting.timeSpent || details.timeSpent,
+            isFeeding: sighting.isFeeding || details.isFeeding,
+            notes: sighting.notes || details.notes
+        };
+
+        // Create details list with only available information
+        const detailsList = [];
+        
+        // Always add a cat count entry, even if just "Cats present"
+        detailsList.push(formatCatCount(data));
+        
+        // Add location if available
+        if (data.locationType) {
+            detailsList.push(`At ${formatLocation(data.locationType)}`);
+        }
+        
+        // Add movement information if available
+        if (data.movementLevel) {
+            detailsList.push(`Movement: ${data.movementLevel}`);
+        }
+        
+        // Add time spent if available
+        if (data.timeSpent) {
+            detailsList.push(`Time spent: ${data.timeSpent}`);
+        }
+        
+        // Add feeding status if true
+        if (data.isFeeding) {
+            detailsList.push('Feeding observed');
+        }
+
+        return `
+            <div class="colony-popup">
+                <h3 class="font-medium text-lg">Cat Sighting</h3>
+                <div class="mt-2">
+                    <ul class="list-disc pl-5">
+                        ${detailsList.map(detail => `<li>${detail}</li>`).join('')}
+                    </ul>
+                </div>
+                ${data.notes ? `<div class="mt-2"><strong>Notes:</strong><br>${data.notes}</div>` : ''}
+                <div class="mt-2 text-sm text-gray-500">
+                    Reported by: ${sighting.userName || 'Anonymous'}
+                    <br>
+                    Time: ${formatDate(sighting.timestamp)}
+                </div>
+            </div>
+        `;
+    }
+
+    // Function to add marker to map
+    function addMarkerToMap(sighting) {
+        if (!sighting.coordinate) return;
+        
+        const marker = L.marker([sighting.coordinate.latitude, sighting.coordinate.longitude])
+            .bindPopup(createPopupContent(sighting))
+            .addTo(map);
+        
+        markers.set(sighting.id, marker);
+        return marker;
+    }
+
+    // Function to update sightings list
+    function updateSightingsList(sighting) {
+        const list = document.getElementById('sightingsList');
+        const details = sighting.details || {};
+        const data = {
+            bestCount: sighting.bestCount || details.bestCount,
+            minCount: sighting.minCount || details.minCount,
+            maxCount: sighting.maxCount || details.maxCount,
+            locationType: sighting.locationType || details.locationType
+        };
+        
+        const div = document.createElement('div');
+        div.className = 'bg-gray-50 rounded-lg p-4';
+        div.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm text-gray-900">
+                        ${formatCatCount(data)}
+                        ${data.locationType ? `at ${formatLocation(data.locationType)}` : ''}
+                    </p>
+                    <p class="text-xs text-gray-500">
+                        ${formatDate(sighting.timestamp)}
+                    </p>
+                </div>
+                <button onclick="focusMarker('${sighting.id}')" 
+                        class="text-indigo-600 hover:text-indigo-900 text-sm">
+                    View
+                </button>
+            </div>
+        `;
+        list.insertBefore(div, list.firstChild);
+    }
+
+    // Function to focus on a marker
+    function focusMarker(sightingId) {
+        const marker = markers.get(sightingId);
+        if (marker) {
+            map.setView(marker.getLatLng(), 15);
+            marker.openPopup();
+        }
+    }
+
+    // Load and display sightings
+    async function loadSightings() {
+        const statusDiv = document.getElementById('connectionStatus');
+        
+        try {
+            console.log('Fetching sightings from local API...');
+            statusDiv.innerHTML = '<span class="text-blue-600">Loading sightings...</span>';
+            
+            const response = await fetch('/api/sightings');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const sightings = await response.json();
+            console.log(`Found ${sightings.length} sightings`);
+            
+            if (sightings.length === 0) {
+                statusDiv.innerHTML = '<span class="text-yellow-600">No sightings found</span>';
+                return;
+            }
+            
+            displaySightings(sightings);
+            statusDiv.innerHTML = `<span class="text-green-600">✓ Found ${sightings.length} sightings</span>`;
+            
+        } catch (error) {
+            console.error('Error loading sightings:', error);
+            statusDiv.innerHTML = `<span class="text-red-600">✗ Error loading sightings: ${error.message}</span>`;
+        }
+    }
+
+    // Function to manually trigger a sync with Firebase
+    async function syncWithFirebase() {
+        const statusDiv = document.getElementById('connectionStatus');
+        
+        try {
+            statusDiv.innerHTML = '<span class="text-blue-600">Syncing with Firebase...</span>';
+            
+            const response = await fetch('/api/sync', {
+                method: 'POST'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            // Reload sightings after sync
+            await loadSightings();
+            
+        } catch (error) {
+            console.error('Error syncing with Firebase:', error);
+            statusDiv.innerHTML = `<span class="text-red-600">✗ Error syncing: ${error.message}</span>`;
+        }
+    }
+
+    // Add sync button to the UI
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusDiv = document.getElementById('connectionStatus');
+        const syncButton = document.createElement('button');
+        syncButton.className = 'ml-2 text-sm text-blue-600 hover:text-blue-800';
+        syncButton.innerHTML = '🔄 Sync';
+        syncButton.onclick = syncWithFirebase;
+        statusDiv.parentNode.insertBefore(syncButton, statusDiv.nextSibling);
+    });
+
+    // Function to clear markers and sightings list
+    function clearMarkersAndList() {
+        // Clear existing markers
+        markers.forEach(marker => marker.remove());
+        markers.clear();
+
+        // Clear sightings list
+        const sightingsList = document.getElementById('sightingsList');
+        sightingsList.innerHTML = '';
+    }
+
+    // Function to display sightings
+    function displaySightings(sightings) {
+        clearMarkersAndList();
+        
+        sightings.forEach(sighting => {
+            if (sighting.coordinate) {
+                addMarkerToMap(sighting);
+                updateSightingsList(sighting);
+            }
+        });
+    }
+
+    // Load sightings when the page loads
+    loadSightings();
+</script>
+{% endblock %}

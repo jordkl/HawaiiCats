@@ -5,9 +5,4 @@ numpy==1.24.3
 pandas==2.0.3
 psutil>=5.9.0
 gevent==23.9.1
-<<<<<<< Updated upstream
-=======
-firebase-admin==6.2.0
-scikit-learn>=1.3.0
-shapely>=2.0.0
->>>>>>> Stashed changes
+
