@@ -98,23 +98,25 @@ class CatSightingsStore:
             last_sync = self._load_last_sync_time()
             print(f"Last sync time: {last_sync}")
             
-            query = self.db.collection('sightings')
-            if last_sync != datetime.min:
-                query = query.where('timestamp', '>', last_sync)
-            
-            print("Executing Firestore query...")
-            docs = query.get()
-            docs_list = list(docs)
-            print(f"Retrieved {len(docs_list)} documents from Firestore")
-            
-            if not docs_list:
-                print("No new documents found")
-                return
-            
+            # Get all existing sighting IDs before sync
             local_data = self._load_local_data()
-            local_data_dict = {item['id']: item for item in local_data}
+            local_ids = {item['id'] for item in local_data}
             
-            for doc in docs_list:
+            # Get all current sightings from Firestore
+            print("Fetching all current sightings from Firestore...")
+            current_docs = self.db.collection('sightings').get()
+            current_ids = {doc.id for doc in current_docs}
+            
+            # Find deleted sightings
+            deleted_ids = local_ids - current_ids
+            if deleted_ids:
+                print(f"Found {len(deleted_ids)} deleted sightings")
+            
+            # Update local data
+            local_data_dict = {item['id']: item for item in local_data if item['id'] not in deleted_ids}
+            
+            # Update with current data
+            for doc in current_docs:
                 data = doc.to_dict()
                 data['id'] = doc.id
                 # Convert Firestore types to serializable format
@@ -124,7 +126,7 @@ class CatSightingsStore:
             new_local_data = list(local_data_dict.values())
             self._save_local_data(new_local_data)
             self._save_last_sync_time(datetime.now())
-            print(f"Sync completed successfully. Saved {len(new_local_data)} sightings.")
+            print(f"Sync completed successfully. Saved {len(new_local_data)} sightings. Removed {len(deleted_ids)} deleted sightings.")
             
         except Exception as e:
             print(f"Error during sync: {str(e)}")
