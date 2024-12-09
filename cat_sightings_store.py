@@ -139,17 +139,32 @@ class CatSightingsStore:
             
             # Normalize location data and remove user information
             for sighting in sightings:
-                # Normalize location
-                location = sighting.get('userLocation') or sighting.get('coordinate')
+                # Safely normalize location with multiple fallbacks
+                location = None
+                if sighting.get('userLocation'):
+                    location = sighting['userLocation']
+                elif sighting.get('coordinate'):
+                    location = sighting['coordinate']
+                
                 if location:
-                    sighting['coordinate'] = {
-                        'latitude': location.get('_latitude'),
-                        'longitude': location.get('_longitude')
-                    }
+                    # Try different possible location property names
+                    lat = location.get('_latitude') or location.get('latitude') or location.get('lat')
+                    lng = location.get('_longitude') or location.get('longitude') or location.get('lng')
+                    
+                    if lat is not None and lng is not None:
+                        sighting['coordinate'] = {
+                            'latitude': float(lat),
+                            'longitude': float(lng)
+                        }
+                    else:
+                        # If no valid coordinates found, set coordinate to None
+                        sighting['coordinate'] = None
+                else:
+                    sighting['coordinate'] = None
                 
                 # Normalize timestamp
                 timestamp_obj = sighting.get('timestamp')
-                if timestamp_obj and '_timestamp' in timestamp_obj:
+                if isinstance(timestamp_obj, dict) and '_timestamp' in timestamp_obj:
                     sighting['timestamp'] = timestamp_obj['_timestamp']
                 
                 # Remove user-specific information
