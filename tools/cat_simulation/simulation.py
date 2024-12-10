@@ -546,12 +546,15 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
         log_simulation_end(simulation_id, duration, monthly_populations[-1])
         
         # Prepare results
+        final_population = monthly_populations[-1]
         results = {
-            'final_population': monthly_populations[-1],
+            'final_population': final_population,
             'final_sterilized': monthly_sterilized[-1],
             'final_reproductive': monthly_reproductive[-1],
             'final_kittens': monthly_kittens[-1],
             'total_cost': total_cost,
+            'total_sterilizations': monthly_sterilization * months,
+            'population_growth': final_population - current_size,
             'total_deaths': cumulative_deaths['total'],
             'kitten_deaths': cumulative_deaths['kittens'],
             'adult_deaths': cumulative_deaths['adults'],

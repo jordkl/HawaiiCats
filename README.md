@@ -40,12 +40,20 @@ The application will be available at `http://localhost:5001`
 
 ## Project Structure
 
-- `main.py` - Main Flask application and API endpoints
-- `cat_simulation/` - Core simulation logic and models
-- `templates/` - HTML templates for the web interface
-- `static/` - Static assets (CSS, JavaScript, images)
+- `app/` - Main Flask application
+  - `routes/` - API endpoints and route handlers
+  - `templates/` - HTML templates for the web interface
+  - `static/` - Static assets (CSS, JavaScript, images)
+- `tools/` - Core functionality modules
+  - `cat_simulation/` - Core simulation logic and models
+  - `colony_analyzer/` - Colony analysis tools
+  - `sightings/` - Cat sighting data management
+- `config/` - Application configuration
+- `deployment/` - Deployment scripts and configurations
 - `logs/` - Simulation logs and calculation results
 - `flagged_scenarios/` - Storage for notable simulation scenarios
+- `scripts/` - Utility scripts
+- `tests/` - Test suite
 
 ## Dependencies
 

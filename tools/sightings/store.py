@@ -213,11 +213,15 @@ class CatSightingsStore:
 _store = None
 
 def init_store(data_dir='data'):
+    """Initialize the global store instance"""
     global _store
     if _store is None:
-        print("Initializing CatSightingsStore...")
+        # Use absolute path for data directory
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        data_dir = os.path.join(base_dir, data_dir)
+        # Create data directory if it doesn't exist
+        os.makedirs(data_dir, exist_ok=True)
         _store = CatSightingsStore(data_dir)
-        print("CatSightingsStore initialized successfully")
     return _store
 
 def get_store():

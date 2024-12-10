@@ -1,0 +1,43 @@
+<!-- Results Section -->
+<div id="resultsSection" class="hidden space-y-6">
+    <h3 class="text-lg font-medium text-gray-900">Simulation Results</h3>
+    
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <!-- Final Population -->
+        <div class="stat-card">
+            <h4 class="text-sm font-medium text-gray-500">Final Population</h4>
+            <p id="finalPopulation" class="text-2xl font-bold text-hawaii-blue">-</p>
+        </div>
+        
+        <!-- Population Change -->
+        <div class="stat-card">
+            <h4 class="text-sm font-medium text-gray-500">Population Change</h4>
+            <p id="populationChange" class="text-2xl font-bold text-hawaii-blue">-</p>
+        </div>
+        
+        <!-- Total Cost -->
+        <div class="stat-card">
+            <h4 class="text-sm font-medium text-gray-500">Total Cost</h4>
+            <p id="totalCost" class="text-2xl font-bold text-hawaii-blue">-</p>
+        </div>
+        
+        <!-- Cost per Cat -->
+        <div class="stat-card">
+            <h4 class="text-sm font-medium text-gray-500">Cost per Cat</h4>
+            <p id="costPerCat" class="text-2xl font-bold text-hawaii-blue">-</p>
+        </div>
+    </div>
+
+    <!-- Population Graph -->
+    <div class="dashboard-card">
+        <h4 class="text-base font-medium text-gray-900 mb-4">Population Over Time</h4>
+        <div id="populationGraph" style="width: 100%; height: 400px;"></div>
+    </div>
+
+    <!-- Cost Graph -->
+    <div class="dashboard-card">
+        <h4 class="text-base font-medium text-gray-900 mb-4">Cumulative Cost</h4>
+        <div id="costGraph" style="width: 100%; height: 400px;"></div>
+    </div>
+</div>

@@ -200,12 +200,19 @@ def run_monte_carlo(
         for month in range(months + 1):
             if month < len(monthly_populations) and monthly_populations[month]:
                 month_pops = np.array(monthly_populations[month])
+                month_sterilized = np.array(monthly_sterilized[month]) if monthly_sterilized[month] else np.array([0])
+                month_reproductive = np.array(monthly_reproductive[month]) if monthly_reproductive[month] else np.array([0])
+                month_kittens = np.array(monthly_kittens[month]) if monthly_kittens[month] else np.array([0])
+                
                 monthly_stats.append({
                     'mean': float(np.mean(month_pops)),
                     'median': float(np.median(month_pops)),
                     'std': float(np.std(month_pops)),
                     'ci_lower': float(np.percentile(month_pops, 2.5)),
-                    'ci_upper': float(np.percentile(month_pops, 97.5))
+                    'ci_upper': float(np.percentile(month_pops, 97.5)),
+                    'sterilized_mean': float(np.mean(month_sterilized)),
+                    'reproductive_mean': float(np.mean(month_reproductive)),
+                    'kittens_mean': float(np.mean(month_kittens))
                 })
             else:
                 # Add placeholder stats if no data for this month
@@ -214,7 +221,10 @@ def run_monte_carlo(
                     'median': 0.0,
                     'std': 0.0,
                     'ci_lower': 0.0,
-                    'ci_upper': 0.0
+                    'ci_upper': 0.0,
+                    'sterilized_mean': 0.0,
+                    'reproductive_mean': 0.0,
+                    'kittens_mean': 0.0
                 })
         
         # Calculate summary statistics using numpy
