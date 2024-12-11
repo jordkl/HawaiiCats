@@ -59,9 +59,78 @@ def log_calculation_result(params, results):
     # Combine parameters and results
     log_entry = {
         'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        **params,
-        **results
+        'current_size': int(float(params.get('current_size', 0))),
+        'sterilized_count': int(float(params.get('sterilized_count', 0))),
+        'monthly_sterilization': int(float(params.get('monthly_sterilization', 0))),
+        'months': int(float(params.get('months', 0))),
+        'breeding_rate': float(params.get('breeding_rate', 0.0)),
+        'kittens_per_litter': float(params.get('kittens_per_litter', 0.0)),
+        'litters_per_year': float(params.get('litters_per_year', 0.0)),
+        'kitten_survival_rate': float(params.get('kitten_survival_rate', 0.0)),
+        'female_ratio': float(params.get('female_ratio', 0.0)),
+        'adult_survival_rate': float(params.get('adult_survival_rate', 0.0)),
+        'kitten_maturity_months': int(float(params.get('kitten_maturity_months', 0))),
+        'sterilization_cost': float(params.get('sterilization_cost', 0.0)),
+        'seasonal_breeding_amplitude': float(params.get('seasonal_breeding_amplitude', 0.0)),
+        'peak_breeding_month': int(float(params.get('peak_breeding_month', 0))),
+        'base_food_capacity': float(params.get('base_food_capacity', 0.0)),
+        'food_scaling_factor': float(params.get('food_scaling_factor', 0.0)),
+        'water_availability': float(params.get('water_availability', 0.0)),
+        'shelter_quality': float(params.get('shelter_quality', 0.0)),
+        'urban_risk': float(params.get('urban_risk', 0.0)),
+        'disease_risk': float(params.get('disease_risk', 0.0)),
+        'natural_risk': float(params.get('natural_risk', 0.0)),
+        'caretaker_support': float(params.get('caretaker_support', 0.0)),
+        'feeding_consistency': float(params.get('feeding_consistency', 0.0)),
+        'territory_size': float(params.get('territory_size', 0.0)),
+        'density_impact_threshold': float(params.get('density_impact_threshold', 0.0)),
+        'monthly_abandonment': float(params.get('monthly_abandonment', 0.0))
     }
+    
+    # Add results with proper type conversion
+    if isinstance(results, dict):
+        # Handle cumulative deaths
+        if 'cumulative_deaths' in results:
+            cumulative = results['cumulative_deaths']
+            log_entry.update({
+                'total_deaths': int(float(cumulative.get('total', 0))),
+                'kitten_deaths': int(float(cumulative.get('kittens', 0))),
+                'adult_deaths': int(float(cumulative.get('adults', 0))),
+                'natural_deaths': int(float(cumulative['by_cause'].get('natural', 0))),
+                'urban_deaths': int(float(cumulative['by_cause'].get('urban', 0))),
+                'disease_deaths': int(float(cumulative['by_cause'].get('disease', 0)))
+            })
+        else:
+            # Fallback to direct death statistics if cumulative not available
+            log_entry.update({
+                'total_deaths': int(float(results.get('total_deaths', 0))),
+                'kitten_deaths': int(float(results.get('kitten_deaths', 0))),
+                'adult_deaths': int(float(results.get('adult_deaths', 0))),
+                'natural_deaths': int(float(results.get('natural_deaths', 0))),
+                'urban_deaths': int(float(results.get('urban_deaths', 0))),
+                'disease_deaths': int(float(results.get('disease_deaths', 0)))
+            })
+        
+        # Add other results
+        log_entry.update({
+            'final_population': int(float(results.get('final_population', 0))),
+            'final_sterilized': int(float(results.get('final_sterilized', 0))),
+            'final_reproductive': int(float(results.get('final_reproductive', 0))),
+            'final_kittens': int(float(results.get('final_kittens', 0))),
+            'total_cost': float(results.get('total_cost', 0.0)),
+            'monthly_populations': json.dumps(results.get('monthly_populations', [])),
+            'monthly_sterilized': json.dumps(results.get('monthly_sterilized', [])),
+            'monthly_reproductive': json.dumps(results.get('monthly_reproductive', [])),
+            'monthly_kittens': json.dumps(results.get('monthly_kittens', [])),
+            'monthly_deaths_kittens': json.dumps([int(float(x)) for x in results.get('monthly_deaths_kittens', [])]),
+            'monthly_deaths_adults': json.dumps([int(float(x)) for x in results.get('monthly_deaths_adults', [])]),
+            'monthly_deaths_natural': json.dumps([int(float(x)) for x in results.get('monthly_deaths_natural', [])]),
+            'monthly_deaths_urban': json.dumps([int(float(x)) for x in results.get('monthly_deaths_urban', [])]),
+            'monthly_deaths_disease': json.dumps([int(float(x)) for x in results.get('monthly_deaths_disease', [])]),
+            'monthly_deaths_other': json.dumps([int(float(x)) for x in results.get('monthly_deaths_other', [])]),
+            'monthly_costs': json.dumps([float(x) for x in results.get('monthly_costs', [])]),
+            'monthly_densities': json.dumps([float(x) for x in results.get('monthly_densities', [])])
+        })
     
     # Get logger
     logger = logging.getLogger('calculations')
@@ -72,9 +141,16 @@ def log_calculation_result(params, results):
         headers = ','.join(log_entry.keys())
         logger.info(headers)
     
-    # Write values
-    values = ','.join(str(v) for v in log_entry.values())
-    logger.info(values)
+    # Write values, ensuring proper escaping of JSON strings
+    values = []
+    for k, v in log_entry.items():
+        if isinstance(v, str) and ('[' in v or '{' in v):  # JSON array or object
+            # Properly escape the JSON string and wrap in quotes
+            escaped = json.dumps(v)  # This will escape any quotes inside the JSON string
+            values.append(escaped)
+        else:
+            values.append(str(v))
+    logger.info(','.join(values))
 
 def log_debug(level, message, simulation_id=None):
     """Log debug information to debug.log file."""

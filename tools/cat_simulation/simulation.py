@@ -153,117 +153,151 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
             log_debug('DEBUG', f'Month {month} base adult mortality rate: {adult_mortality}')
             
             # Process deaths
-            new_colony = {'young_kittens': [], 'reproductive': [], 'sterilized': [], 'sterilized_kittens': []}
-            
-            # Process kitten deaths with gentler seasonal variation in survival
-            seasonal_kitten_mortality = kitten_mortality * (1.1 - seasonal_factor * 0.2)  # Reduced seasonal impact
-            log_debug('DEBUG', f'Month {month} kitten mortality rate: {seasonal_kitten_mortality}')
-            
-            # Calculate total risk for death cause distribution
-            total_risk = float(params.get('natural_risk', 0.05)) + \
-                        float(params.get('urban_risk', 0.1)) + \
-                        float(params.get('disease_risk', 0.15))
-            
-            # Ensure minimum risk values
-            min_risk = 0.01  # 1% minimum risk for each cause
-            natural_risk = max(min_risk, float(params.get('natural_risk', 0.05)))
-            urban_risk = max(min_risk, float(params.get('urban_risk', 0.1)))
-            disease_risk = max(min_risk, float(params.get('disease_risk', 0.15)))
-            total_risk = natural_risk + urban_risk + disease_risk
-            
-            # Calculate risk ratios with minimum thresholds
-            risk_ratios = {
-                'natural': natural_risk / total_risk,
-                'urban': urban_risk / total_risk,
-                'disease': disease_risk / total_risk
-            }
-            
-            log_debug('DEBUG', f'Month {month} risk ratios: Natural={risk_ratios["natural"]:.2f}, Urban={risk_ratios["urban"]:.2f}, Disease={risk_ratios["disease"]:.2f}')
-            
-            # Process kitten deaths with additional type safety
-            for item in colony['young_kittens']:
+            def process_deaths(colony, adult_mortality, kitten_mortality, params):
+                """Process deaths in the colony with enhanced tracking."""
                 try:
-                    if not isinstance(item, (list, tuple)) or len(item) != 2:
-                        log_simulation_error(simulation_id, f"Invalid colony data structure: {item}")
-                        continue
+                    deaths = {
+                        'kittens': 0,
+                        'adults': 0,
+                        'causes': {
+                            'natural': 0,
+                            'urban': 0,
+                            'disease': 0
+                        }
+                    }
                     
-                    count, age = item
-                    count = int(float(count))  # Ensure count is an integer
-                    age = int(float(age))      # Ensure age is an integer
+                    # Risk factors
+                    urban_risk = float(params.get('urban_risk', 0.15))
+                    disease_risk = float(params.get('disease_risk', 0.1))
+                    total_risk = urban_risk + disease_risk
                     
-                    raw_deaths = float(count) * float(seasonal_kitten_mortality)
-                    # For small groups, use probabilistic death
-                    if raw_deaths < 1 and raw_deaths > 0:
-                        deaths = 1 if np.random.random() < raw_deaths else 0
-                    else:
-                        deaths = int(round(raw_deaths))
-                    survivors = max(0, count - deaths)
+                    new_colony = {
+                        'young_kittens': [],
+                        'reproductive': [],
+                        'sterilized': [],
+                        'sterilized_kittens': []  # Added back the sterilized_kittens key
+                    }
                     
-                    if survivors > 0:
-                        new_colony['young_kittens'].append([survivors, age])
-                    
-                    if deaths > 0:
-                        month_deaths['kittens'] += deaths
-                        # Distribute deaths by cause based on risk ratios with minimum counts
-                        natural_deaths = max(1, int(round(deaths * risk_ratios['natural']))) if deaths >= 3 else int(np.random.random() < risk_ratios['natural'])
-                        urban_deaths = max(1, int(round(deaths * risk_ratios['urban']))) if deaths >= 3 else int(np.random.random() < risk_ratios['urban'])
-                        disease_deaths = deaths - (natural_deaths + urban_deaths)
-                        
-                        month_deaths['causes']['natural'] += natural_deaths
-                        month_deaths['causes']['urban'] += urban_deaths
-                        month_deaths['causes']['disease'] += disease_deaths
-                except Exception as e:
-                    log_simulation_error(simulation_id, f"Error processing kitten deaths: {str(e)}")
-                    continue
-
-            # Process adult deaths (both reproductive and sterilized)
-            for group in ['reproductive', 'sterilized']:
-                for item in colony[group]:
-                    try:
-                        if not isinstance(item, (list, tuple)) or len(item) != 2:
-                            log_simulation_error(simulation_id, f"Invalid colony data structure: {item}")
+                    # Process kitten deaths
+                    for count, age in colony['young_kittens']:
+                        count = int(float(count))
+                        if count <= 0:
                             continue
+                            
+                        # Calculate deaths
+                        deaths_this_group = np.random.binomial(count, kitten_mortality)
+                        if deaths_this_group > 0:
+                            deaths['kittens'] += deaths_this_group
+                            
+                            # Attribute deaths to causes
+                            if total_risk > 0:
+                                urban_deaths = int(deaths_this_group * (urban_risk / total_risk))
+                                disease_deaths = int(deaths_this_group * (disease_risk / total_risk))
+                                natural_deaths = deaths_this_group - urban_deaths - disease_deaths
+                            else:
+                                natural_deaths = deaths_this_group
+                                urban_deaths = disease_deaths = 0
+                                
+                            deaths['causes']['natural'] += natural_deaths
+                            deaths['causes']['urban'] += urban_deaths
+                            deaths['causes']['disease'] += disease_deaths
+                            
+                            logger.debug(f"Kitten deaths at age {age}: {deaths_this_group} "
+                                       f"(Natural: {natural_deaths}, Urban: {urban_deaths}, Disease: {disease_deaths})")
                         
-                        count, age = item
-                        count = int(float(count))  # Ensure count is an integer
-                        age = int(float(age))      # Ensure age is an integer
-                        
-                        raw_deaths = float(count) * float(adult_mortality)
-                        log_debug('DEBUG', f'Month {month} processing {group} cats: count={count}, age={age}, raw_deaths={raw_deaths}')
-                        
-                        # For small groups, use probabilistic death
-                        if raw_deaths < 1 and raw_deaths > 0:
-                            deaths = 1 if np.random.random() < raw_deaths else 0
-                        else:
-                            deaths = int(round(raw_deaths))
-                        survivors = max(0, count - deaths)
-                        
+                        # Add survivors
+                        survivors = count - deaths_this_group
                         if survivors > 0:
-                            new_colony[group].append([survivors, age])
-                        
-                        if deaths > 0:
-                            month_deaths['adults'] += deaths
-                            # Distribute deaths by cause based on risk ratios with minimum counts
-                            natural_deaths = max(1, int(round(deaths * risk_ratios['natural']))) if deaths >= 3 else int(np.random.random() < risk_ratios['natural'])
-                            urban_deaths = max(1, int(round(deaths * risk_ratios['urban']))) if deaths >= 3 else int(np.random.random() < risk_ratios['urban'])
-                            disease_deaths = deaths - (natural_deaths + urban_deaths)
+                            new_colony['young_kittens'].append((survivors, age))
+                    
+                    # Process adult deaths (both reproductive and sterilized)
+                    for category in ['reproductive', 'sterilized']:
+                        for count, age in colony[category]:
+                            count = int(float(count))
+                            if count <= 0:
+                                continue
+                                
+                            # Calculate deaths
+                            deaths_this_group = np.random.binomial(count, adult_mortality)
+                            if deaths_this_group > 0:
+                                deaths['adults'] += deaths_this_group
+                                
+                                # Attribute deaths to causes
+                                if total_risk > 0:
+                                    urban_deaths = int(deaths_this_group * (urban_risk / total_risk))
+                                    disease_deaths = int(deaths_this_group * (disease_risk / total_risk))
+                                    natural_deaths = deaths_this_group - urban_deaths - disease_deaths
+                                else:
+                                    natural_deaths = deaths_this_group
+                                    urban_deaths = disease_deaths = 0
+                                    
+                                deaths['causes']['natural'] += natural_deaths
+                                deaths['causes']['urban'] += urban_deaths
+                                deaths['causes']['disease'] += disease_deaths
+                                
+                                logger.debug(f"{category.capitalize()} deaths at age {age}: {deaths_this_group} "
+                                           f"(Natural: {natural_deaths}, Urban: {urban_deaths}, Disease: {disease_deaths})")
                             
-                            month_deaths['causes']['natural'] += natural_deaths
-                            month_deaths['causes']['urban'] += urban_deaths
-                            month_deaths['causes']['disease'] += disease_deaths
+                            # Add survivors
+                            survivors = count - deaths_this_group
+                            if survivors > 0:
+                                new_colony[category].append((survivors, age))
+                    
+                    # Process sterilized kittens deaths
+                    if 'sterilized_kittens' in colony:  # Handle sterilized kittens if they exist
+                        for count, age in colony['sterilized_kittens']:
+                            count = int(float(count))
+                            if count <= 0:
+                                continue
+                                
+                            # Calculate deaths
+                            deaths_this_group = np.random.binomial(count, kitten_mortality)
+                            if deaths_this_group > 0:
+                                deaths['kittens'] += deaths_this_group
+                                
+                                # Attribute deaths to causes
+                                if total_risk > 0:
+                                    urban_deaths = int(deaths_this_group * (urban_risk / total_risk))
+                                    disease_deaths = int(deaths_this_group * (disease_risk / total_risk))
+                                    natural_deaths = deaths_this_group - urban_deaths - disease_deaths
+                                else:
+                                    natural_deaths = deaths_this_group
+                                    urban_deaths = disease_deaths = 0
+                                    
+                                deaths['causes']['natural'] += natural_deaths
+                                deaths['causes']['urban'] += urban_deaths
+                                deaths['causes']['disease'] += disease_deaths
+                                
+                                logger.debug(f"Sterilized kitten deaths at age {age}: {deaths_this_group} "
+                                           f"(Natural: {natural_deaths}, Urban: {urban_deaths}, Disease: {disease_deaths})")
                             
-                            # Log deaths for debugging
-                            log_debug('DEBUG', f'Month {month} {group} deaths: {deaths} (Natural: {natural_deaths}, Urban: {urban_deaths}, Disease: {disease_deaths})')
-                    except Exception as e:
-                        log_simulation_error(simulation_id, f"Error processing adult deaths: {str(e)}")
-                        continue
+                            # Add survivors
+                            survivors = count - deaths_this_group
+                            if survivors > 0:
+                                new_colony['sterilized_kittens'].append((survivors, age))
+                    
+                    logger.info(f"Total deaths this month - "
+                               f"Kittens: {deaths['kittens']}, Adults: {deaths['adults']}, "
+                               f"By cause - Natural: {deaths['causes']['natural']}, "
+                               f"Urban: {deaths['causes']['urban']}, "
+                               f"Disease: {deaths['causes']['disease']}")
+                    
+                    return new_colony, deaths
+                    
+                except Exception as e:
+                    logger.error(f"Error in process_deaths: {str(e)}")
+                    logger.error(traceback.format_exc())
+                    raise
+            
+            new_colony, month_deaths = process_deaths(colony, adult_mortality, kitten_mortality, params)
             
             # Update monthly death statistics
+            monthly_deaths_kittens.append(month_deaths['kittens'])
+            monthly_deaths_adults.append(month_deaths['adults'])
             monthly_deaths_natural.append(month_deaths['causes']['natural'])
             monthly_deaths_urban.append(month_deaths['causes']['urban'])
             monthly_deaths_disease.append(month_deaths['causes']['disease'])
-            monthly_deaths_kittens.append(month_deaths['kittens'])
-            monthly_deaths_adults.append(month_deaths['adults'])
+            monthly_deaths_other.append(0)  # Add other deaths to monthly data
             
             # Update cumulative deaths
             cumulative_deaths['total'] += month_deaths['kittens'] + month_deaths['adults']
@@ -273,9 +307,14 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
             cumulative_deaths['by_cause']['urban'] += month_deaths['causes']['urban']
             cumulative_deaths['by_cause']['disease'] += month_deaths['causes']['disease']
             
-            # Record monthly deaths
-            log_debug('DEBUG', f'Month {month} deaths: {month_deaths}')
-            log_debug('DEBUG', f'Cumulative deaths: {cumulative_deaths}')
+            # Log monthly death statistics
+            log_debug('DEBUG', f'Month {month} deaths:')
+            log_debug('DEBUG', f'  Kittens: {month_deaths["kittens"]}')
+            log_debug('DEBUG', f'  Adults: {month_deaths["adults"]}')
+            log_debug('DEBUG', f'  Natural: {month_deaths["causes"]["natural"]}')
+            log_debug('DEBUG', f'  Urban: {month_deaths["causes"]["urban"]}')
+            log_debug('DEBUG', f'  Disease: {month_deaths["causes"]["disease"]}')
+            log_debug('DEBUG', f'  Total: {month_deaths["kittens"] + month_deaths["adults"]}')
             
             colony = new_colony
             
@@ -395,8 +434,14 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
                 age = int(float(age))
                 
                 # Apply kitten mortality
-                kitten_deaths = int(round(float(count) * float(kitten_mortality)))
-                survivors = count - kitten_deaths
+                raw_deaths = count * kitten_mortality
+                kitten_deaths = int(np.ceil(raw_deaths))  # Round up for small populations
+                
+                # Ensure at least one death if mortality threshold is met
+                if raw_deaths > 0.3 and kitten_deaths == 0:  # 30% chance threshold
+                    kitten_deaths = 1 if np.random.random() < raw_deaths else 0
+                
+                survivors = max(0, count - kitten_deaths)
                 
                 if survivors > 0:
                     if age >= maturity_age:
@@ -412,13 +457,10 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
                 if kitten_deaths > 0:
                     month_deaths['kittens'] += kitten_deaths
                     # Distribute deaths by cause
-                    natural_deaths = max(1, int(round(kitten_deaths * risk_ratios['natural']))) if kitten_deaths >= 3 else int(np.random.random() < risk_ratios['natural'])
-                    urban_deaths = max(1, int(round(kitten_deaths * risk_ratios['urban']))) if kitten_deaths >= 3 else int(np.random.random() < risk_ratios['urban'])
-                    disease_deaths = kitten_deaths - (natural_deaths + urban_deaths)
-                    
-                    month_deaths['causes']['natural'] += natural_deaths
-                    month_deaths['causes']['urban'] += urban_deaths
-                    month_deaths['causes']['disease'] += disease_deaths
+                    for _ in range(kitten_deaths):
+                        cause = np.random.choice(['natural', 'urban', 'disease'], 
+                                               p=[0.4, 0.3, 0.3])  # Adjusted probabilities
+                        month_deaths['causes'][cause] += 1
             
             # Process sterilized kittens
             for count, age in colony['sterilized_kittens']:
@@ -426,8 +468,14 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
                 age = int(float(age))
                 
                 # Apply kitten mortality
-                kitten_deaths = int(round(float(count) * float(kitten_mortality)))
-                survivors = count - kitten_deaths
+                raw_deaths = count * kitten_mortality
+                kitten_deaths = int(np.ceil(raw_deaths))  # Round up for small populations
+                
+                # Ensure at least one death if mortality threshold is met
+                if raw_deaths > 0.3 and kitten_deaths == 0:  # 30% chance threshold
+                    kitten_deaths = 1 if np.random.random() < raw_deaths else 0
+                
+                survivors = max(0, count - kitten_deaths)
                 
                 if survivors > 0:
                     if age >= maturity_age:
@@ -443,13 +491,10 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
                 if kitten_deaths > 0:
                     month_deaths['kittens'] += kitten_deaths
                     # Distribute deaths by cause
-                    natural_deaths = max(1, int(round(kitten_deaths * risk_ratios['natural']))) if kitten_deaths >= 3 else int(np.random.random() < risk_ratios['natural'])
-                    urban_deaths = max(1, int(round(kitten_deaths * risk_ratios['urban']))) if kitten_deaths >= 3 else int(np.random.random() < risk_ratios['urban'])
-                    disease_deaths = kitten_deaths - (natural_deaths + urban_deaths)
-                    
-                    month_deaths['causes']['natural'] += natural_deaths
-                    month_deaths['causes']['urban'] += urban_deaths
-                    month_deaths['causes']['disease'] += disease_deaths
+                    for _ in range(kitten_deaths):
+                        cause = np.random.choice(['natural', 'urban', 'disease'], 
+                                               p=[0.4, 0.3, 0.3])  # Adjusted probabilities
+                        month_deaths['causes'][cause] += 1
             
             # Update kitten lists
             colony['young_kittens'] = new_unsterilized_kittens
@@ -535,9 +580,12 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
             log_debug('DEBUG', f'  Reproductive: {sum(count for count, _ in colony["reproductive"])}')
             log_debug('DEBUG', f'  Sterilized: {sum(count for count, _ in colony["sterilized"])}')
             log_debug('DEBUG', f'  Total population: {current_population}')
-            
-            # Store death statistics
-            monthly_deaths_other.append(0)  # Add other deaths to monthly data
+            log_debug('DEBUG', f'  Deaths this month:')
+            log_debug('DEBUG', f'    Kittens: {month_deaths["kittens"]}')
+            log_debug('DEBUG', f'    Adults: {month_deaths["adults"]}')
+            log_debug('DEBUG', f'    Natural: {month_deaths["causes"]["natural"]}')
+            log_debug('DEBUG', f'    Urban: {month_deaths["causes"]["urban"]}')
+            log_debug('DEBUG', f'    Disease: {month_deaths["causes"]["disease"]}')
             
             # Calculate density relative to territory
             density = current_population / params['territory_size'] if params['territory_size'] > 0 else float('inf')
@@ -545,7 +593,7 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
         duration = time.time() - start_time
         log_simulation_end(simulation_id, duration, monthly_populations[-1])
         
-        # Prepare results
+        # Prepare results with death statistics
         final_population = monthly_populations[-1]
         results = {
             'final_population': final_population,
@@ -555,12 +603,12 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
             'total_cost': total_cost,
             'total_sterilizations': monthly_sterilization * months,
             'population_growth': final_population - current_size,
-            'total_deaths': cumulative_deaths['total'],
-            'kitten_deaths': cumulative_deaths['kittens'],
-            'adult_deaths': cumulative_deaths['adults'],
-            'natural_deaths': cumulative_deaths['by_cause']['natural'],
-            'urban_deaths': cumulative_deaths['by_cause']['urban'],
-            'disease_deaths': cumulative_deaths['by_cause']['disease'],
+            'total_deaths': sum(monthly_deaths_kittens) + sum(monthly_deaths_adults),  # Calculate from monthly data
+            'kitten_deaths': sum(monthly_deaths_kittens),
+            'adult_deaths': sum(monthly_deaths_adults),
+            'natural_deaths': sum(monthly_deaths_natural),
+            'urban_deaths': sum(monthly_deaths_urban),
+            'disease_deaths': sum(monthly_deaths_disease),
             'monthly_populations': monthly_populations,
             'monthly_sterilized': monthly_sterilized,
             'monthly_reproductive': monthly_reproductive,

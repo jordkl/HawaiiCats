@@ -91,114 +91,113 @@ def calculate_resource_impact(resource_availability):
         raise
 
 def calculate_monthly_mortality(params, colony):
-    """Calculate monthly mortality rates with improved biological realism."""
+    """Calculate monthly mortality rates with improved biological realism and territory effects."""
     try:
-        # Base mortality rates (annual rates converted to monthly)
-        # 15% annual mortality = ~1.3% monthly for adults
-        # 25% annual mortality = ~2.1% monthly for kittens
-        base_adult_mortality = 0.013  # Monthly base rate
-        base_kitten_mortality = 0.021  # Monthly base rate for kittens
+        # Convert annual mortality rates to monthly
+        # For adult survival rate of 0.75 (25% annual mortality), monthly rate is about 0.024
+        # For kitten survival rate of 0.55 (45% annual mortality), monthly rate is about 0.05
+        base_adult_mortality = -np.log(0.75) / 12  # Monthly rate from annual 25% mortality
+        base_kitten_mortality = -np.log(0.55) / 12  # Monthly rate from annual 45% mortality
         
-        # Calculate total population
+        logger.info(f"Base mortality rates - Adult: {base_adult_mortality:.4f}, Kitten: {base_kitten_mortality:.4f}")
+        
+        # Calculate total population and unsterilized males
         total_cats = (
             sum(int(float(count)) for count, _ in colony['young_kittens']) +
             sum(int(float(count)) for count, _ in colony['reproductive']) +
             sum(int(float(count)) for count, _ in colony['sterilized']) +
-            sum(int(float(count)) for count, _ in colony.get('sterilized_kittens', []))
+            sum(int(float(count)) for count, _ in colony.get('sterilized_kittens', []))  # Include sterilized kittens
         )
         
-        # Environmental Factors - each scaled from 0 to 1
-        shelter_quality = float(params.get('shelter_quality', 0.8))
-        caretaker_support = float(params.get('caretaker_support', 0.8))
-        feeding_consistency = float(params.get('feeding_consistency', 0.8))
-        water_availability = float(params.get('water_availability', 0.9))
+        if total_cats == 0:
+            return 0.0, 0.0  # No mortality if no cats
         
-        # Calculate environmental stress
-        # More balanced weights and stronger impact
-        resource_stress = (
-            0.3 * (1 - feeding_consistency) +   # Food stress (30%)
-            0.2 * (1 - water_availability) +    # Water stress (20%)
-            0.3 * (1 - shelter_quality) +       # Shelter stress (30%)
-            0.2 * (1 - caretaker_support)       # Care stress (20%)
+        logger.info(f"Total population: {total_cats}")
+        
+        # Calculate unsterilized males (affects kitten mortality)
+        reproductive_cats = sum(int(float(count)) for count, _ in colony['reproductive'])
+        unsterilized_males = reproductive_cats * (1 - float(params.get('female_ratio', 0.5)))
+        male_aggression = float(params.get('male_aggression_factor', 0.3))  # Increased from 0.2
+        
+        logger.info(f"Reproductive cats: {reproductive_cats}, Unsterilized males: {unsterilized_males:.1f}")
+        
+        # Territory and density calculations
+        territory_size = float(params.get('territory_size', 500))
+        cats_per_acre = float(params.get('cats_per_acre', 2.0))  # Reduced from 2.5
+        territory_scaling = float(params.get('territory_scaling_factor', 0.4))  # Increased from 0.3
+        max_sustainable = territory_size * cats_per_acre
+        
+        # Calculate density effect with stronger territory influence
+        density = total_cats / max(1, territory_size)
+        density_threshold = float(params.get('density_impact_threshold', 0.4))  # Reduced from 0.5
+        density_mortality = float(params.get('density_mortality_factor', 0.35))  # Increased from 0.25
+        territory_competition = float(params.get('territory_competition_factor', 0.3))  # Increased from 0.2
+        
+        logger.info(f"Territory metrics - Size: {territory_size}, Density: {density:.2f}, Max sustainable: {max_sustainable}")
+        
+        # Exponential density effect when population exceeds territory capacity
+        overpopulation_ratio = total_cats / max(1, max_sustainable)
+        density_factor = 1.0 + (density_mortality * (
+            np.exp(max(0, (density / density_threshold - 1))) - 1
+        ))
+        
+        logger.info(f"Density impact - Overpopulation ratio: {overpopulation_ratio:.2f}, Density factor: {density_factor:.2f}")
+        
+        # Territory competition effect (increases with population density)
+        competition_factor = 1.0 + (territory_competition * (
+            np.exp(max(0, (overpopulation_ratio - 1)) * territory_scaling) - 1
+        ))
+        
+        logger.info(f"Competition factor: {competition_factor:.2f}")
+        
+        # Environmental Factors
+        shelter_quality = float(params.get('shelter_quality', 0.6))
+        caretaker_support = float(params.get('caretaker_support', 0.6))
+        feeding_consistency = float(params.get('feeding_consistency', 0.7))
+        water_availability = float(params.get('water_availability', 0.8))
+        
+        # Resource stress increases with territory overcrowding
+        base_resource_stress = (
+            0.3 * (1 - feeding_consistency) +
+            0.2 * (1 - water_availability) +
+            0.3 * (1 - shelter_quality) +
+            0.2 * (1 - caretaker_support)
         )
+        resource_stress = base_resource_stress * (1 + max(0, overpopulation_ratio - 1))
         
-        # Risk factors with base rates
-        urban_risk = float(params.get('urban_risk', 0.05))
-        disease_risk = float(params.get('disease_risk', 0.05))
-        natural_risk = float(params.get('natural_risk', 0.05))
+        logger.info(f"Resource stress: {resource_stress:.2f}")
         
-        # Calculate risk impacts with stronger environmental effects
-        # Poor conditions double the impact of risks
-        risk_multiplier = 1.0 + (urban_risk + disease_risk + natural_risk) * (2.0 - min(1.0, (
-            shelter_quality +
-            caretaker_support +
-            feeding_consistency +
-            water_availability
-        ) / 4))
+        # Risk factors with territory scaling
+        urban_risk = float(params.get('urban_risk', 0.15))
+        disease_risk = float(params.get('disease_risk', 0.1)) * competition_factor
+        natural_risk = float(params.get('natural_risk', 0.1))
         
-        # Density impact calculation
-        territory_size = float(params.get('territory_size', 1000))
-        density = total_cats / territory_size
+        # Risk multiplier increases with territory competition
+        risk_multiplier = 1.0 + (urban_risk + disease_risk + natural_risk) * competition_factor
         
-        # Density effect is stronger with poor environmental conditions
-        # Poor conditions effectively reduce the carrying capacity
-        density_factor = 1.0 + density * (1.0 + resource_stress)
-        density_factor = min(2.0, density_factor)  # Cap at 100% increase
+        logger.info(f"Risk multiplier: {risk_multiplier:.2f}")
         
-        # Age-based mortality
-        # Older cats are more affected by poor conditions
-        age_factors = []
-        for group in ['reproductive', 'sterilized']:
-            for _, age in colony[group]:
-                age = float(age)
-                if age > 84:  # Cats over 7 years
-                    base_factor = 1.5
-                elif age > 60:  # Cats over 5 years
-                    base_factor = 1.3
-                elif age > 36:  # Cats over 3 years
-                    base_factor = 1.15
-                else:
-                    base_factor = 1.0
-                # Poor conditions affect older cats more
-                age_factors.append(base_factor * (1.0 + 0.5 * resource_stress))
-        
-        avg_age_factor = np.mean(age_factors) if age_factors else 1.0
-        
-        # Calculate final mortality rates
-        # Base rate increased by:
-        # 1. Risk multiplier (up to 3x in very poor conditions)
-        # 2. Density factor (up to 2x in overcrowded conditions)
-        # 3. Age factor (up to 2.25x for old cats in poor conditions)
-        # 4. Direct environmental stress (up to 2x in poor conditions)
-        
-        # Adult mortality
-        adult_mortality = (
+        # Calculate final mortality rates with increased territory influence
+        adult_mortality = min(0.99, max(0.001,  # Ensure mortality is between 0.1% and 99%
             base_adult_mortality *
             risk_multiplier *
-            density_factor *
-            avg_age_factor *
-            (1.0 + resource_stress)
-        )
+            (density_factor ** 1.2) *  # Increased from 1.0
+            (competition_factor ** 1.3) *  # Increased from 1.0
+            (1.0 + 1.5 * resource_stress)  # Increased from 1.0
+        ))
         
-        # Kitten mortality (more sensitive to conditions)
-        kitten_mortality = (
+        # Kitten mortality with stronger territory effects
+        male_aggression_impact = 1.0 + (male_aggression * unsterilized_males / max(1, total_cats))
+        kitten_mortality = min(0.99, max(0.001,  # Ensure mortality is between 0.1% and 99%
             base_kitten_mortality *
             risk_multiplier *
-            density_factor *
-            (1.0 + 1.5 * resource_stress)  # 50% more sensitive
-        )
+            (density_factor ** 2.0) *  # Increased from 1.8
+            (competition_factor ** 1.8) *  # Increased from 1.5
+            (1.0 + 2.5 * resource_stress) *  # Increased from 2.0
+            male_aggression_impact
+        ))
         
-        # Cap mortality rates at reasonable maximums
-        # Max 20% monthly mortality for adults (92% annual)
-        # Max 30% monthly mortality for kittens (98% annual)
-        adult_mortality = min(0.20, adult_mortality)
-        kitten_mortality = min(0.30, kitten_mortality)
-        
-        # Ensure minimum mortality rates
-        # Min 1% monthly for adults (11% annual)
-        # Min 1.5% monthly for kittens (17% annual)
-        adult_mortality = max(0.01, adult_mortality)
-        kitten_mortality = max(0.015, kitten_mortality)
+        logger.info(f"Final mortality rates - Adult: {adult_mortality:.4f}, Kitten: {kitten_mortality:.4f}")
         
         return float(adult_mortality), float(kitten_mortality)
         

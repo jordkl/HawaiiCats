@@ -152,7 +152,20 @@ def calculate_population():
                             summary['population']['ci_lower'],
                             summary['population']['ci_upper']
                         ],
-                        'standard_deviation': summary['population']['std']
+                        'standard_deviation': summary['population']['std'],
+                        # Add mortality statistics
+                        'total_deaths': summary['mortality']['total']['mean'],
+                        'kitten_deaths': summary['mortality']['kittens']['mean'],
+                        'adult_deaths': summary['mortality']['adults']['mean'],
+                        'natural_deaths': summary['mortality'].get('natural', {}).get('mean', 0),
+                        'urban_deaths': summary['mortality'].get('urban', {}).get('mean', 0),
+                        'disease_deaths': summary['mortality'].get('disease', {}).get('mean', 0),
+                        'monthly_deaths_kittens': [],  # Placeholder for monthly stats
+                        'monthly_deaths_adults': [],   # Placeholder for monthly stats
+                        'monthly_deaths_natural': [],  # Placeholder for monthly stats
+                        'monthly_deaths_urban': [],    # Placeholder for monthly stats
+                        'monthly_deaths_disease': [],  # Placeholder for monthly stats
+                        'monthly_deaths_other': []     # Placeholder for monthly stats
                     }
                 except Exception as e:
                     log_debug('ERROR', f"Error in Monte Carlo simulation: {str(e)}")
@@ -241,7 +254,19 @@ def calculate_population():
                     'monthly_populations': result['monthly_populations'],
                     'monthly_sterilized': result['monthly_sterilized'],
                     'monthly_kittens': result['monthly_kittens'],
-                    'monthly_reproductive': result['monthly_reproductive']
+                    'monthly_reproductive': result['monthly_reproductive'],
+                    'total_deaths': result['total_deaths'],
+                    'kitten_deaths': result['kitten_deaths'],
+                    'adult_deaths': result['adult_deaths'],
+                    'natural_deaths': result['natural_deaths'],
+                    'urban_deaths': result['urban_deaths'],
+                    'disease_deaths': result['disease_deaths'],
+                    'monthly_deaths_kittens': result['monthly_deaths_kittens'],
+                    'monthly_deaths_adults': result['monthly_deaths_adults'],
+                    'monthly_deaths_natural': result['monthly_deaths_natural'],
+                    'monthly_deaths_urban': result['monthly_deaths_urban'],
+                    'monthly_deaths_disease': result['monthly_deaths_disease'],
+                    'monthly_deaths_other': result['monthly_deaths_other']
                 }
             }
 
@@ -277,31 +302,98 @@ def run_parameter_tests():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@bp.route('/download_logs')
+@bp.route('/download_logs', methods=['GET'])
 def download_logs():
+    """Download the calculation logs as a CSV file."""
     try:
-        # ... (log download logic)
-        return send_file(
-            io.BytesIO(csv_data.encode()),
-            mimetype='text/csv',
-            as_attachment=True,
-            download_name=f'cat_calculations_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
-        )
-    except Exception as e:
-        return str(e), 500
+        if not os.path.exists(CALC_FILE):
+            return jsonify({'error': 'No logs found'}), 404
 
-@bp.route('/flag_scenario', methods=['POST'])
-def flag_scenario():
-    try:
-        # ... (scenario flagging logic)
-        return jsonify({"message": "Scenario flagged successfully"})
+        # Read the CSV file
+        with open(CALC_FILE, 'r', newline='') as f:
+            csv_data = f.read()
+
+        # Create the response with CSV data
+        response = current_app.response_class(csv_data, mimetype='text/csv')
+        response.headers['Content-Disposition'] = 'attachment; filename=cat_colony_calculations.csv'
+        
+        return response
+        
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        log_debug('ERROR', f"Error downloading logs: {str(e)}")
+        return jsonify({'error': 'The log download feature is currently unavailable. Please try again later.'}), 500
+
+@bp.route('/flag_scenario', methods=['POST', 'OPTIONS'])
+def flag_scenario():
+    """Save a flagged scenario to a dedicated file with timestamp."""
+    if request.method == 'OPTIONS':
+        response = bp.make_default_options_response()
+        response.headers['Access-Control-Allow-Methods'] = 'POST'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
+        
+    try:
+        data = request.get_json(force=True)
+        if not data or 'userNote' not in data:
+            return jsonify({'error': 'No user note provided'}), 400
+            
+        user_note = data['userNote'].strip()
+        if not user_note:
+            return jsonify({'error': 'User note cannot be empty'}), 400
+
+        # Read the last calculation and headers from CALC_FILE
+        headers = None
+        last_calculation = None
+        try:
+            with open(CALC_FILE, 'r', newline='') as f:
+                reader = csv.reader(f)
+                headers = next(reader)  # Get header row
+                for row in reader:
+                    last_calculation = row
+        except Exception as e:
+            return jsonify({'error': 'No calculations found to flag'}), 404
+
+        if not last_calculation or not headers:
+            return jsonify({'error': 'No calculations found to flag'}), 404
+
+        # Generate timestamp and filename
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        flagged_dir = os.path.join(os.path.dirname(CALC_FILE), 'flagged_scenarios')
+        os.makedirs(flagged_dir, exist_ok=True)
+        flagged_file = os.path.join(flagged_dir, f'flagged_scenario_{timestamp}.csv')
+        
+        with open(flagged_file, 'w', newline='') as f:
+            writer = csv.writer(f)
+            # Write headers including the new ones
+            all_headers = headers + ['user_note', 'flag_timestamp']
+            writer.writerow(all_headers)
+            
+            # Add the note and current timestamp to the calculation
+            flagged_row = last_calculation + [user_note, timestamp]
+            writer.writerow(flagged_row)
+            
+        log_debug('INFO', f'Flagged scenario saved with note: {user_note} to file: {flagged_file}')
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        log_debug('ERROR', f"Error in flag_scenario: {str(e)}\n{traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
 
 @bp.route('/clear_logs', methods=['POST'])
 def clear_logs():
     try:
-        # ... (log clearing logic)
-        return jsonify({"message": "Logs cleared successfully"})
+        if os.path.exists(CALC_FILE):
+            # Keep the header row and delete the rest
+            with open(CALC_FILE, 'r', newline='') as f:
+                reader = csv.reader(f)
+                header = next(reader)  # Get the header row
+            
+            with open(CALC_FILE, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(header)  # Write back only the header row
+            
+            return jsonify({'success': True, 'message': 'Logs cleared successfully'})
+        return jsonify({'success': False, 'message': 'No logs found to clear'})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        log_debug('ERROR', f"Error clearing logs: {str(e)}")
+        return jsonify({'error': str(e)}), 500

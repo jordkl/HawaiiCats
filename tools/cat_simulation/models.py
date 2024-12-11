@@ -27,7 +27,8 @@ def initialize_colony_with_ages(total_cats, sterilized, params):
         colony = {
             'young_kittens': [],  # [count, age_in_months]
             'reproductive': [],
-            'sterilized': []
+            'sterilized': [],
+            'sterilized_kittens': []  # Added sterilized_kittens category
         }
         
         # Get maturity months parameter early since we need it for both unsterilized and sterilized cats
@@ -98,22 +99,34 @@ def initialize_colony_with_ages(total_cats, sterilized, params):
                             age = np.random.randint(72, 96)
                             colony['reproductive'].append([senior, age])
         
-        # Add sterilized cats with similar age distribution
+        # Distribute sterilized cats if any
         if sterilized > 0:
-            logger.debug(f"Distributing {sterilized} sterilized cats")
+            # For sterilized cats, assume a small percentage are kittens (10%)
+            sterilized_kitten_count = max(0, int(sterilized * 0.1))
+            sterilized_adult_count = sterilized - sterilized_kitten_count
             
-            # For very small numbers, distribute evenly
-            if sterilized <= 3:
-                age_ranges = [(maturity_months, 24), (24, 48), (48, 72)]
-                for i in range(sterilized):
-                    min_age, max_age = age_ranges[i % len(age_ranges)]
-                    age = np.random.randint(min_age, max_age)
-                    colony['sterilized'].append([1, age])
-            else:
-                young_adults = max(1, int(sterilized * 0.4))
-                middle_aged = max(1, int(sterilized * 0.3))
-                mature = max(1, int(sterilized * 0.2))
-                senior = sterilized - young_adults - middle_aged - mature
+            logger.debug(f"Distributing {sterilized} sterilized cats: {sterilized_kitten_count} kittens, {sterilized_adult_count} adults")
+            
+            # Distribute sterilized kittens if any
+            if sterilized_kitten_count > 0:
+                if sterilized_kitten_count <= 3:
+                    for _ in range(sterilized_kitten_count):
+                        age = np.random.randint(0, maturity_months)
+                        colony['sterilized_kittens'].append([1, age])
+                else:
+                    ages = np.random.triangular(0, maturity_months/2, maturity_months, sterilized_kitten_count)
+                    ages = np.clip(ages, 0, maturity_months - 1).astype(int)
+                    age_counts = np.bincount(ages, minlength=maturity_months)
+                    for age, count in enumerate(age_counts):
+                        if count > 0:
+                            colony['sterilized_kittens'].append([int(count), int(age)])
+            
+            # Add sterilized adults with similar age distribution
+            if sterilized_adult_count > 0:
+                young_adults = max(1, int(sterilized_adult_count * 0.4))
+                middle_aged = max(1, int(sterilized_adult_count * 0.3))
+                mature = max(1, int(sterilized_adult_count * 0.2))
+                senior = sterilized_adult_count - young_adults - middle_aged - mature
                 
                 # Add each age group separately
                 if young_adults > 0:
