@@ -122,6 +122,75 @@ Production deployment requires proper authentication and access credentials. Con
 
 **Note:** Always test changes thoroughly in the local environment before requesting a production deployment.
 
+## Parameter Relationships and Weights
+
+The simulation uses a complex network of interrelated parameters to model cat population dynamics. Here's how they influence each other:
+
+### Territory and Density Parameters (High Impact)
+- `territory_size` (Weight: 1.0) - Base parameter that directly affects carrying capacity
+  - Influences: density impact, resource availability, stress factors
+  - Non-linear scaling: smaller territories have exponentially lower carrying capacity
+  - Formula: carrying_capacity = territory_size * base_cats_per_unit * (territory_size/1000)^0.8
+
+### Breeding Parameters (High Impact)
+- `breeding_rate` (Weight: 0.85) - Base breeding probability
+- `seasonal_breeding_amplitude` (Weight: 0.2) - Seasonal variation in breeding
+- `female_ratio` (Weight: 0.5) - Population gender balance
+Combined Effect = breeding_rate * seasonal_factor * (1 - density_impact)
+
+### Survival Parameters (Medium-High Impact)
+- `kitten_survival_rate` (Weight: 0.7) - Base survival rate for kittens
+- `adult_survival_rate` (Weight: 0.9) - Base survival rate for adults
+Actual survival rates are modified by:
+  - Resource availability (0.4x - 1.0x multiplier)
+  - Territory stress (0.6x - 1.0x multiplier)
+  - Population density (0.5x - 1.0x multiplier)
+
+### Environmental Risk Factors (Medium Impact)
+- `urban_risk` (Weight: 0.15) - Risk from urban environment
+- `disease_risk` (Weight: 0.10) - Risk of disease spread
+- `natural_risk` (Weight: 0.10) - Natural predation/environmental risks
+Combined Risk = 1.0 + (sum of risks) * competition_factor
+
+### Resource Parameters (Medium Impact)
+- `base_food_capacity` (Weight: 0.9) - Base food availability
+- `food_scaling_factor` (Weight: 0.8) - How food scales with population
+- `water_availability` (Weight: 0.9) - Water resource factor
+- `shelter_quality` (Weight: 0.8) - Shelter availability
+Resource Stress = base_stress * (1 + overpopulation_ratio)
+
+### Support Parameters (Low-Medium Impact)
+- `caretaker_support` (Weight: 0.8) - Human intervention level
+- `feeding_consistency` (Weight: 0.9) - Regular feeding impact
+Support Effect = 1.0 + support_factor * (1 - density_stress)
+
+### Intervention Parameters (Variable Impact)
+- `monthly_sterilization` - Direct population control
+- `sterilization_cost` - Economic factor
+Impact varies based on:
+  - Population size
+  - Territory capacity
+  - Implementation timing
+
+### Parameter Interactions
+1. Territory Size → Density → Resource Availability
+   - Larger territories support higher populations but with diminishing returns
+   - Density effects become more pronounced in smaller territories
+
+2. Resource Availability → Breeding Success → Population Growth
+   - Resources affect breeding success non-linearly
+   - High resource stress reduces breeding success exponentially
+
+3. Population Density → Competition → Mortality
+   - Higher density increases competition
+   - Competition increases mortality rates exponentially above carrying capacity
+
+4. Environmental Risks → Mortality → Population Control
+   - Risks compound with density stress
+   - Urban areas have different risk profiles than rural areas
+
+These relationships create a dynamic system where changes in one parameter can have cascading effects throughout the population model. The simulation uses these weighted relationships to provide realistic predictions of cat population dynamics under various conditions.
+
 ## Contributing
 
 1. Fork the repository

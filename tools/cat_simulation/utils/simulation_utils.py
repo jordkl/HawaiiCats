@@ -36,21 +36,26 @@ def calculate_density_impact(current_population, params):
         impact_threshold = float(params.get('density_impact_threshold', 1.5))
         urban_factor = float(params.get('urban_environment', 0.7))  # Higher value = more urban
         
-        # Calculate density relative to territory
+        # Calculate density relative to territory with stronger impact
         density = current_population / territory_size
         
-        # Adjust impact threshold based on environment type
-        # Urban areas can support higher densities
-        adjusted_threshold = impact_threshold * (1 + 0.5 * urban_factor)
+        # Base carrying capacity - cats per square unit
+        base_cats_per_unit = 2.0  # Base number of cats per territory unit
+        carrying_capacity = territory_size * base_cats_per_unit
         
-        # Use configurable sigmoid curve with environment-based steepness
-        k = 4.0 * (1 - 0.3 * urban_factor)  # Gentler curve in urban areas
-        midpoint = territory_size * adjusted_threshold / 2
-        impact = 1.0 / (1.0 + np.exp(k * (density - midpoint)))
+        # Adjust impact threshold based on environment type and territory size
+        # Smaller territories have lower thresholds
+        size_factor = min(1.0, territory_size / 1000)  # Normalize to 1000 units
+        adjusted_threshold = impact_threshold * (0.5 + 0.5 * size_factor) * (1 + 0.3 * urban_factor)
         
-        # Higher minimum breeding potential in urban areas
-        min_potential = 0.3 + (0.2 * urban_factor)
-        return float(max(min_potential, impact))
+        # Use steeper sigmoid curve for density impact
+        k = 6.0 * (1 - 0.2 * urban_factor)  # Steeper curve, less affected by urban factor
+        relative_density = density / (carrying_capacity * adjusted_threshold)
+        impact = 1.0 / (1.0 + np.exp(-k * (relative_density - 0.5)))
+        
+        # Higher minimum breeding potential in urban areas, but more affected by territory size
+        min_potential = (0.2 + 0.1 * urban_factor) * size_factor
+        return float(max(min_potential, 1.0 - impact))
     except Exception as e:
         logger.error(f"Error in calculate_density_impact: {str(e)}")
         logger.error(traceback.format_exc())
@@ -209,34 +214,29 @@ def calculate_monthly_mortality(params, colony):
 def calculate_resource_limit(params, current_population):
     """Calculate resource-based population limits and stress factors."""
     try:
-        # Calculate base capacity from territory and food
-        base_capacity = float(params.get('territory_size', 1000)) * \
-                       float(params.get('base_food_capacity', 0.95))
+        # Extract and validate parameters
+        territory_size = float(params.get('territory_size', 1000))
+        base_food = float(params.get('base_food_capacity', 0.9))
+        food_scaling = float(params.get('food_scaling_factor', 0.8))
         
-        # Calculate resource factor with dampened multiplicative effects
-        resource_factor = min(1.0, (
-            float(params.get('water_availability', 0.9)) * 
-            float(params.get('shelter_quality', 0.85)) * 
-            float(params.get('caretaker_support', 0.8)) * 
-            float(params.get('feeding_consistency', 0.85))
-        ) ** 0.25)  # Fourth root for gentler scaling
+        # Calculate base carrying capacity based on territory size
+        # Smaller territories have exponentially lower carrying capacity
+        base_cats_per_unit = 2.0  # Base number of cats per territory unit
+        size_factor = np.power(territory_size / 1000, 0.8)  # Non-linear scaling
+        carrying_capacity = territory_size * base_cats_per_unit * size_factor
         
-        # Calculate maximum sustainable population
-        max_sustainable = base_capacity * resource_factor
+        # Calculate current population density relative to territory
+        density = current_population / territory_size
         
-        # Calculate stress factor with smoother transition
-        if current_population > 0:
-            density_ratio = float(current_population) / max_sustainable
-            if density_ratio > 1.2:  # Higher threshold for stress onset
-                stress_factor = max(0.6, 1.0 / (1.0 + np.exp((density_ratio - 1.5) / 0.3)))
-            elif density_ratio > 0.8:  # Earlier but gentler stress onset
-                stress_factor = 1.0 - (0.2 * (density_ratio - 0.8))
-            else:
-                stress_factor = 1.0
-        else:
-            stress_factor = 1.0
+        # Calculate food availability with stronger territory dependence
+        food_availability = base_food * np.power(food_scaling, density / base_cats_per_unit)
         
-        return float(stress_factor), float(max(current_population * 0.5, max_sustainable))
+        # Calculate stress factor based on population density
+        # More pronounced effect in smaller territories
+        density_ratio = current_population / carrying_capacity
+        stress_factor = 1.0 + np.power(max(0, density_ratio - 0.8), 1.5) * (2.0 - size_factor)
+        
+        return float(stress_factor), float(carrying_capacity)
     except Exception as e:
         logger.error(f"Error in calculate_resource_limit: {str(e)}")
         logger.error(traceback.format_exc())
