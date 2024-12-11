@@ -103,7 +103,8 @@ def calculate_monthly_mortality(params, colony):
         total_cats = (
             sum(int(float(count)) for count, _ in colony['young_kittens']) +
             sum(int(float(count)) for count, _ in colony['reproductive']) +
-            sum(int(float(count)) for count, _ in colony['sterilized'])
+            sum(int(float(count)) for count, _ in colony['sterilized']) +
+            sum(int(float(count)) for count, _ in colony.get('sterilized_kittens', []))
         )
         
         # Environmental Factors - each scaled from 0 to 1
@@ -249,7 +250,8 @@ def calculate_breeding_success(params, colony, environment_factor, current_month
         total_cats = (
             sum(int(float(count)) for count, _ in colony['young_kittens']) +
             sum(int(float(count)) for count, _ in colony['reproductive']) +
-            sum(int(float(count)) for count, _ in colony['sterilized'])
+            sum(int(float(count)) for count, _ in colony['sterilized']) +
+            sum(int(float(count)) for count, _ in colony.get('sterilized_kittens', []))
         )
         reproductive_females = sum(count for count, _ in colony['reproductive']) * float(params.get('female_ratio', 0.5))
         

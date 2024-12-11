@@ -113,7 +113,7 @@ def initialize_colony_with_ages(total_cats, sterilized, params):
                 young_adults = max(1, int(sterilized * 0.4))
                 middle_aged = max(1, int(sterilized * 0.3))
                 mature = max(1, int(sterilized * 0.2))
-                senior = max(0, sterilized - young_adults - middle_aged - mature)
+                senior = sterilized - young_adults - middle_aged - mature
                 
                 # Add each age group separately
                 if young_adults > 0:
