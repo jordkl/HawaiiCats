@@ -16,7 +16,7 @@ def get_sightings():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@bp.route('/force_sync', methods=['POST'])
+@bp.route('/sightings/force_sync', methods=['POST'])
 def force_sync():
     try:
         store = get_store()
