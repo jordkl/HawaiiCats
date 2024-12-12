@@ -7,6 +7,7 @@ from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google.cloud.firestore import GeoPoint
+from config.settings import ENABLE_FIREBASE_SYNC
 
 class FirebaseEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -27,22 +28,30 @@ class CatSightingsStore:
         self.lock = threading.Lock()
         
         try:
-            if not firebase_admin._apps:
-                print("Initializing Firebase Admin SDK...")
-                cred_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'firebase-credentials.json')
-                print(f"Looking for credentials at: {cred_path}")
-                if not os.path.exists(cred_path):
-                    raise FileNotFoundError(f"Firebase credentials file not found at {cred_path}")
-                cred = credentials.Certificate(cred_path)
-                firebase_admin.initialize_app(cred)
-                print("Firebase Admin SDK initialized successfully")
-            
-            self.db = firestore.client()
-            print("Firestore client created successfully")
+            if ENABLE_FIREBASE_SYNC:
+                if not firebase_admin._apps:
+                    print("Initializing Firebase Admin SDK...")
+                    cred_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'firebase-credentials.json')
+                    print(f"Looking for credentials at: {cred_path}")
+                    if not os.path.exists(cred_path):
+                        raise FileNotFoundError(f"Firebase credentials file not found at {cred_path}")
+                    cred = credentials.Certificate(cred_path)
+                    firebase_admin.initialize_app(cred)
+                    print("Firebase Admin SDK initialized successfully")
+                
+                self.db = firestore.client()
+                print("Firestore client created successfully")
+            else:
+                print("Firebase sync is disabled")
+                self.db = None
         except Exception as e:
             print(f"Error initializing Firebase: {str(e)}")
             print(f"Stack trace: {traceback.format_exc()}")
-            raise
+            if ENABLE_FIREBASE_SYNC:
+                raise
+            else:
+                print("Continuing without Firebase")
+                self.db = None
         
         os.makedirs(data_dir, exist_ok=True)
         
@@ -52,8 +61,9 @@ class CatSightingsStore:
         if not os.path.exists(self.last_sync_file):
             self._save_last_sync_time(datetime.min)
         
-        self.sync_thread = threading.Thread(target=self._background_sync, daemon=True)
-        self.sync_thread.start()
+        if ENABLE_FIREBASE_SYNC:
+            self.sync_thread = threading.Thread(target=self._background_sync, daemon=True)
+            self.sync_thread.start()
     
     def _save_local_data(self, data):
         with self.lock:
@@ -93,6 +103,10 @@ class CatSightingsStore:
 
     def sync_with_firebase(self):
         """Synchronize local data with Firebase"""
+        if not ENABLE_FIREBASE_SYNC:
+            print("Firebase sync is disabled, skipping sync")
+            return
+
         try:
             print("Starting Firebase sync...")
             last_sync = self._load_last_sync_time()
@@ -184,7 +198,8 @@ class CatSightingsStore:
 
     def force_sync(self):
         """Force an immediate sync with Firebase"""
-        self.sync_with_firebase()
+        if ENABLE_FIREBASE_SYNC:
+            self.sync_with_firebase()
 
     def _save_last_sync_time(self, sync_time):
         with open(self.last_sync_file, 'w') as f:
