@@ -397,3 +397,36 @@ def clear_logs():
     except Exception as e:
         log_debug('ERROR', f"Error clearing logs: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@bp.route("/save_calculation", methods=['POST', 'OPTIONS'])
+def save_calculation():
+    if request.method == 'OPTIONS':
+        response = bp.make_default_options_response()
+        response.headers['Access-Control-Allow-Methods'] = 'POST'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
+
+    try:
+        data = request.get_json(force=True)
+        result = data.get('data', {})
+        append = data.get('append', False)
+        
+        if not result:
+            return jsonify({'error': 'No data received'}), 400
+
+        # Create calculations.csv if it doesn't exist
+        if not os.path.exists(CALC_FILE) or not append:
+            with open(CALC_FILE, 'w', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=result.keys())
+                writer.writeheader()
+
+        # Append the result to calculations.csv
+        with open(CALC_FILE, 'a', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=result.keys())
+            writer.writerow(result)
+
+        return jsonify({'message': 'Results saved successfully'})
+
+    except Exception as e:
+        log_debug('ERROR', f'Error saving calculation: {str(e)}\n{traceback.format_exc()}')
+        return jsonify({'error': str(e)}), 500

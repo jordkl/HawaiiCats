@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 load_dotenv('.env.local')
 
 # Firebase Configuration
+ENABLE_FIREBASE_SYNC = os.getenv('ENABLE_FIREBASE_SYNC', 'true').lower() == 'true'
+
 FIREBASE_CONFIG = {
     'apiKey': os.getenv('FIREBASE_API_KEY'),
     'projectId': os.getenv('FIREBASE_PROJECT_ID'),

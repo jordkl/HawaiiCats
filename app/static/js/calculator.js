@@ -141,6 +141,120 @@ function initializeInputListeners() {
         colonySizeInput.addEventListener('input', updateSterilizedConstraints);
     }
 
+    // Environment presets configuration
+    const ENVIRONMENT_PRESETS = {
+        residential: {
+            name: "Residential Area",
+            territory_size: 2000,
+            density_threshold: 1.5,
+            description: "Suburban neighborhood with houses and gardens, regular feeding by residents",
+            typical_size: "15-40 cats",
+            features: "Multiple feeding stations, hiding spots under houses, moderate human interaction"
+        },
+        street: {
+            name: "Street/Alley",
+            territory_size: 500,
+            density_threshold: 2.0,
+            description: "Urban street with shops and restaurants, high food availability",
+            typical_size: "10-25 cats",
+            features: "Restaurant waste, dumpsters, regular feeding by workers"
+        },
+        park: {
+            name: "Public Park",
+            territory_size: 5000,
+            density_threshold: 1.2,
+            description: "Public park with grass areas, trees, and picnic spots",
+            typical_size: "20-60 cats",
+            features: "BBQ areas, trash bins, bushes for shelter, visitor feeding"
+        },
+        industrial: {
+            name: "Industrial Area",
+            territory_size: 3000,
+            density_threshold: 1.0,
+            description: "Warehouses, storage facilities, and industrial buildings",
+            typical_size: "15-45 cats",
+            features: "Shipping containers, pallets for shelter, worker feeding stations"
+        },
+        parking: {
+            name: "Parking Lot",
+            territory_size: 800,
+            density_threshold: 1.8,
+            description: "Shopping center or hotel parking area with nearby food sources",
+            typical_size: "8-20 cats",
+            features: "Cars for shelter, restaurant proximity, tourist feeding"
+        },
+        forest: {
+            name: "Forest/Nature Area",
+            territory_size: 50000,
+            density_threshold: 0.2,
+            description: "Forested area or nature reserve with natural resources",
+            typical_size: "20-100 cats",
+            features: "Natural prey, streams, dense vegetation for shelter"
+        },
+        beach: {
+            name: "Beach Area",
+            territory_size: 3000,
+            density_threshold: 1.0,
+            description: "Coastal area with beach parks and nearby facilities",
+            typical_size: "10-30 cats",
+            features: "Tourist feeding, fish scraps, vegetation near beach for shelter"
+        }
+    };
+
+    // Handle environment preset selection
+    document.getElementById('environment_preset').addEventListener('change', function(e) {
+        const preset = ENVIRONMENT_PRESETS[e.target.value];
+        if (preset) {
+            // Update territory size
+            document.getElementById('territory_size').value = preset.territory_size;
+            document.getElementById('territory_size_custom').value = preset.territory_size;
+            
+            // Update density threshold
+            document.getElementById('density_threshold').value = preset.density_threshold;
+            document.getElementById('density_threshold_custom').value = preset.density_threshold;
+            
+            // Show preset info in a tooltip or info box
+            const infoBox = document.getElementById('preset_info');
+            if (infoBox) {
+                infoBox.innerHTML = `
+                    <div class="alert alert-info">
+                        <strong>${preset.name}</strong><br>
+                        ${preset.description}<br>
+                        <strong>Features:</strong> ${preset.features}<br>
+                        <strong>Typical colony size:</strong> ${preset.typical_size}<br>
+                        <strong>Area:</strong> ${preset.territory_size}m² | <strong>Density:</strong> ${preset.density_threshold} cats/100m²
+                    </div>
+                `;
+            }
+        } else {
+            // Clear info box if custom is selected
+            const infoBox = document.getElementById('preset_info');
+            if (infoBox) {
+                infoBox.innerHTML = '';
+            }
+        }
+    });
+
+    // Update custom inputs when select values change
+    document.getElementById('territory_size').addEventListener('change', function(e) {
+        document.getElementById('territory_size_custom').value = e.target.value;
+    });
+
+    document.getElementById('density_threshold').addEventListener('change', function(e) {
+        document.getElementById('density_threshold_custom').value = e.target.value;
+    });
+
+    // Update select inputs when custom values change
+    document.getElementById('territory_size_custom').addEventListener('input', function(e) {
+        const select = document.getElementById('territory_size');
+        select.value = Array.from(select.options).find(opt => opt.value === e.target.value)?.value || '';
+    });
+
+    document.getElementById('density_threshold_custom').addEventListener('input', function(e) {
+        const select = document.getElementById('density_threshold');
+        select.value = Array.from(select.options).find(opt => opt.value === e.target.value)?.value || '';
+    });
+
     // Initialize the constraints based on initial values
     updateSliderConstraints();
     updateMaxSterilization();
@@ -370,28 +484,37 @@ async function calculatePopulation(data) {
         });
         
         const contentType = response.headers.get("content-type");
-        const responseText = await response.text();
-        
-        let result;
-        try {
-            result = JSON.parse(responseText);
-        } catch (e) {
-            console.error('Failed to parse response as JSON:', responseText);
-            throw new Error('Invalid response from server');
-        }
         
         if (!response.ok) {
-            throw new Error(JSON.stringify(result));
+            if (response.status === 500) {
+                throw new Error('Server error: The log download feature is currently unavailable. Please try again later.');
+            }
+            const responseContent = await response.text();
+            throw new Error(responseContent.error || `Server returned ${response.status}: ${response.statusText}`);
         }
         
-        if (!contentType || !contentType.includes("application/json")) {
-            throw new TypeError("Received non-JSON response from server");
-        }
+        // Handle successful response
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = downloadUrl;
         
-        return result;
+        // Get filename from Content-Disposition header or use default
+        const disposition = response.headers.get('content-disposition');
+        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        const matches = filenameRegex.exec(disposition);
+        const filename = matches ? matches[1].replace(/['"]/g, '') : 'simulation_results.csv';
+        
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        document.body.removeChild(a);
+        
     } catch (error) {
-        console.error('Error in calculatePopulation:', error);
-        throw error;
+        console.error('Error downloading logs:', error);
+        alert('Error downloading logs: ' + error.message);
     }
 }
 
@@ -892,213 +1015,143 @@ async function runParameterTests() {
     testBtn.textContent = 'Running Tests...';
 
     try {
+        // Base configuration for Hawaiʻi
         const baseConfig = {
             months: 24,
-            current_size: 10,
+            current_size: 50,
             sterilized_count: 0,
-            monthly_sterilization: 2,
+            monthly_sterilization: 0,
+            use_monte_carlo: true,
+            monte_carlo_runs: 50,
             params: {
-                breeding_rate: 0.7,
+                breeding_rate: 0.85,
                 kittens_per_litter: 4,
-                litters_per_year: 2,
+                litters_per_year: 2.5,
                 female_ratio: 0.5,
-                kitten_survival_rate: 0.7,
-                adult_survival_rate: 0.8,
+                kitten_survival_rate: 0.75,
+                adult_survival_rate: 0.90,
                 kitten_maturity_months: 6,
-                sterilization_cost: 50,
-                seasonal_breeding_amplitude: 0.3,
+                seasonal_breeding_amplitude: 0.1,
                 peak_breeding_month: 5,
+                base_food_capacity: 0.9,
+                food_scaling_factor: 0.8,
                 water_availability: 0.8,
-                shelter_quality: 0.7,
-                urban_risk: 0.1,
+                urban_risk: 0.15,
                 disease_risk: 0.1,
                 natural_risk: 0.1,
                 caretaker_support: 1.0,
                 feeding_consistency: 0.8,
-                human_interference: 0.5,
                 territory_size: 1000,
-                density_impact_threshold: 1.2,
-                monthly_abandonment: 0.1,
-                abandoned_sterilized_ratio: 0.2
+                density_impact_threshold: 1.2
             }
         };
 
-        const scenarios = [
-            // Baseline
-            { ...baseConfig },
-            
-            // High Urban Risk
-            {
-                ...baseConfig,
-                params: {
-                    ...baseConfig.params,
-                    urban_risk: 0.3,
-                    disease_risk: 0.05,
-                    natural_risk: 0.05,
-                    kitten_survival_rate: 0.6,
-                    adult_survival_rate: 0.7
-                }
-            },
-            
-            // High Natural Risk
-            {
-                ...baseConfig,
-                params: {
-                    ...baseConfig.params,
-                    urban_risk: 0.05,
-                    disease_risk: 0.05,
-                    natural_risk: 0.3,
-                    kitten_survival_rate: 0.6,
-                    adult_survival_rate: 0.7,
-                    water_availability: 0.5,
-                    food_scaling_factor: 0.5
-                }
-            },
-            
-            // High Disease Risk
-            {
-                ...baseConfig,
-                params: {
-                    ...baseConfig.params,
-                    urban_risk: 0.05,
-                    disease_risk: 0.3,
-                    natural_risk: 0.05,
-                    kitten_survival_rate: 0.5,
-                    adult_survival_rate: 0.6,
-                    density_impact_threshold: 1.2
-                }
-            },
-            
-            // Combined Environmental Stress
-            {
-                ...baseConfig,
-                params: {
-                    ...baseConfig.params,
-                    urban_risk: 0.15,
-                    disease_risk: 0.15,
-                    natural_risk: 0.15,
-                    water_availability: 0.6,
-                    shelter_quality: 0.6,
-                    food_scaling_factor: 0.6,
-                    kitten_survival_rate: 0.5,
-                    adult_survival_rate: 0.6
-                }
-            },
+        // Parameter ranges for testing
+        const parameterRanges = {
+            breeding_rate: { min: 0.3, max: 1.0, step: 0.1, name: "Breeding Rate" },
+            kittens_per_litter: { min: 1, max: 6, step: 1, name: "Kittens per Litter" },
+            litters_per_year: { min: 1, max: 4, step: 0.5, name: "Litters per Year" },
+            female_ratio: { min: 0.3, max: 0.7, step: 0.1, name: "Female Ratio" },
+            kitten_survival_rate: { min: 0.4, max: 0.9, step: 0.1, name: "Kitten Survival Rate" },
+            adult_survival_rate: { min: 0.6, max: 0.95, step: 0.05, name: "Adult Survival Rate" },
+            kitten_maturity_months: { min: 4, max: 8, step: 1, name: "Kitten Maturity Months" },
+            base_food_capacity: { min: 0.4, max: 1.0, step: 0.1, name: "Base Food Capacity" },
+            food_scaling_factor: { min: 0.4, max: 1.0, step: 0.1, name: "Food Scaling Factor" },
+            water_availability: { min: 0.4, max: 1.0, step: 0.1, name: "Water Availability" },
+            urban_risk: { min: 0.05, max: 0.3, step: 0.05, name: "Urban Risk" },
+            disease_risk: { min: 0.05, max: 0.3, step: 0.05, name: "Disease Risk" },
+            natural_risk: { min: 0.05, max: 0.3, step: 0.05, name: "Natural Risk" },
+            territory_size: { min: 200, max: 5000, step: 600, name: "Territory Size" },
+            density_impact_threshold: { min: 0.5, max: 2.0, step: 0.3, name: "Density Impact Threshold" }
+        };
 
-            // High Population Density Impact
-            {
-                ...baseConfig,
-                current_size: 50,
-                params: {
-                    ...baseConfig.params,
-                    density_impact_threshold: 1.2,
-                    territory_size: 500,
-                    disease_risk: 0.15,
-                    food_scaling_factor: 0.6,
-                    water_availability: 0.7
-                }
-            },
+        const tests = [];
 
-            // Seasonal Variation
-            {
-                ...baseConfig,
-                months: 36,
-                params: {
-                    ...baseConfig.params,
-                    seasonal_breeding_amplitude: 0.5,
-                    peak_breeding_month: 5,
-                    water_availability: 0.7,
-                    food_scaling_factor: 0.7
-                }
-            },
-
-            // Urban Environment
-            {
-                ...baseConfig,
-                current_size: 30,
-                params: {
-                    ...baseConfig.params,
-                    urban_risk: 0.25,
-                    disease_risk: 0.15,
-                    natural_risk: 0.05,
-                    caretaker_support: 1.5,
-                    feeding_consistency: 0.9,
-                    human_interference: 0.7,
-                    territory_size: 300
-                }
-            },
-
-            // Rural Environment
-            {
-                ...baseConfig,
-                current_size: 20,
-                params: {
-                    ...baseConfig.params,
-                    urban_risk: 0.05,
-                    disease_risk: 0.1,
-                    natural_risk: 0.2,
-                    caretaker_support: 0.5,
-                    feeding_consistency: 0.6,
-                    human_interference: 0.3,
-                    territory_size: 2000
-                }
-            },
-
-            // High Abandonment
-            {
-                ...baseConfig,
-                params: {
-                    ...baseConfig.params,
-                    monthly_abandonment: 0.3,
-                    abandoned_sterilized_ratio: 0.3,
-                    urban_risk: 0.2,
-                    disease_risk: 0.15,
-                    natural_risk: 0.1
-                }
+        // Generate tests for each parameter
+        for (const [param, range] of Object.entries(parameterRanges)) {
+            for (let value = range.min; value <= range.max; value += range.step) {
+                tests.push({
+                    name: `${range.name} (${value})`,
+                    config: {
+                        ...baseConfig,
+                        params: {
+                            ...baseConfig.params,
+                            [param]: value
+                        }
+                    },
+                    expectedTrend: `Testing ${range.name} at value ${value}`,
+                    parameter: param,
+                    value: value
+                });
             }
-        ];
-
-        let completedTests = 0;
-        const totalTests = scenarios.length;
-        
-        for (const scenario of scenarios) {
-            completedTests++;
-            testBtn.textContent = `Running Tests (${completedTests}/${totalTests})...`;
-            await calculatePopulation(scenario);
-            await new Promise(resolve => setTimeout(resolve, 500));
         }
 
-        const downloadBtn = document.getElementById('downloadLogsBtn');
-        if (downloadBtn) {
-            downloadBtn.classList.add('highlight');
-            setTimeout(() => downloadBtn.classList.remove('highlight'), 2000);
+        // Run all tests
+        const results = [];
+        for (const test of tests) {
+            console.log(`Running test: ${test.name}`);
+            
+            // Run the test multiple times
+            const response = await fetch(`${baseUrl}/calculate_population`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(test.config)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            // Extract key metrics
+            const result = {
+                test_name: test.name,
+                parameter: test.parameter,
+                value: test.value,
+                final_population: data.final_population,
+                population_growth: data.population_growth,
+                total_deaths: data.total_deaths,
+                kitten_deaths: data.kitten_deaths,
+                adult_deaths: data.adult_deaths,
+                natural_deaths: data.natural_deaths,
+                urban_deaths: data.urban_deaths,
+                disease_deaths: data.disease_deaths
+            };
+
+            if (data.monte_carlo_summary) {
+                result.population_mean = data.monte_carlo_summary.final_population.mean;
+                result.population_std = data.monte_carlo_summary.final_population.std;
+                result.deaths_mean = data.monte_carlo_summary.total_deaths.mean;
+                result.deaths_std = data.monte_carlo_summary.total_deaths.std;
+            }
+
+            results.push(result);
+            
+            // Update calculations.csv
+            await fetch(`${baseUrl}/save_calculation`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    data: result,
+                    append: true
+                })
+            });
         }
-        
-        // Show success message in a more subtle way
-        const resultsDiv = document.querySelector('.results-container');
-        if (resultsDiv) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'alert alert-success mt-4';
-            messageDiv.textContent = 'Parameter tests completed successfully! Click "Download Results" to view the data.';
-            resultsDiv.insertBefore(messageDiv, resultsDiv.firstChild);
-            setTimeout(() => messageDiv.remove(), 5000);
-        }
+
+        console.log('All parameter tests completed');
+        alert('Parameter tests completed successfully. Results have been saved to calculations.csv');
+
     } catch (error) {
-        console.error('Error running tests:', error);
-        // Show error in a more subtle way
-        const resultsDiv = document.querySelector('.results-container');
-        if (resultsDiv) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'alert alert-error mt-4';
-            messageDiv.textContent = 'Error running tests: ' + error.message;
-            resultsDiv.insertBefore(messageDiv, resultsDiv.firstChild);
-            setTimeout(() => messageDiv.remove(), 5000);
-        }
+        console.error('Error running parameter tests:', error);
+        alert('Error running parameter tests: ' + error.message);
     } finally {
-        if (testBtn) {
-            testBtn.disabled = false;
-            testBtn.textContent = originalText;
-        }
+        testBtn.disabled = false;
+        testBtn.textContent = originalText;
     }
 }
 

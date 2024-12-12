@@ -2,6 +2,47 @@
 <div class="space-y-4">
     <h4 class="text-base font-medium text-hawaii-blue">Basic Parameters</h4>
     
+    <!-- Environment Presets -->
+    <div>
+        <label class="parameter-label" for="environment_preset">Colony Environment</label>
+        <select id="environment_preset" class="w-full p-2 border rounded">
+            <option value="" selected>Custom (Set manually below)</option>
+            <option value="residential">Residential Area</option>
+            <option value="street">Street/Alley</option>
+            <option value="park">Public Park</option>
+            <option value="industrial">Industrial Area</option>
+            <option value="parking">Parking Lot</option>
+            <option value="forest">Forest/Nature Area</option>
+            <option value="beach">Beach Area</option>
+        </select>
+        <div class="flex justify-between">
+            <span class="parameter-description">Select environment type to auto-set territory and density</span>
+        </div>
+        <div id="preset_info" class="mt-2 text-sm text-gray-600"></div>
+    </div>
+
+    <!-- Territory Size -->
+    <div>
+        <label class="parameter-label" for="territory_size">Territory Size</label>
+        <input type="range" id="territory_size" min="100" max="100000" value="1000" class="slider">
+        <div class="flex justify-between">
+            <input type="number" id="territory_size_custom" min="100" max="100000" value="1000" 
+                   class="w-24 p-1 border rounded text-right">
+            <span class="parameter-description">square meters</span>
+        </div>
+    </div>
+
+    <!-- Density Threshold -->
+    <div>
+        <label class="parameter-label" for="density_threshold">Environment Density</label>
+        <input type="range" id="density_threshold" min="0.2" max="5.0" step="0.1" value="1.2" class="slider">
+        <div class="flex justify-between">
+            <input type="number" id="density_threshold_custom" min="0.2" max="5.0" step="0.1" value="1.2" 
+                   class="w-24 p-1 border rounded text-right">
+            <span class="parameter-description">cats per 100m²</span>
+        </div>
+    </div>
+    
     <!-- Initial Colony Size -->
     <div>
         <label class="parameter-label" for="currentSize">Initial Colony Size</label>
