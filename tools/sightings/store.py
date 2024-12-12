@@ -155,11 +155,9 @@ class CatSightingsStore:
             
             # Normalize location data and remove user information
             for sighting in sightings:
-                # Safely normalize location with multiple fallbacks
+                # Safely normalize location with coordinate taking priority
                 location = None
-                if sighting.get('userLocation'):
-                    location = sighting['userLocation']
-                elif sighting.get('coordinate'):
+                if sighting.get('coordinate'):
                     location = sighting['coordinate']
                 
                 if location:
