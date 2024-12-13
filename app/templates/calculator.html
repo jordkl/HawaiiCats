@@ -404,6 +404,35 @@
             cursor: pointer;
         }
 
+        /* Preset Buttons */
+        .preset-button {
+            padding: 0.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            background-color: white;
+            color: #4b5563;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .preset-button:hover {
+            border-color: #0077be;
+            color: #0077be;
+        }
+
+        .preset-button.active {
+            background-color: #0077be;
+            border-color: #0077be;
+            color: white;
+        }
+
+        .preset-button:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 119, 190, 0.2);
+        }
+
         /* Monte Carlo Loading Indicator */
         .monte-carlo-loading {
             display: none;

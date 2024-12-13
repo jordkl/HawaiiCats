@@ -4,19 +4,16 @@
     
     <!-- Environment Presets -->
     <div>
-        <label class="parameter-label" for="environment_preset">Colony Environment</label>
-        <select id="environment_preset" class="w-full p-2 border rounded">
-            <option value="" selected>Custom (Set manually below)</option>
-            <option value="residential">Residential Area</option>
-            <option value="street">Street/Alley</option>
-            <option value="park">Public Park</option>
-            <option value="industrial">Industrial Area</option>
-            <option value="parking">Parking Lot</option>
-            <option value="forest">Forest/Nature Area</option>
-            <option value="beach">Beach Area</option>
-        </select>
-        <div class="flex justify-between">
-            <span class="parameter-description">Select environment type to auto-set territory and density</span>
+        <label class="parameter-label mb-2 block">Colony Environment</label>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+            <button type="button" class="preset-button" data-preset="residential">Residential Area</button>
+            <button type="button" class="preset-button" data-preset="street">Street/Alley</button>
+            <button type="button" class="preset-button" data-preset="park">Public Park</button>
+            <button type="button" class="preset-button" data-preset="industrial">Industrial Area</button>
+            <button type="button" class="preset-button" data-preset="parking">Parking Lot</button>
+            <button type="button" class="preset-button" data-preset="forest">Forest/Nature</button>
+            <button type="button" class="preset-button" data-preset="beach">Beach Area</button>
+            <button type="button" class="preset-button" data-preset="custom">Custom</button>
         </div>
         <div id="preset_info" class="mt-2 text-sm text-gray-600"></div>
     </div>

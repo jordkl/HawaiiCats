@@ -142,98 +142,87 @@ function initializeInputListeners() {
     }
 
     // Environment presets configuration
-    const ENVIRONMENT_PRESETS = {
+    const environmentPresets = {
         residential: {
-            name: "Residential Area",
-            territory_size: 2000,
-            density_threshold: 1.5,
-            description: "Suburban neighborhood with houses and gardens, regular feeding by residents",
-            typical_size: "15-40 cats",
-            features: "Multiple feeding stations, hiding spots under houses, moderate human interaction"
+            territory: 2000,
+            density: 1.2,
+            description: "Urban residential areas with moderate human activity"
         },
         street: {
-            name: "Street/Alley",
-            territory_size: 500,
-            density_threshold: 2.0,
-            description: "Urban street with shops and restaurants, high food availability",
-            typical_size: "10-25 cats",
-            features: "Restaurant waste, dumpsters, regular feeding by workers"
+            territory: 1000,
+            density: 1.5,
+            description: "Streets and alleys with high human activity"
         },
         park: {
-            name: "Public Park",
-            territory_size: 5000,
-            density_threshold: 1.2,
-            description: "Public park with grass areas, trees, and picnic spots",
-            typical_size: "20-60 cats",
-            features: "BBQ areas, trash bins, bushes for shelter, visitor feeding"
+            territory: 5000,
+            density: 0.8,
+            description: "Public parks with scattered resources"
         },
         industrial: {
-            name: "Industrial Area",
-            territory_size: 3000,
-            density_threshold: 1.0,
-            description: "Warehouses, storage facilities, and industrial buildings",
-            typical_size: "15-45 cats",
-            features: "Shipping containers, pallets for shelter, worker feeding stations"
+            territory: 3000,
+            density: 0.6,
+            description: "Industrial areas with limited resources"
         },
         parking: {
-            name: "Parking Lot",
-            territory_size: 800,
-            density_threshold: 1.8,
-            description: "Shopping center or hotel parking area with nearby food sources",
-            typical_size: "8-20 cats",
-            features: "Cars for shelter, restaurant proximity, tourist feeding"
+            territory: 1500,
+            density: 0.7,
+            description: "Parking lots with moderate human activity"
         },
         forest: {
-            name: "Forest/Nature Area",
-            territory_size: 50000,
-            density_threshold: 0.2,
-            description: "Forested area or nature reserve with natural resources",
-            typical_size: "20-100 cats",
-            features: "Natural prey, streams, dense vegetation for shelter"
+            territory: 8000,
+            density: 0.4,
+            description: "Natural areas with diverse wildlife"
         },
         beach: {
-            name: "Beach Area",
-            territory_size: 3000,
-            density_threshold: 1.0,
-            description: "Coastal area with beach parks and nearby facilities",
-            typical_size: "10-30 cats",
-            features: "Tourist feeding, fish scraps, vegetation near beach for shelter"
+            territory: 4000,
+            density: 0.5,
+            description: "Coastal areas with variable resources"
+        },
+        custom: {
+            territory: 1000,
+            density: 1.2,
+            description: "Custom environment settings"
         }
     };
 
-    // Handle environment preset selection
-    document.getElementById('environment_preset').addEventListener('change', function(e) {
-        const preset = ENVIRONMENT_PRESETS[e.target.value];
-        if (preset) {
-            // Update territory size
-            document.getElementById('territory_size').value = preset.territory_size;
-            document.getElementById('territory_size_custom').value = preset.territory_size;
-            
-            // Update density threshold
-            document.getElementById('density_threshold').value = preset.density_threshold;
-            document.getElementById('density_threshold_custom').value = preset.density_threshold;
-            
-            // Show preset info in a tooltip or info box
-            const infoBox = document.getElementById('preset_info');
-            if (infoBox) {
-                infoBox.innerHTML = `
-                    <div class="alert alert-info">
-                        <strong>${preset.name}</strong><br>
-                        ${preset.description}<br>
-                        <strong>Features:</strong> ${preset.features}<br>
-                        <strong>Typical colony size:</strong> ${preset.typical_size}<br>
-                        <strong>Area:</strong> ${preset.territory_size}m² | <strong>Density:</strong> ${preset.density_threshold} cats/100m²
-                    </div>
-                `;
-            }
-        } else {
-            // Clear info box if custom is selected
-            const infoBox = document.getElementById('preset_info');
-            if (infoBox) {
-                infoBox.innerHTML = '';
-            }
+    // Function to handle preset button clicks
+    function handlePresetClick(preset) {
+        // Remove active class from all buttons
+        document.querySelectorAll('.preset-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Add active class to clicked button
+        const clickedButton = document.querySelector(`.preset-button[data-preset="${preset}"]`);
+        if (clickedButton) {
+            clickedButton.classList.add('active');
         }
-    });
+        
+        // Update territory and density values
+        const presetData = environmentPresets[preset];
+        if (presetData) {
+            document.getElementById('territory_size').value = presetData.territory;
+            document.getElementById('territory_size_custom').value = presetData.territory;
+            document.getElementById('density_threshold').value = presetData.density;
+            document.getElementById('density_threshold_custom').value = presetData.density;
+            document.getElementById('preset_info').textContent = presetData.description;
+        }
+    }
+
+    // Initialize preset buttons
+    function initializePresetButtons() {
+        document.querySelectorAll('.preset-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const preset = button.dataset.preset;
+                handlePresetClick(preset);
+            });
+        });
+        
+        // Set initial active state to custom
+        handlePresetClick('custom');
+    }
+
+    initializePresetButtons();
 
     // Update custom inputs when select values change
     document.getElementById('territory_size').addEventListener('change', function(e) {
