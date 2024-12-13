@@ -1,3 +1,7 @@
+// Define calculator version
+const CALCULATOR_VERSION = '1.0.0';
+window.CALCULATOR_VERSION = CALCULATOR_VERSION;  // Make version globally available
+
 // Determine the base URL based on the current environment
 const isLocalhost = ['localhost', '127.0.0.1', '192.168.1.169'].includes(window.location.hostname);
 const baseUrl = isLocalhost ? `http://${window.location.host}` : 'https://hawaiicats.org';

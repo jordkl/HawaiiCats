@@ -592,10 +592,73 @@
 <!-- Floating Calculate Button -->
 <button onclick="handleCalculate()" class="floating-calculate">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10H9m3-5h3m-6 0h0m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10H9m3-5h3m-6 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
     Calculate
 </button>
+
+<!-- Flag Scenario Modal -->
+<div id="flagScenarioModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4">
+        <h2 class="text-2xl font-bold mb-4">Flag Scenario</h2>
+        
+        <div class="bg-blue-50 border border-blue-200 rounded p-4 mb-6">
+            <p class="text-blue-800">
+                <span class="font-semibold">Note:</span> All current parameters and results will be automatically saved with your report.
+            </p>
+        </div>
+
+        <div class="mb-6">
+            <h3 class="text-lg font-medium mb-3">Category</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="radio" name="category" value="population-high" class="mr-3">
+                    Population Higher Than Expected
+                </label>
+                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="radio" name="category" value="population-low" class="mr-3">
+                    Population Lower Than Expected
+                </label>
+                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="radio" name="category" value="population-accurate" class="mr-3">
+                    Population Accurate (Interesting Case)
+                </label>
+                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="radio" name="category" value="parameter-issue" class="mr-3">
+                    Parameter Not Working as Expected
+                </label>
+                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="radio" name="category" value="bug" class="mr-3">
+                    Bug Report
+                </label>
+                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="radio" name="category" value="other" class="mr-3">
+                    Other
+                </label>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-lg font-medium mb-2">Additional Notes</label>
+            <textarea id="flagScenarioNotes" rows="4" class="w-full border rounded-lg p-3" placeholder="Please provide any additional details or observations..."></textarea>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-lg font-medium mb-2">Email (Optional)</label>
+            <div class="text-sm text-gray-600 mb-2">Provide your email if you would like to be contacted about this report.</div>
+            <input type="email" id="flagScenarioEmail" class="w-full border rounded-lg p-3" placeholder="your.email@example.com">
+        </div>
+
+        <div class="flex justify-end space-x-3">
+            <button onclick="closeFlagScenarioModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-50">
+                Cancel
+            </button>
+            <button onclick="submitFlagScenario()" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                Submit Report
+            </button>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
 
@@ -609,6 +672,12 @@
         const testBtn = document.getElementById('testParametersBtn');
         if (testBtn) {
             testBtn.addEventListener('click', runParameterTests);
+        }
+
+        // Set up flag scenario button
+        const flagBtn = document.getElementById('flagScenarioBtn');
+        if (flagBtn) {
+            flagBtn.addEventListener('click', flagScenario);
         }
     });
 </script>

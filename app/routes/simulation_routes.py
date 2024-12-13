@@ -7,6 +7,7 @@ import io
 from datetime import datetime
 import os
 import traceback
+import json
 
 bp = Blueprint('simulation', __name__)
 
@@ -338,53 +339,39 @@ def flag_scenario():
         response.headers['Access-Control-Allow-Methods'] = 'POST'
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
         return response
-        
+
     try:
-        data = request.get_json(force=True)
-        if not data or 'userNote' not in data:
-            return jsonify({'error': 'No user note provided'}), 400
-            
-        user_note = data['userNote'].strip()
-        if not user_note:
-            return jsonify({'error': 'User note cannot be empty'}), 400
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data received'}), 400
 
-        # Read the last calculation and headers from CALC_FILE
-        headers = None
-        last_calculation = None
-        try:
-            with open(CALC_FILE, 'r', newline='') as f:
-                reader = csv.reader(f)
-                headers = next(reader)  # Get header row
-                for row in reader:
-                    last_calculation = row
-        except Exception as e:
-            return jsonify({'error': 'No calculations found to flag'}), 404
-
-        if not last_calculation or not headers:
-            return jsonify({'error': 'No calculations found to flag'}), 404
-
-        # Generate timestamp and filename
+        # Get the current timestamp
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        flagged_dir = os.path.join(os.path.dirname(CALC_FILE), 'flagged_scenarios')
-        os.makedirs(flagged_dir, exist_ok=True)
-        flagged_file = os.path.join(flagged_dir, f'flagged_scenario_{timestamp}.csv')
         
-        with open(flagged_file, 'w', newline='') as f:
-            writer = csv.writer(f)
-            # Write headers including the new ones
-            all_headers = headers + ['user_note', 'flag_timestamp']
-            writer.writerow(all_headers)
-            
-            # Add the note and current timestamp to the calculation
-            flagged_row = last_calculation + [user_note, timestamp]
-            writer.writerow(flagged_row)
-            
-        log_debug('INFO', f'Flagged scenario saved with note: {user_note} to file: {flagged_file}')
-        return jsonify({'success': True})
+        # Create a unique filename for this flagged scenario
+        filename = f'flagged_scenario_{timestamp}.json'
+        filepath = os.path.join(LOGS_DIR, filename)
+
+        # Add metadata
+        data['timestamp'] = timestamp
+        data['ip_address'] = request.remote_addr
         
+        # Write the data to a JSON file
+        with open(filepath, 'w') as f:
+            json.dump(data, f, indent=4)
+
+        return jsonify({
+            'success': True,
+            'message': 'Scenario has been flagged and saved.',
+            'filename': filename
+        })
+
     except Exception as e:
-        log_debug('ERROR', f"Error in flag_scenario: {str(e)}\n{traceback.format_exc()}")
-        return jsonify({'error': str(e)}), 500
+        log_debug('ERROR', f'Error in flag_scenario: {str(e)}\n{traceback.format_exc()}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @bp.route('/clear_logs', methods=['POST'])
 def clear_logs():
