@@ -18,6 +18,11 @@ def create_app():
     app.config['FIREBASE_STORAGE_BUCKET'] = os.getenv('FIREBASE_STORAGE_BUCKET')
     app.config['FIREBASE_MESSAGING_SENDER_ID'] = os.getenv('FIREBASE_MESSAGING_SENDER_ID')
 
+    # Load button visibility settings
+    app.config['SHOW_DOWNLOAD_BUTTON'] = os.getenv('SHOW_DOWNLOAD_BUTTON', 'false').lower() == 'true'
+    app.config['SHOW_CLEAR_RESULTS_BUTTON'] = os.getenv('SHOW_CLEAR_RESULTS_BUTTON', 'false').lower() == 'true'
+    app.config['SHOW_TEST_PARAMETERS_BUTTON'] = os.getenv('SHOW_TEST_PARAMETERS_BUTTON', 'false').lower() == 'true'
+
     # Configure CORS
     CORS(app)
 

@@ -21,7 +21,14 @@ def home():
 
 @bp.route('/calculator')
 def calculator():
-    return render_template('calculator.html')
+    show_download = current_app.config.get('SHOW_DOWNLOAD_BUTTON', False)
+    show_clear = current_app.config.get('SHOW_CLEAR_RESULTS_BUTTON', False)
+    show_test = current_app.config.get('SHOW_TEST_PARAMETERS_BUTTON', False)
+    
+    return render_template('calculator.html',
+                         show_download_button=show_download,
+                         show_clear_results_button=show_clear,
+                         show_test_parameters_button=show_test)
 
 @bp.route("/calculate_population", methods=['POST', 'OPTIONS'])
 def calculate_population():
