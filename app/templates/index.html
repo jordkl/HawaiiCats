@@ -40,50 +40,71 @@
                         </div>
                     </div>
 
-                                       <!-- CatMap Card -->
-                                       <div class="bg-white overflow-hidden shadow rounded-lg">
-                                        <div class="px-4 py-5 sm:p-6">
-                                            <div class="flex items-center">
-                                                <div class="flex-shrink-0 bg-indigo-500 rounded-md p-3">
-                                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-                                                    </svg>
-                                                </div>
-                                                <div class="ml-5">
-                                                    <h3 class="text-lg font-medium text-gray-900">CatMap</h3>
-                                                    <p class="mt-2 text-sm text-gray-500">
-                                                        Interactive mapping tool for tracking and managing cat colonies across Hawaii.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div class="mt-6">
-                                                <a href="{{ url_for('sightings.catmap') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-                                                    Open CatMap
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
+                    <!-- CatMap Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-indigo-500 rounded-md p-3">
+                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                                    </svg>
+                                </div>
                                 <div class="ml-5">
-                                    <h3 class="text-lg font-medium text-gray-900">More Tools Coming Soon</h3>
+                                    <h3 class="text-lg font-medium text-gray-900">CatMap</h3>
                                     <p class="mt-2 text-sm text-gray-500">
-                                        We're working on additional tools to help with colony management and tracking.
+                                        Interactive mapping tool for tracking and managing cat colonies across Hawaii.
                                     </p>
                                 </div>
+                            </div>
+                            <div class="mt-6">
+                                <a href="{{ url_for('sightings.catmap') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                                    Open CatMap
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CatMap iOS App Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-indigo-500 rounded-md p-3">
+                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/>
+                                    </svg>
+                                </div>
+                                <div class="ml-5">
+                                    <h3 class="text-lg font-medium text-gray-900">CatMap iOS App</h3>
+                                    <p class="mt-2 text-sm text-gray-500">
+                                        Record cat sightings on the go with our mobile app. Available on the App Store.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-6">
+                                <a href="https://testflight.apple.com/join/4N9ssyQJ" target="_blank" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                                    Download App
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-12 bg-gray-50 overflow-hidden shadow rounded-lg divide-y divide-gray-200">
-                    <div class="px-4 py-5 sm:px-6">
-                        <h3 class="text-lg font-medium text-gray-900">About the Project</h3>
-                    </div>
+                <!-- More Tools Section -->
+                <div class="mt-12 bg-white overflow-hidden shadow rounded-lg">
                     <div class="px-4 py-5 sm:p-6">
-                        <p class="text-base text-gray-500">
-                            Our tools are designed to help cat colony caretakers and stakeholders make data-driven decisions. 
-                            The population calculator uses advanced modeling techniques to simulate colony growth under various conditions 
-                            and intervention strategies. 
-                        </p>
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 bg-indigo-500 rounded-md p-3">
+                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                </svg>
+                            </div>
+                            <div class="ml-5">
+                                <h3 class="text-lg font-medium text-gray-900">More Tools Coming Soon</h3>
+                                <p class="mt-2 text-sm text-gray-500">
+                                    We're working on additional tools to help with colony management and tracking.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

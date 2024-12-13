@@ -3,6 +3,14 @@
 {% block title %}Cat Map{% endblock %}
 
 {% block head %}
+<!-- Disclaimer Section -->
+<div class="mt-8 p-4 bg-blue-50 rounded-lg">
+    <p class="text-sm text-gray-600">
+        <strong>Test Deployment Notice:</strong> This is a test deployment to evaluate iOS app synchronization with the web interface. 
+        Sightings displayed on this map should not be considered reliable and may be edited or removed at any time. 
+        The official CatMap with complete colony sightings will launch on July 1, 2025.
+    </p>
+</div>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -333,5 +341,6 @@
 
     // Load sightings when the page loads
     loadSightings();
+    
 </script>
 {% endblock %}
