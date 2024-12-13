@@ -1,20 +1,41 @@
 {% extends "base.html" %}
 
-{% block title %}Cat Colony Management Tools{% endblock %}
+{% block title %}Hawaiʻi Cats - Data-Driven Feral Cat Management{% endblock %}
 
 {% block content %}
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div class="px-4 py-6 sm:px-0">
             <div class="max-w-4xl mx-auto">
+                <!-- Header Section -->
                 <div class="text-center mb-12">
-                    <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                        Welcome to Cat Colony Management Tools
-                    </h2>
-                    <p class="mt-4 text-xl text-gray-500">
-                        A suite of tools to help you manage and plan cat colony interventions effectively.
+                    <h1 class="text-4xl font-extrabold text-gray-900 sm:text-5xl">
+                        Hawaiʻi Cats
+                    </h1>
+                    <p class="mt-4 text-lg text-gray-600">
+                        Empowering communities with tools and insights to manage feral cat colonies while protecting Hawaiʻi’s native species.
                     </p>
                 </div>
 
+                <!-- About Section -->
+                <div class="bg-white overflow-hidden shadow rounded-lg mb-12">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h2 class="text-2xl font-bold text-gray-900">About Hawaiʻi Cats</h2>
+                        <p class="mt-4 text-gray-700">
+                            Hawaiʻi Cats is a community-focused initiative supported by <a href="https://nene.org" class="text-indigo-600 underline">Nene.org</a>, dedicated to addressing the complex challenges posed by feral cat populations. Using data-driven tools and collaborative approaches, Hawaiʻi Cats provides solutions for humane and effective colony management while minimizing the impact on native wildlife.
+                        </p>
+                        <h3 class="mt-6 text-xl font-bold text-gray-900">Our Goals</h3>
+                        <ul class="mt-4 list-disc list-inside text-gray-700">
+                            <li>Identify priority areas where cat colonies overlap with habitats of protected species.</li>
+                            <li>Quantify the costs and resources required for effective colony management strategies.</li>
+                            <li>Critically evaluate the impact of trap-neuter-return (TNR) programs on colony growth and wildlife conservation.</li>
+                        </ul>
+                        <p class="mt-4 text-gray-700">
+                            By combining technology, research, and local collaboration, Hawaiʻi Cats seeks to create a sustainable balance between conservation and humane cat care.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Tools Section -->
                 <div class="mt-12 grid gap-8 grid-cols-1 md:grid-cols-2">
                     <!-- Population Calculator Card -->
                     <div class="bg-white overflow-hidden shadow rounded-lg">
@@ -28,7 +49,7 @@
                                 <div class="ml-5">
                                     <h3 class="text-lg font-medium text-gray-900">Population Calculator</h3>
                                     <p class="mt-2 text-sm text-gray-500">
-                                        Model colony growth and plan interventions with our advanced population calculator.
+                                        Use this tool to model colony growth and explore intervention scenarios tailored to your community.
                                     </p>
                                 </div>
                             </div>
@@ -50,9 +71,9 @@
                                     </svg>
                                 </div>
                                 <div class="ml-5">
-                                    <h3 class="text-lg font-medium text-gray-900">CatMap</h3>
+                                    <h3 class="text-lg font-medium text-gray-900">CatMap Web Explorer</h3>
                                     <p class="mt-2 text-sm text-gray-500">
-                                        Interactive mapping tool for tracking and managing cat colonies across Hawaii.
+                                        Explore interactive maps to track, monitor, and manage cat colonies across Hawaiʻi.
                                     </p>
                                 </div>
                             </div>
@@ -68,41 +89,20 @@
                     <div class="bg-white overflow-hidden shadow rounded-lg">
                         <div class="px-4 py-5 sm:p-6">
                             <div class="flex items-center">
-                                <div class="flex-shrink-0 bg-indigo-500 rounded-md p-3">
-                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/>
-                                    </svg>
+                                <div class="flex-shrink-0">
+                                    <img src="{{ url_for('static', filename='img/catmapIOSicon.jpg') }}" alt="CatMap iOS App Icon" class="h-12 w-12 rounded-xl">
                                 </div>
                                 <div class="ml-5">
                                     <h3 class="text-lg font-medium text-gray-900">CatMap iOS App</h3>
                                     <p class="mt-2 text-sm text-gray-500">
-                                        Record cat sightings on the go with our mobile app. Available on the App Store.
+                                        Log sightings and manage colonies on the go with our mobile app, available on the App Store.
                                     </p>
                                 </div>
                             </div>
-                            <div class="mt-6">
-                                <a href="https://testflight.apple.com/join/4N9ssyQJ" target="_blank" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-                                    Download App
-                                </a>
-                            </div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- More Tools Section -->
-                <div class="mt-12 bg-white overflow-hidden shadow rounded-lg">
-                    <div class="px-4 py-5 sm:p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 bg-indigo-500 rounded-md p-3">
-                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                </svg>
-                            </div>
-                            <div class="ml-5">
-                                <h3 class="text-lg font-medium text-gray-900">More Tools Coming Soon</h3>
-                                <p class="mt-2 text-sm text-gray-500">
-                                    We're working on additional tools to help with colony management and tracking.
-                                </p>
+                        <div class="bg-gray-50 px-4 py-4 sm:px-6">
+                            <div class="text-sm">
+                                <a href="#" class="font-medium text-indigo-600 hover:text-indigo-500">Coming Soon</a>
                             </div>
                         </div>
                     </div>
