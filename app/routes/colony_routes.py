@@ -52,7 +52,7 @@ def add_colony():
             # Basic colony information
             'current_size': data.get('currentSize'),
             'sterilized_count': data.get('sterilizedCount'),
-            'monthly_sterilization_rate': data.get('monthlyRate', 0),
+            'monthly_sterilization_rate': data.get('monthlySterilizationRate', 0),
             
             # Environmental factors
             'water_availability': data.get('waterAvailability', 0.8),
@@ -63,8 +63,8 @@ def add_colony():
             'breeding_rate': data.get('breedingRate', 0.85),
             'kittens_per_litter': data.get('kittensPerLitter', 4),
             'litters_per_year': data.get('littersPerYear', 2.5),
-            'kitten_survival_rate': data.get('kittenSurvival', 0.75),
-            'adult_survival_rate': data.get('adultSurvival', 0.85),
+            'kitten_survival_rate': data.get('kittenSurvivalRate', 0.75),
+            'adult_survival_rate': data.get('adultSurvivalRate', 0.85),
             
             # Risk factors
             'urban_risk': data.get('urbanRisk', 0.15),
@@ -109,7 +109,7 @@ def update_colony(colony_id):
         data = request.get_json()
         
         # Validate required fields
-        required_fields = ['name', 'current_size']
+        required_fields = ['name', 'currentSize']
         for field in required_fields:
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400

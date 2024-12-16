@@ -4,6 +4,19 @@
     border-radius: 0.5rem;
 }
 
+/* Cursor styles */
+.leaflet-crosshair {
+    cursor: crosshair !important;
+}
+
+.leaflet-grab {
+    cursor: grab;
+}
+
+.crosshair-cursor {
+    cursor: crosshair !important;
+}
+
 .colony-popup {
     max-width: 300px;
 }
@@ -65,10 +78,6 @@
     border-color: #357abd;
 }
 
-.crosshair {
-    cursor: crosshair !important;
-}
-
 /* Map Styles */
 .colony-marker, .sighting-marker {
     display: flex;
@@ -88,6 +97,10 @@
 .colony-marker.selected, .sighting-marker.selected {
     transform: scale(1.2);
     filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.5));
+}
+
+.crosshair {
+    cursor: crosshair !important;
 }
 
 /* Map Controls */

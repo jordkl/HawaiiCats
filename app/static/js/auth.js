@@ -3,7 +3,10 @@
 // Sign in with email and password
 export async function signIn(email, password) {
     try {
-        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+        if (!window.auth) {
+            throw new Error('Firebase Auth not initialized');
+        }
+        const userCredential = await window.auth.signInWithEmailAndPassword(email, password);
         if (userCredential.user) {
             // Get the ID token
             const idToken = await userCredential.user.getIdToken();
@@ -35,7 +38,10 @@ export async function signIn(email, password) {
 // Sign out
 export async function signOut() {
     try {
-        await firebase.auth().signOut();
+        if (!window.auth) {
+            throw new Error('Firebase Auth not initialized');
+        }
+        await window.auth.signOut();
         // Clear server session
         await fetch('/logout', {
             method: 'GET'
@@ -49,7 +55,12 @@ export async function signOut() {
 
 // Initialize auth state observer
 export function initAuthStateObserver(callback) {
-    firebase.auth().onAuthStateChanged((user) => {
+    if (!window.auth) {
+        console.error('Firebase Auth not initialized');
+        return;
+    }
+    
+    window.auth.onAuthStateChanged((user) => {
         if (callback) {
             callback(user);
         }

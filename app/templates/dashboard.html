@@ -44,32 +44,45 @@
                 
                 <!-- Colony detail view -->
                 <div id="colonyDetails" class="hidden">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-medium" id="colonyDetailName"></h3>
-                        <div class="flex gap-2">
-                            <button onclick="toggleColonyEdit()" class="text-blue-500 hover:text-blue-700">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                            <button onclick="showColonyList()" class="text-blue-500 hover:text-blue-700">
-                                <i class="fas fa-arrow-left"></i> Back to List
-                            </button>
-                        </div>
+                    <div class="flex items-center mb-4 space-x-4">
+                        <button onclick="showColonyList()" class="text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-arrow-left"></i> Back to List
+                        </button>
+                        <h3 class="text-lg font-medium flex-grow" id="colonyDetailName"></h3>
                     </div>
 
                     <!-- View Mode -->
                     <div id="colonyViewMode" class="space-y-4">
                         <div class="bg-white p-4 rounded-lg shadow">
-                            <h2 class="text-xl font-semibold mb-4" id="colonyDetailName"></h2>
-                            <div class="space-y-2">
-                                <p><span class="font-medium">Population:</span> <span id="colonyDetailPopulation"></span></p>
-                                <p><span class="font-medium">Location:</span> <span id="colonyDetailLocation"></span></p>
-                                <p><span class="font-medium">Created:</span> <span id="colonyDetailCreatedAt"></span></p>
-                                <p><span class="font-medium">Last Updated:</span> <span id="colonyDetailUpdatedAt"></span></p>
-                                <div class="mt-4">
-                                    <p class="font-medium">Notes:</p>
-                                    <p id="colonyDetailNotes" class="mt-1 text-gray-600"></p>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-600">Current Size</p>
+                                    <p class="font-medium" id="colonyDetailPopulation"></p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">Location</p>
+                                    <p class="font-medium" id="colonyDetailLocation"></p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">Created</p>
+                                    <p class="font-medium" id="colonyDetailCreatedAt"></p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">Last Updated</p>
+                                    <p class="font-medium" id="colonyDetailUpdatedAt"></p>
                                 </div>
                             </div>
+                            <div class="mt-4">
+                                <p class="text-sm text-gray-600">Notes</p>
+                                <p id="colonyDetailNotes" class="mt-1 font-medium"></p>
+                            </div>
+                        </div>
+
+                        <!-- Edit button at bottom right -->
+                        <div class="flex justify-end mt-6">
+                            <button onclick="toggleColonyEdit()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none">
+                                <i class="fas fa-edit mr-2"></i>Edit Colony
+                            </button>
                         </div>
                     </div>
 
@@ -187,7 +200,7 @@
 
                             <!-- Form Buttons -->
                             <div class="flex justify-end space-x-3">
-                                <button type="button" onclick="toggleColonyEdit()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+                                <button type="button" onclick="toggleColonyEdit()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none">
                                     Cancel
                                 </button>
                                 <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
@@ -248,19 +261,249 @@
     </div>
 
     <!-- Map container -->
-    <div class="flex-1">
-        <div id="map" class="h-full w-full relative"></div>
+    <div id="map" class="flex-grow rounded-lg relative">
+        <!-- Map controls -->
+        <div class="absolute top-4 right-4 z-[1000] bg-white rounded-lg shadow-lg p-2">
+            <button id="addColonyBtn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none flex items-center">
+                <i class="fas fa-plus mr-2"></i>Add Colony
+            </button>
+        </div>
     </div>
+
+    <!-- Add Colony Form Modal -->
+    <div id="addColonyModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[2000] flex items-center justify-center p-4">
+        <div class="relative mx-auto p-5 border shadow-lg rounded-md bg-white w-[90%] max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium">Add New Colony</h3>
+                <button id="closeAddColonyModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="addColonyForm" class="space-y-4">
+                <!-- Basic Information -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">Basic Information</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Name</label>
+                            <input type="text" id="colonyName" name="name" required
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Latitude</label>
+                                <input type="number" step="any" id="colonyLat" name="latitude" required readonly
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-100">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Longitude</label>
+                                <input type="number" step="any" id="colonyLng" name="longitude" required readonly
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-gray-100">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Current Size</label>
+                                <input type="number" id="colonySize" name="current_size" required min="0"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Sterilized Count</label>
+                                <input type="number" id="sterilizedCount" name="sterilized_count" required min="0"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Population Parameters -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">Population Parameters</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Monthly Sterilization Rate</label>
+                            <input type="number" id="monthlyRate" name="monthly_sterilization_rate" min="0" step="0.1" value="0"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Breeding Rate</label>
+                            <input type="number" id="breedingRate" name="breeding_rate" min="0" max="1" step="0.1" value="0.7"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Kittens per Litter</label>
+                            <input type="number" id="kittensPerLitter" name="kittens_per_litter" min="1" value="4"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Litters per Year</label>
+                            <input type="number" id="littersPerYear" name="litters_per_year" min="1" value="2"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Survival Rates -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">Survival Rates</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Adult Survival Rate</label>
+                            <input type="number" id="adultSurvivalRate" name="adult_survival_rate" min="0" max="1" step="0.1" value="0.7"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Kitten Survival Rate</label>
+                            <input type="number" id="kittenSurvivalRate" name="kitten_survival_rate" min="0" max="1" step="0.1" value="0.6"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Environmental Factors -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">Environmental Factors</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Territory Size (sq meters)</label>
+                            <input type="number" id="territorySize" name="territory_size" min="0" value="2500"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Base Food Capacity</label>
+                            <input type="number" id="baseFoodCapacity" name="base_food_capacity" min="0" max="1" step="0.1" value="0.9"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Food Scaling Factor</label>
+                            <input type="number" id="foodScalingFactor" name="food_scaling_factor" min="0" max="1" step="0.1" value="0.8"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Feeding Consistency</label>
+                            <input type="number" id="feedingConsistency" name="feeding_consistency" min="0" max="1" step="0.1" value="0.8"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Water Availability</label>
+                            <input type="number" id="waterAvailability" name="water_availability" min="0" max="1" step="0.1" value="0.7"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Shelter Quality</label>
+                            <input type="number" id="shelterQuality" name="shelter_quality" min="0" max="1" step="0.1" value="0.7"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Risk Factors -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">Risk Factors</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Disease Risk</label>
+                            <input type="number" id="diseaseRisk" name="disease_risk" min="0" max="1" step="0.1" value="0.1"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Natural Risk</label>
+                            <input type="number" id="naturalRisk" name="natural_risk" min="0" max="1" step="0.1" value="0.1"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Urban Risk</label>
+                            <input type="number" id="urbanRisk" name="urban_risk" min="0" max="1" step="0.1" value="0.1"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Density Factors -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">Density Factors</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Density Mortality Factor</label>
+                            <input type="number" id="densityMortalityFactor" name="density_mortality_factor" min="0" max="1" step="0.1" value="0.5"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Survival Density Factor</label>
+                            <input type="number" id="survivalDensityFactor" name="survival_density_factor" min="0" max="1" step="0.1" value="0.3"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Mortality Threshold</label>
+                            <input type="number" id="mortalityThreshold" name="mortality_threshold" min="0" value="30"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seasonal Breeding -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">Seasonal Breeding</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Peak Breeding Month</label>
+                            <input type="number" id="peakBreedingMonth" name="peak_breeding_month" min="1" max="12" value="1"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Seasonal Breeding Amplitude</label>
+                            <input type="number" id="seasonalBreedingAmplitude" name="seasonal_breeding_amplitude" min="0" max="1" step="0.1" value="0.3"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Support -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">Support</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Caretaker Support</label>
+                            <input type="number" id="caretakerSupport" name="caretaker_support" min="0" max="1" step="0.1" value="1"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes Section -->
+                <div class="w-full">
+                    <h3 class="text-lg font-semibold mb-2">Notes</h3>
+                    <textarea id="colonyNotes" name="notes" rows="4" 
+                              class="w-full p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                              placeholder="Add notes about the colony..."></textarea>
+                </div>
+                
+                <div class="flex justify-end space-x-3 mt-4">
+                    <button type="button" id="cancelAddColony"
+                            class="px-4 py-2 border text-gray-700 rounded hover:bg-gray-100 focus:outline-none">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none">
+                        Add Colony
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
 </div>
 
-<div id="notification" class="notification"></div>
 {% endblock %}
 
 {% block scripts %}
 <!-- Leaflet JavaScript -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <!-- Custom JavaScript -->
-<script src="{{ url_for('static', filename='js/leaflet.js') }}"></script>
 <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/map.js') }}"></script>
 <script src="{{ url_for('static', filename='js/colony.js') }}"></script>

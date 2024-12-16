@@ -1,56 +1,27 @@
 [
   {
-    "details": {
-      "movementLevel": "moderate",
-      "bestCount": 2,
-      "notes": "",
-      "minCount": 1,
-      "visibleCats": 2,
-      "maxCount": 3,
-      "uncertaintyLevel": "medium",
-      "timeSpent": "quick",
-      "isFeeding": false,
-      "locationType": "Residential"
-    },
-    "userName": "tammy t",
-    "timestamp": {
-      "_timestamp": "2024-11-25T05:14:39.275516+00:00",
-      "_type": "datetime"
-    },
     "isHidden": false,
-    "species": "cat",
-    "userEmail": "frdv9vwxhz@privaterelay.appleid.com",
-    "id": "1991CB57-5BE6-4E22-9F86-3DDFAE167C3A",
-    "coordinate": {
-      "latitude": 21.394553523812935,
-      "longitude": -157.9334362978164
-    },
-    "userLocation": {
-      "latitude": 21.394553523812935,
-      "longitude": -157.9334362978164
-    },
     "deviceIdentifier": "DDF01222-C30A-4DBD-A906-0C6076C53564",
     "editHistory": {
       "original": {
+        "details": {
+          "notes": "",
+          "locationType": "Residential",
+          "isFeeding": false,
+          "uncertaintyLevel": "medium",
+          "maxCount": 3,
+          "visibleCats": 1,
+          "minCount": 1,
+          "bestCount": 2,
+          "timeSpent": "quick",
+          "movementLevel": "moderate"
+        },
         "coordinate": {
           "latitude": 21.394553523812935,
           "longitude": -157.9334362978164
-        },
-        "details": {
-          "minCount": 1,
-          "notes": "",
-          "maxCount": 3,
-          "timeSpent": "quick",
-          "bestCount": 2,
-          "movementLevel": "moderate",
-          "visibleCats": 1,
-          "isFeeding": false,
-          "uncertaintyLevel": "medium",
-          "locationType": "Residential"
         }
       },
       "edited": {
-        "editedBy": "frdv9vwxhz@privaterelay.appleid.com",
         "timestamp": {
           "_timestamp": "2024-11-25T05:16:44.657815+00:00",
           "_type": "datetime"
@@ -59,105 +30,127 @@
           "latitude": 21.394553523812935,
           "longitude": -157.9334362978164
         },
+        "editedBy": "frdv9vwxhz@privaterelay.appleid.com",
         "details": {
+          "minCount": 1,
           "timeSpent": "quick",
           "notes": "",
-          "bestCount": 2,
+          "locationType": "Residential",
           "uncertaintyLevel": "medium",
           "visibleCats": 2,
-          "locationType": "Residential",
-          "movementLevel": "moderate",
           "maxCount": 3,
           "isFeeding": false,
-          "minCount": 1
+          "movementLevel": "moderate",
+          "bestCount": 2
         }
       }
     },
-    "userId": "PK8jv81DM0Tuelb23DcjP5Vre4O2"
+    "id": "1991CB57-5BE6-4E22-9F86-3DDFAE167C3A",
+    "userName": "tammy t",
+    "userId": "PK8jv81DM0Tuelb23DcjP5Vre4O2",
+    "species": "cat",
+    "userEmail": "frdv9vwxhz@privaterelay.appleid.com",
+    "coordinate": {
+      "latitude": 21.394553523812935,
+      "longitude": -157.9334362978164
+    },
+    "details": {
+      "maxCount": 3,
+      "visibleCats": 2,
+      "timeSpent": "quick",
+      "minCount": 1,
+      "bestCount": 2,
+      "isFeeding": false,
+      "notes": "",
+      "uncertaintyLevel": "medium",
+      "movementLevel": "moderate",
+      "locationType": "Residential"
+    },
+    "userLocation": {
+      "latitude": 21.394553523812935,
+      "longitude": -157.9334362978164
+    },
+    "timestamp": {
+      "_timestamp": "2024-11-25T05:14:39.275516+00:00",
+      "_type": "datetime"
+    }
   },
   {
-    "isHidden": false,
     "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6",
-    "timestamp": {
-      "_timestamp": "2024-11-25T04:09:06.821858+00:00",
-      "_type": "datetime"
+    "coordinate": {
+      "latitude": 19.94740376044058,
+      "longitude": -155.79214464312042
     },
-    "species": "cat",
-    "id": "4699C848-4B55-4D7F-94E6-44224BBB76B5",
     "userName": "katie.cartee",
+    "details": {
+      "isFeeding": true,
+      "maxCount": 19,
+      "notes": "Often see them eating cat food and cans left for them here. They also go into the bathrooms and drink off the water fountain ",
+      "uncertaintyLevel": "high",
+      "timeSpent": "moderate",
+      "locationType": "Park",
+      "minCount": 3,
+      "movementLevel": "moderate",
+      "visibleCats": 6,
+      "bestCount": 11
+    },
     "userLocation": {
       "latitude": 19.923492296025707,
       "longitude": -155.7918593384279
     },
-    "details": {
-      "uncertaintyLevel": "high",
-      "notes": "Often see them eating cat food and cans left for them here. They also go into the bathrooms and drink off the water fountain ",
-      "movementLevel": "moderate",
-      "isFeeding": true,
-      "minCount": 3,
-      "locationType": "Park",
-      "visibleCats": 6,
-      "bestCount": 11,
-      "maxCount": 19,
-      "timeSpent": "moderate"
-    },
     "userEmail": "katie.cartee@colorado.edu",
+    "id": "4699C848-4B55-4D7F-94E6-44224BBB76B5",
+    "species": "cat",
     "userId": "irf24FDvHFUhY8a9px758Rdcy763",
-    "coordinate": {
-      "latitude": 19.94740376044058,
-      "longitude": -155.79214464312042
-    }
+    "timestamp": {
+      "_timestamp": "2024-11-25T04:09:06.821858+00:00",
+      "_type": "datetime"
+    },
+    "isHidden": false
   },
   {
+    "isHidden": false,
     "id": "60E98515-EDFC-40B9-BFB8-6A9EE344837A",
-    "userId": "irf24FDvHFUhY8a9px758Rdcy763",
     "userName": "katie.cartee",
     "timestamp": {
       "_timestamp": "2024-11-25T04:04:12.678617+00:00",
       "_type": "datetime"
     },
-    "isHidden": false,
+    "details": {
+      "uncertaintyLevel": "high",
+      "notes": "Black cat. Near cat food. Not observed eating it.\n",
+      "movementLevel": "active",
+      "isFeeding": false,
+      "visibleCats": 1,
+      "locationType": "Park",
+      "bestCount": 3,
+      "maxCount": 5,
+      "timeSpent": "quick",
+      "minCount": 1
+    },
     "species": "cat",
     "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6",
     "userEmail": "katie.cartee@colorado.edu",
-    "coordinate": {
-      "latitude": 19.913479917838554,
-      "longitude": -155.87873986225682
-    },
     "userLocation": {
       "latitude": 19.923492296025707,
       "longitude": -155.7918593384279
     },
-    "details": {
-      "uncertaintyLevel": "high",
-      "movementLevel": "active",
-      "locationType": "Park",
-      "notes": "Black cat. Near cat food. Not observed eating it.\n",
-      "isFeeding": false,
-      "timeSpent": "quick",
-      "bestCount": 3,
-      "minCount": 1,
-      "visibleCats": 1,
-      "maxCount": 5
+    "userId": "irf24FDvHFUhY8a9px758Rdcy763",
+    "coordinate": {
+      "latitude": 19.913479917838554,
+      "longitude": -155.87873986225682
     }
   },
   {
-    "userEmail": "katie.cartee@colorado.edu",
+    "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6",
+    "timestamp": {
+      "_timestamp": "2024-11-25T04:05:46.430603+00:00",
+      "_type": "datetime"
+    },
+    "species": "cat",
     "coordinate": {
       "latitude": 19.92349229602567,
       "longitude": -155.79185933842794
-    },
-    "details": {
-      "timeSpent": "extended",
-      "bestCount": 9,
-      "movementLevel": "active",
-      "notes": "Cats eating out of dumpster",
-      "locationType": "Residential",
-      "uncertaintyLevel": "high",
-      "isFeeding": false,
-      "maxCount": 15,
-      "visibleCats": 5,
-      "minCount": 3
     },
     "userLocation": {
       "latitude": 19.923492296025707,
@@ -166,97 +159,102 @@
     "id": "F036CFAD-9F1B-4D94-BC69-1E02E8F36E35",
     "isHidden": false,
     "userId": "irf24FDvHFUhY8a9px758Rdcy763",
-    "timestamp": {
-      "_timestamp": "2024-11-25T04:05:46.430603+00:00",
-      "_type": "datetime"
-    },
     "userName": "katie.cartee",
-    "species": "cat",
-    "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6"
+    "details": {
+      "maxCount": 15,
+      "locationType": "Residential",
+      "bestCount": 9,
+      "isFeeding": false,
+      "visibleCats": 5,
+      "minCount": 3,
+      "notes": "Cats eating out of dumpster",
+      "timeSpent": "extended",
+      "uncertaintyLevel": "high",
+      "movementLevel": "active"
+    },
+    "userEmail": "katie.cartee@colorado.edu"
   },
   {
-    "userEmail": "v7vhczhhjb@privaterelay.appleid.com",
-    "maxCount": 62,
-    "photos": [],
-    "bestCount": 32,
-    "minCount": 25,
+    "timeSpent": "quick",
     "deviceIdentifier": "C2E060A4-7B73-47F9-9101-C6710FBF99D6",
     "timestamp": {
       "_timestamp": "2024-12-09T02:56:31.834808+00:00",
       "_type": "datetime"
     },
-    "isHidden": false,
-    "uncertaintyLevel": "high",
+    "bestCount": 32,
+    "userName": "jordan1",
+    "userEmail": "v7vhczhhjb@privaterelay.appleid.com",
     "photoUrls": "",
+    "coordinate": {
+      "longitude": -156.4413053714732,
+      "latitude": 20.898526370300974
+    },
     "id": "In4ufGYzITvxCkh3gxTy",
+    "isFeeding": true,
     "userId": "ZXBDqtARoTSnyKIQKE4PbSTxs1j1",
-    "locationType": "beach",
-    "notes": "",
+    "isHidden": false,
+    "minCount": 25,
     "visibleCats": 32,
     "movementLevel": "active",
-    "timeSpent": "quick",
+    "uncertaintyLevel": "high",
     "userLocation": {
       "latitude": 20.898826370601206,
       "longitude": -156.44153729577224
     },
     "details": {
-      "notes": "",
-      "maxCount": 62,
-      "isFeeding": true,
-      "timeSpent": "quick",
-      "uncertaintyLevel": "high",
-      "locationType": "beach",
-      "minCount": 25,
       "bestCount": 32,
+      "locationType": "beach",
+      "maxCount": 62,
+      "timeSpent": "quick",
+      "isFeeding": true,
+      "minCount": 25,
+      "notes": "",
+      "uncertaintyLevel": "high",
       "visibleCats": 32,
       "movementLevel": "active"
     },
-    "isFeeding": true,
+    "photos": [],
+    "maxCount": 62,
+    "notes": "",
     "species": "cat",
-    "coordinate": {
-      "latitude": 20.898526370300974,
-      "longitude": -156.4413053714732
-    },
-    "userName": "jordan1"
+    "locationType": "beach"
   },
   {
-    "coordinate": {
-      "latitude": 19.67038110938625,
-      "longitude": -156.02720609555058
-    },
-    "userName": "katie.cartee",
-    "timestamp": {
-      "_timestamp": "2024-12-03T00:00:47.145000+00:00",
-      "_type": "datetime"
-    },
+    "userEmail": "katie.cartee@colorado.edu",
+    "userId": "irf24FDvHFUhY8a9px758Rdcy763",
     "userLocation": {
       "latitude": 19.670381109386252,
       "longitude": -156.02720609555058
     },
-    "userEmail": "katie.cartee@colorado.edu",
+    "coordinate": {
+      "latitude": 19.67038110938625,
+      "longitude": -156.02720609555058
+    },
+    "timestamp": {
+      "_timestamp": "2024-12-03T00:00:47.145000+00:00",
+      "_type": "datetime"
+    },
     "isHidden": false,
     "details": {
+      "isFeeding": true,
+      "locationType": "beach",
+      "uncertaintyLevel": "low",
       "timeSpent": "quick",
-      "notes": "Varying sizes \nSeen up to 9 at once. Only 2 out today\n",
       "minCount": 2,
       "maxCount": 5,
+      "movementLevel": "moderate",
       "visibleCats": 3,
-      "uncertaintyLevel": "low",
-      "locationType": "beach",
-      "isFeeding": true,
-      "bestCount": 3,
-      "movementLevel": "moderate"
+      "notes": "Varying sizes \nSeen up to 9 at once. Only 2 out today\n",
+      "bestCount": 3
     },
     "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6",
-    "species": "cat",
-    "userId": "irf24FDvHFUhY8a9px758Rdcy763",
     "photos": [
       {
+        "uploadedBy": "irf24FDvHFUhY8a9px758Rdcy763",
+        "url": "https://firebasestorage.googleapis.com:443/v0/b/catmap-e5581.firebasestorage.app/o/sighting_photos%2Fphoto_1733183576_43F85150-F695-4DA4-84B0-73FCBE3CBCF0.jpg?alt=media&token=60974205-a754-46a2-8302-8f957e48d65f",
         "metadata": {
           "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6"
-        },
-        "uploadedBy": "irf24FDvHFUhY8a9px758Rdcy763",
-        "url": "https://firebasestorage.googleapis.com:443/v0/b/catmap-e5581.firebasestorage.app/o/sighting_photos%2Fphoto_1733183576_43F85150-F695-4DA4-84B0-73FCBE3CBCF0.jpg?alt=media&token=60974205-a754-46a2-8302-8f957e48d65f"
+        }
       },
       {
         "uploadedBy": "irf24FDvHFUhY8a9px758Rdcy763",
@@ -266,121 +264,117 @@
         }
       }
     ],
+    "species": "cat",
+    "userName": "katie.cartee",
     "id": "MQYhDh2j7l9jzPhItOys"
   },
   {
-    "userId": "irf24FDvHFUhY8a9px758Rdcy763",
-    "id": "NU7ILAt7LR3qiLMlt76d",
-    "coordinate": {
-      "latitude": 19.927142174001688,
-      "longitude": -155.78862953014283
-    },
-    "editHistory": {
-      "original": {
-        "coordinate": {
-          "latitude": 19.927142174001688,
-          "longitude": -155.78862953014283
-        },
-        "editedBy": "katie.cartee@colorado.edu",
-        "timestamp": {
-          "_timestamp": "2024-12-09T05:18:30.135999+00:00",
-          "_type": "datetime"
-        },
-        "details": {
-          "isFeeding": true,
-          "bestCount": 6,
-          "visibleCats": 6,
-          "uncertaintyLevel": "medium",
-          "locationType": "residential",
-          "notes": "Saw car stop and feed the cats. ",
-          "movementLevel": "active",
-          "minCount": 5,
-          "maxCount": 11,
-          "timeSpent": "moderate"
-        }
-      },
-      "edited": {
-        "editedBy": "katie.cartee@colorado.edu",
-        "timestamp": {
-          "_timestamp": "2024-12-09T05:38:02.893931+00:00",
-          "_type": "datetime"
-        },
-        "details": {
-          "minCount": 5,
-          "maxCount": 11,
-          "isFeeding": true,
-          "notes": "Saw car stop and feed the cats. ",
-          "locationType": "Parking Lot",
-          "timeSpent": "moderate",
-          "bestCount": 6,
-          "visibleCats": 6,
-          "movementLevel": "active",
-          "uncertaintyLevel": "medium"
-        },
-        "coordinate": {
-          "latitude": 19.927142174001688,
-          "longitude": -155.78862953014283
-        }
-      }
-    },
-    "species": "cat",
+    "userEmail": "katie.cartee@colorado.edu",
     "details": {
-      "timeSpent": "moderate",
       "visibleCats": 6,
-      "locationType": "Parking Lot",
-      "bestCount": 6,
-      "movementLevel": "active",
       "uncertaintyLevel": "medium",
-      "minCount": 5,
-      "maxCount": 11,
+      "timeSpent": "moderate",
+      "notes": "Saw car stop and feed the cats. ",
+      "locationType": "Parking Lot",
+      "movementLevel": "active",
       "isFeeding": true,
-      "notes": "Saw car stop and feed the cats. "
+      "bestCount": 6,
+      "maxCount": 11,
+      "minCount": 5
     },
-    "photos": [],
+    "userName": "katie.cartee",
     "timestamp": {
       "_timestamp": "2024-12-09T05:18:30.135999+00:00",
       "_type": "datetime"
     },
+    "coordinate": {
+      "latitude": 19.927142174001688,
+      "longitude": -155.78862953014283
+    },
+    "id": "NU7ILAt7LR3qiLMlt76d",
+    "editHistory": {
+      "edited": {
+        "timestamp": {
+          "_timestamp": "2024-12-09T05:38:02.893931+00:00",
+          "_type": "datetime"
+        },
+        "coordinate": {
+          "latitude": 19.927142174001688,
+          "longitude": -155.78862953014283
+        },
+        "details": {
+          "locationType": "Parking Lot",
+          "minCount": 5,
+          "uncertaintyLevel": "medium",
+          "bestCount": 6,
+          "maxCount": 11,
+          "timeSpent": "moderate",
+          "notes": "Saw car stop and feed the cats. ",
+          "movementLevel": "active",
+          "visibleCats": 6,
+          "isFeeding": true
+        },
+        "editedBy": "katie.cartee@colorado.edu"
+      },
+      "original": {
+        "timestamp": {
+          "_timestamp": "2024-12-09T05:18:30.135999+00:00",
+          "_type": "datetime"
+        },
+        "editedBy": "katie.cartee@colorado.edu",
+        "coordinate": {
+          "latitude": 19.927142174001688,
+          "longitude": -155.78862953014283
+        },
+        "details": {
+          "notes": "Saw car stop and feed the cats. ",
+          "visibleCats": 6,
+          "locationType": "residential",
+          "minCount": 5,
+          "isFeeding": true,
+          "movementLevel": "active",
+          "timeSpent": "moderate",
+          "bestCount": 6,
+          "maxCount": 11,
+          "uncertaintyLevel": "medium"
+        }
+      }
+    },
+    "photos": [],
     "isHidden": false,
     "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6",
-    "userEmail": "katie.cartee@colorado.edu",
-    "userName": "katie.cartee",
     "userLocation": {
       "latitude": 19.927142174001688,
       "longitude": -155.78862953014283
-    }
+    },
+    "userId": "irf24FDvHFUhY8a9px758Rdcy763",
+    "species": "cat"
   },
   {
-    "isFeeding": true,
-    "species": "cat",
-    "visibleCats": 40,
-    "locationType": "residential",
+    "isHidden": false,
     "details": {
-      "timeSpent": "quick",
+      "minCount": 29,
       "bestCount": 40,
-      "movementLevel": "still",
-      "locationType": "residential",
-      "visibleCats": 40,
       "uncertaintyLevel": "high",
-      "isFeeding": true,
-      "notes": "",
+      "locationType": "residential",
+      "movementLevel": "still",
+      "timeSpent": "quick",
       "maxCount": 76,
-      "minCount": 29
+      "visibleCats": 40,
+      "isFeeding": true,
+      "notes": ""
     },
-    "userLocation": {
-      "latitude": 19.91352077937055,
-      "longitude": -155.88190379847362
-    },
-    "notes": "",
-    "coordinate": {
-      "latitude": 19.914042042947322,
-      "longitude": -155.8810820537947
-    },
+    "uncertaintyLevel": "high",
+    "userName": "jordan1",
     "minCount": 29,
-    "movementLevel": "still",
-    "deviceIdentifier": "C2E060A4-7B73-47F9-9101-C6710FBF99D6",
     "bestCount": 40,
+    "movementLevel": "still",
+    "isFeeding": true,
     "userId": "ZXBDqtARoTSnyKIQKE4PbSTxs1j1",
+    "maxCount": 76,
+    "timeSpent": "quick",
+    "locationType": "residential",
+    "userEmail": "v7vhczhhjb@privaterelay.appleid.com",
     "photos": [
       {
         "metadata": {
@@ -390,234 +384,240 @@
         "url": "https://firebasestorage.googleapis.com:443/v0/b/catmap-e5581.firebasestorage.app/o/sighting_photos%2Fphoto_1733779510_11052683-186C-4960-BD53-C57FF24D3A4F.jpg?alt=media&token=789aa213-f857-4b46-8d3b-b737dea187cc"
       }
     ],
-    "uncertaintyLevel": "high",
+    "notes": "",
+    "coordinate": {
+      "latitude": 19.914042042947322,
+      "longitude": -155.8810820537947
+    },
+    "userLocation": {
+      "latitude": 19.91352077937055,
+      "longitude": -155.88190379847362
+    },
+    "species": "cat",
+    "visibleCats": 40,
+    "deviceIdentifier": "C2E060A4-7B73-47F9-9101-C6710FBF99D6",
     "timestamp": {
       "_timestamp": "2024-12-09T21:25:30.597772+00:00",
       "_type": "datetime"
     },
-    "maxCount": 76,
-    "userEmail": "v7vhczhhjb@privaterelay.appleid.com",
-    "isHidden": false,
-    "userName": "jordan1",
-    "timeSpent": "quick",
     "id": "cEmjHVtmqdMNl7zJOmox"
   },
   {
-    "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6",
+    "userId": "irf24FDvHFUhY8a9px758Rdcy763",
+    "userName": "katie.cartee",
+    "userLocation": {
+      "latitude": 19.669656681226893,
+      "longitude": -156.02467142911877
+    },
+    "userEmail": "katie.cartee@colorado.edu",
     "isHidden": false,
+    "photos": [
+      {
+        "uploadedBy": "irf24FDvHFUhY8a9px758Rdcy763",
+        "url": "https://firebasestorage.googleapis.com:443/v0/b/catmap-e5581.firebasestorage.app/o/sighting_photos%2Fphoto_1733183576_43F85150-F695-4DA4-84B0-73FCBE3CBCF0.jpg?alt=media&token=60974205-a754-46a2-8302-8f957e48d65f",
+        "metadata": {
+          "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6"
+        }
+      }
+    ],
+    "species": "cat",
+    "timestamp": {
+      "_timestamp": "2024-12-02T23:54:18.118000+00:00",
+      "_type": "datetime"
+    },
     "details": {
+      "uncertaintyLevel": "low",
+      "isFeeding": true,
+      "bestCount": 2,
+      "locationType": "beach",
       "minCount": 1,
       "movementLevel": "moderate",
-      "timeSpent": "quick",
       "maxCount": 3,
-      "visibleCats": 2,
-      "locationType": "beach",
-      "uncertaintyLevel": "low",
-      "bestCount": 2,
+      "timeSpent": "quick",
       "notes": "Varying sizes \nSeen up to 9 at once. Only 2 out today\n",
-      "isFeeding": true
+      "visibleCats": 2
     },
     "coordinate": {
       "latitude": 19.669997712540518,
       "longitude": -156.02418420530364
     },
-    "timestamp": {
-      "_timestamp": "2024-12-02T23:54:18.118000+00:00",
-      "_type": "datetime"
-    },
-    "userId": "irf24FDvHFUhY8a9px758Rdcy763",
-    "photos": [
-      {
-        "uploadedBy": "irf24FDvHFUhY8a9px758Rdcy763",
-        "metadata": {
-          "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6"
-        },
-        "url": "https://firebasestorage.googleapis.com:443/v0/b/catmap-e5581.firebasestorage.app/o/sighting_photos%2Fphoto_1733183576_43F85150-F695-4DA4-84B0-73FCBE3CBCF0.jpg?alt=media&token=60974205-a754-46a2-8302-8f957e48d65f"
-      }
-    ],
-    "species": "cat",
-    "userEmail": "katie.cartee@colorado.edu",
-    "userLocation": {
-      "latitude": 19.669656681226893,
-      "longitude": -156.02467142911877
-    },
-    "userName": "katie.cartee",
+    "deviceIdentifier": "33CF1B22-4A5F-4BDD-AB63-8E6570E742A6",
     "id": "mchUSbRstWRvcNdYTK1a"
   },
   {
-    "movementLevel": "active",
-    "photos": [],
-    "deviceIdentifier": "C2E060A4-7B73-47F9-9101-C6710FBF99D6",
-    "visibleCats": 18,
     "timestamp": {
       "_timestamp": "2024-12-12T09:02:25.019654+00:00",
       "_type": "datetime"
     },
+    "photos": [],
     "species": "cat",
-    "userEmail": "v7vhczhhjb@privaterelay.appleid.com",
-    "isHidden": false,
-    "userName": "jordan1",
-    "bestCount": 18,
-    "userId": "ZXBDqtARoTSnyKIQKE4PbSTxs1j1",
-    "isFeeding": true,
+    "details": {
+      "locationType": "residential",
+      "maxCount": 33,
+      "timeSpent": "extended",
+      "visibleCats": 18,
+      "notes": "",
+      "minCount": 15,
+      "uncertaintyLevel": "high",
+      "movementLevel": "active",
+      "isFeeding": true,
+      "bestCount": 18
+    },
+    "movementLevel": "active",
+    "maxCount": 33,
     "userLocation": {
       "latitude": 21.405660734467055,
       "longitude": -157.9633615969664
     },
-    "details": {
-      "bestCount": 18,
-      "uncertaintyLevel": "high",
-      "locationType": "residential",
-      "timeSpent": "extended",
-      "minCount": 15,
-      "maxCount": 33,
-      "movementLevel": "active",
-      "isFeeding": true,
-      "visibleCats": 18,
-      "notes": ""
-    },
+    "userEmail": "v7vhczhhjb@privaterelay.appleid.com",
+    "minCount": 15,
+    "userId": "ZXBDqtARoTSnyKIQKE4PbSTxs1j1",
+    "visibleCats": 18,
+    "timeSpent": "extended",
+    "notes": "",
     "uncertaintyLevel": "high",
+    "userName": "jordan1",
+    "bestCount": 18,
+    "isHidden": false,
+    "isFeeding": true,
+    "deviceIdentifier": "C2E060A4-7B73-47F9-9101-C6710FBF99D6",
     "locationType": "residential",
     "coordinate": {
       "latitude": 19.72716199390479,
       "longitude": -155.06735117921738
     },
-    "minCount": 15,
-    "timeSpent": "extended",
-    "notes": "",
-    "maxCount": 33,
     "id": "pvpHhTiHmifQ0RgEQOnw"
   },
   {
-    "userEmail": "mcyz7684rc@privaterelay.appleid.com",
-    "locationType": "residential",
-    "minCount": 1,
-    "uncertaintyLevel": "high",
-    "maxCount": 3,
-    "details": {
-      "minCount": 1,
-      "locationType": "residential",
-      "uncertaintyLevel": "high",
-      "isFeeding": true,
-      "maxCount": 3,
-      "notes": "",
-      "movementLevel": "moderate",
-      "bestCount": 2,
-      "timeSpent": "moderate",
-      "visibleCats": 2
-    },
     "timeSpent": "moderate",
+    "userName": "mcyz7684rc",
+    "locationType": "residential",
+    "isFeeding": true,
+    "isHidden": false,
+    "photos": [],
+    "visibleCats": 2,
+    "details": {
+      "timeSpent": "moderate",
+      "notes": "",
+      "isFeeding": true,
+      "movementLevel": "moderate",
+      "locationType": "residential",
+      "bestCount": 2,
+      "maxCount": 3,
+      "uncertaintyLevel": "high",
+      "visibleCats": 2,
+      "minCount": 1
+    },
     "timestamp": {
       "_timestamp": "2024-12-12T22:16:44.497007+00:00",
       "_type": "datetime"
     },
-    "isHidden": false,
-    "photos": [],
-    "deviceIdentifier": "78F16823-C4DA-42BD-84D8-756E7B33CDA4",
-    "userName": "mcyz7684rc",
-    "userLocation": {
-      "latitude": 37.31328853955389,
-      "longitude": -122.13210079047214
-    },
-    "isFeeding": true,
-    "species": "cat",
+    "userEmail": "mcyz7684rc@privaterelay.appleid.com",
     "notes": "",
-    "movementLevel": "moderate",
+    "minCount": 1,
+    "species": "cat",
     "userId": "Mf0BlKEkP9O9wOLpF3f4FY8bZGg1",
-    "visibleCats": 2,
     "coordinate": {
       "latitude": 37.313288539553895,
       "longitude": -122.13210079047215
     },
     "bestCount": 2,
+    "uncertaintyLevel": "high",
+    "movementLevel": "moderate",
+    "userLocation": {
+      "latitude": 37.31328853955389,
+      "longitude": -122.13210079047214
+    },
+    "maxCount": 3,
+    "deviceIdentifier": "78F16823-C4DA-42BD-84D8-756E7B33CDA4",
     "id": "ay5U8KuVMP7rKJgsLNsj"
   },
   {
+    "details": {
+      "maxCount": 3,
+      "uncertaintyLevel": "medium",
+      "visibleCats": 2,
+      "locationType": "residential",
+      "timeSpent": "quick",
+      "bestCount": 2,
+      "movementLevel": "moderate",
+      "notes": "",
+      "isFeeding": false,
+      "minCount": 1
+    },
+    "locationType": "residential",
+    "isHidden": false,
+    "userName": "mcyz7684rc",
     "visibleCats": 2,
-    "bestCount": 2,
-    "userEmail": "mcyz7684rc@privaterelay.appleid.com",
+    "uncertaintyLevel": "medium",
+    "isFeeding": false,
+    "photos": [],
+    "timeSpent": "quick",
+    "maxCount": 3,
+    "movementLevel": "moderate",
     "timestamp": {
       "_timestamp": "2024-12-12T22:15:53.919864+00:00",
       "_type": "datetime"
     },
-    "userName": "mcyz7684rc",
-    "uncertaintyLevel": "medium",
-    "locationType": "residential",
+    "deviceIdentifier": "78F16823-C4DA-42BD-84D8-756E7B33CDA4",
+    "bestCount": 2,
+    "userEmail": "mcyz7684rc@privaterelay.appleid.com",
+    "notes": "",
+    "coordinate": {
+      "latitude": 37.313288539553895,
+      "longitude": -122.13210079047215
+    },
+    "userId": "Mf0BlKEkP9O9wOLpF3f4FY8bZGg1",
     "species": "cat",
     "userLocation": {
       "latitude": 37.31328853955389,
       "longitude": -122.13210079047214
     },
-    "movementLevel": "moderate",
-    "notes": "",
-    "deviceIdentifier": "78F16823-C4DA-42BD-84D8-756E7B33CDA4",
-    "photos": [],
-    "userId": "Mf0BlKEkP9O9wOLpF3f4FY8bZGg1",
     "minCount": 1,
-    "details": {
-      "timeSpent": "quick",
-      "minCount": 1,
-      "isFeeding": false,
-      "notes": "",
-      "visibleCats": 2,
-      "locationType": "residential",
-      "movementLevel": "moderate",
-      "bestCount": 2,
-      "uncertaintyLevel": "medium",
-      "maxCount": 3
-    },
-    "isFeeding": false,
-    "maxCount": 3,
-    "timeSpent": "quick",
-    "isHidden": false,
-    "coordinate": {
-      "latitude": 37.313288539553895,
-      "longitude": -122.13210079047215
-    },
     "id": "sGivj9X6eUQDSE7bHwcR"
   },
   {
-    "isHidden": false,
+    "isFeeding": false,
+    "notes": "",
+    "species": "cat",
+    "userEmail": "v7vhczhhjb@privaterelay.appleid.com",
+    "uncertaintyLevel": "high",
+    "visibleCats": 20,
     "userLocation": {
       "latitude": 21.279016451802743,
       "longitude": -157.81343967286787
     },
-    "photos": [],
-    "uncertaintyLevel": "high",
-    "userId": "ZXBDqtARoTSnyKIQKE4PbSTxs1j1",
-    "movementLevel": "moderate",
-    "timeSpent": "quick",
-    "deviceIdentifier": "C2E060A4-7B73-47F9-9101-C6710FBF99D6",
-    "notes": "",
-    "userName": "jordan1",
-    "locationType": "park",
-    "details": {
-      "uncertaintyLevel": "high",
-      "movementLevel": "moderate",
-      "minCount": 17,
-      "visibleCats": 20,
-      "isFeeding": false,
-      "notes": "",
-      "bestCount": 20,
-      "timeSpent": "quick",
-      "locationType": "park",
-      "maxCount": 36
-    },
-    "species": "cat",
-    "visibleCats": 20,
-    "maxCount": 36,
     "bestCount": 20,
-    "isFeeding": false,
-    "userEmail": "v7vhczhhjb@privaterelay.appleid.com",
+    "details": {
+      "isFeeding": false,
+      "locationType": "park",
+      "maxCount": 36,
+      "timeSpent": "quick",
+      "bestCount": 20,
+      "uncertaintyLevel": "high",
+      "minCount": 17,
+      "movementLevel": "moderate",
+      "notes": "",
+      "visibleCats": 20
+    },
+    "userId": "ZXBDqtARoTSnyKIQKE4PbSTxs1j1",
+    "photos": [],
+    "minCount": 17,
+    "isHidden": false,
+    "maxCount": 36,
     "coordinate": {
       "latitude": 21.278800138953624,
       "longitude": -157.81441962391088
     },
-    "minCount": 17,
+    "timeSpent": "quick",
+    "userName": "jordan1",
     "timestamp": {
       "_timestamp": "2024-12-13T18:29:14.573843+00:00",
       "_type": "datetime"
     },
+    "movementLevel": "moderate",
+    "locationType": "park",
+    "deviceIdentifier": "C2E060A4-7B73-47F9-9101-C6710FBF99D6",
     "id": "wLn88M6vGI2E1jtsYGSc"
   }
 ]

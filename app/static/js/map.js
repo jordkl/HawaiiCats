@@ -5,6 +5,7 @@ let sightingMarkers = [];
 let selectedMarker = null;
 let cachedColonies = [];
 let cachedSightings = [];
+let isAddingColony = false;  // Initialize isAddingColony
 let colonyIcon = L.icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
@@ -39,10 +40,37 @@ function debounce(func, wait) {
 async function initMap() {
     try {
         // Initialize the map
-        map = L.map('map').setView([21.3099, -157.8581], 11);
+        map = L.map('map', {
+            dragging: true,
+            touchZoom: true,
+            scrollWheelZoom: true,
+            doubleClickZoom: true
+        }).setView([21.3099, -157.8581], 11);
+        
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
         }).addTo(map);
+
+        // Set up map click handler for colony placement
+        map.on('click', function(e) {
+            // Only show modal if we're in colony placement mode
+            if (!isAddingColony) {
+                return;
+            }
+            
+            const lat = e.latlng.lat.toFixed(6);
+            const lng = e.latlng.lng.toFixed(6);
+            
+            // Fill in the form with the coordinates
+            document.getElementById('colonyLat').value = lat;
+            document.getElementById('colonyLng').value = lng;
+            
+            // Show the modal
+            document.getElementById('addColonyModal').classList.remove('hidden');
+            
+            // Exit colony placement mode
+            exitAddColonyMode();
+        });
 
         // Load initial data
         await Promise.all([
@@ -56,10 +84,194 @@ async function initMap() {
 
         // Initial update of visible items
         updateVisibleItems();
+        
+        // Set up add colony button
+        setupAddColonyButton();
     } catch (error) {
         console.error('Error initializing map:', error);
         showNotification('Failed to initialize map', 'error');
     }
+}
+
+// Set up add colony button and form handlers
+function setupAddColonyButton() {
+    const addColonyBtn = document.getElementById('addColonyBtn');
+    const addColonyModal = document.getElementById('addColonyModal');
+    const closeModalBtn = document.getElementById('closeAddColonyModal');
+    const cancelBtn = document.getElementById('cancelAddColony');
+    const addColonyForm = document.getElementById('addColonyForm');
+    
+    console.log('Setting up add colony button...'); // Debug log
+    
+    // Add colony button click handler
+    addColonyBtn.addEventListener('click', (e) => {
+        e.preventDefault();  // Prevent any default button behavior
+        e.stopPropagation(); // Prevent event bubbling
+        console.log('Add colony button clicked, current isAddingColony:', isAddingColony); // Debug log
+        
+        if (isAddingColony) {
+            console.log('Exiting add colony mode...'); // Debug log
+            exitAddColonyMode();
+        } else {
+            console.log('Entering add colony mode...'); // Debug log
+            enterAddColonyMode();
+        }
+    });
+    
+    // Close modal handlers
+    [closeModalBtn, cancelBtn].forEach(btn => {
+        if (btn) {  // Check if button exists
+            btn.addEventListener('click', () => {
+                addColonyModal.classList.add('hidden');
+                exitAddColonyMode();
+                addColonyForm.reset(); // Reset form when closing
+            });
+        }
+    });
+
+    // Form submission handler
+    addColonyForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        try {
+            console.log('Checking Firebase initialization...');
+            if (!window.auth) {
+                throw new Error('Firebase Auth not initialized');
+            }
+
+            console.log('Waiting for auth state...');
+            // Wait for Firebase Auth to initialize
+            await new Promise((resolve, reject) => {
+                const unsubscribe = window.auth.onAuthStateChanged(user => {
+                    unsubscribe();
+                    console.log('Auth state changed, user:', user);
+                    resolve();
+                }, error => {
+                    console.error('Auth state change error:', error);
+                    reject(error);
+                });
+            });
+
+            console.log('Checking current user...');
+            // Get current user's email
+            const currentUser = window.auth.currentUser;
+            if (!currentUser) {
+                console.log('No user logged in');
+                showNotification('You must be logged in to add a colony', 'error');
+                return;
+            }
+            console.log('Current user:', currentUser.email);
+
+            const formData = {
+                name: document.getElementById('colonyName').value,
+                latitude: parseFloat(document.getElementById('colonyLat').value),
+                longitude: parseFloat(document.getElementById('colonyLng').value),
+                currentSize: parseInt(document.getElementById('colonySize').value),
+                sterilizedCount: parseInt(document.getElementById('sterilizedCount').value),
+                monthlySterilizationRate: parseFloat(document.getElementById('monthlyRate').value) || 0,
+                breedingRate: parseFloat(document.getElementById('breedingRate').value) || 0.7,
+                kittensPerLitter: parseInt(document.getElementById('kittensPerLitter').value) || 4,
+                littersPerYear: parseInt(document.getElementById('littersPerYear').value) || 2,
+                adultSurvivalRate: parseFloat(document.getElementById('adultSurvivalRate').value) || 0.7,
+                kittenSurvivalRate: parseFloat(document.getElementById('kittenSurvivalRate').value) || 0.6,
+                territorySize: parseInt(document.getElementById('territorySize').value) || 2500,
+                baseFoodCapacity: parseFloat(document.getElementById('baseFoodCapacity').value) || 0.9,
+                foodScalingFactor: parseFloat(document.getElementById('foodScalingFactor').value) || 0.8,
+                feedingConsistency: parseFloat(document.getElementById('feedingConsistency').value) || 0.8,
+                waterAvailability: parseFloat(document.getElementById('waterAvailability').value) || 0.7,
+                shelterQuality: parseFloat(document.getElementById('shelterQuality').value) || 0.7,
+                diseaseRisk: parseFloat(document.getElementById('diseaseRisk').value) || 0.1,
+                naturalRisk: parseFloat(document.getElementById('naturalRisk').value) || 0.1,
+                urbanRisk: parseFloat(document.getElementById('urbanRisk').value) || 0.1,
+                densityMortalityFactor: parseFloat(document.getElementById('densityMortalityFactor').value) || 0.5,
+                survivalDensityFactor: parseFloat(document.getElementById('survivalDensityFactor').value) || 0.3,
+                mortalityThreshold: parseInt(document.getElementById('mortalityThreshold').value) || 30,
+                peakBreedingMonth: parseInt(document.getElementById('peakBreedingMonth').value) || 1,
+                seasonalBreedingAmplitude: parseFloat(document.getElementById('seasonalBreedingAmplitude').value) || 0.3,
+                caretakerSupport: parseFloat(document.getElementById('caretakerSupport').value) || 1,
+                notes: document.getElementById('colonyNotes').value || '',
+                status: 'active',
+                timestamp: new Date().toISOString(),
+                createdBy: currentUser.email
+            };
+            
+            try {
+                const response = await fetch('/api/colonies', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to add colony');
+                }
+                
+                // Add the new colony to the cache and update the map
+                const newColony = await response.json();
+                cachedColonies.push(newColony);
+                updateVisibleItems();
+                
+                // Hide the modal and show success message
+                addColonyModal.classList.add('hidden');
+                showNotification('Colony added successfully', 'success');
+                exitAddColonyMode();
+                
+                // Clear the form
+                addColonyForm.reset();
+            } catch (error) {
+                console.error('Error adding colony:', error);
+                showNotification('Failed to add colony', 'error');
+            }
+        } catch (error) {
+            console.error('Error adding colony:', error);
+            showNotification('Failed to add colony', 'error');
+        }
+    });
+}
+
+// Enter colony placement mode
+function enterAddColonyMode() {
+    console.log('Entering add colony mode...'); // Debug log
+    isAddingColony = true;
+    console.log('isAddingColony set to:', isAddingColony); // Debug log
+    
+    // Get all map elements
+    const mapContainer = map.getContainer();
+    
+    // Set cursor style using Leaflet's built-in classes
+    L.DomUtil.removeClass(mapContainer, 'leaflet-grab');
+    L.DomUtil.addClass(mapContainer, 'leaflet-crosshair');
+    
+    // Also set explicit cursor style
+    mapContainer.style.cursor = 'crosshair';
+    
+    // Update button state and show notification
+    document.getElementById('addColonyBtn').classList.add('bg-gray-500');
+    showNotification('Click on the map to place the colony', 'info');
+    
+    // Hide modal
+    const modal = document.getElementById('addColonyModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+// Exit colony placement mode
+function exitAddColonyMode() {
+    console.log('Exiting add colony mode...'); // Debug log
+    isAddingColony = false;
+    
+    // Reset cursor style using Leaflet's built-in classes
+    const mapContainer = map.getContainer();
+    L.DomUtil.addClass(mapContainer, 'leaflet-grab');
+    L.DomUtil.removeClass(mapContainer, 'leaflet-crosshair');
+    
+    // Reset explicit cursor style
+    mapContainer.style.cursor = '';
+    
+    document.getElementById('addColonyBtn').classList.remove('bg-gray-500');
 }
 
 // Load colonies data
@@ -330,6 +542,17 @@ function formatSightingTitle(sighting) {
 function showNotification(message, type = 'info') {
     // Implement notification display
     console.log(`${type.toUpperCase()}: ${message}`);
+}
+
+// Show colony list view
+function showColonyList() {
+    const colonyList = document.getElementById('colonyList');
+    const colonyDetails = document.getElementById('colonyDetails');
+    
+    if (colonyList && colonyDetails) {
+        colonyList.classList.remove('hidden');
+        colonyDetails.classList.add('hidden');
+    }
 }
 
 // Initialize map when document is ready
