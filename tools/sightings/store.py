@@ -156,9 +156,7 @@ class CatSightingsStore:
             # Normalize location data and remove user information
             for sighting in sightings:
                 # Safely normalize location with coordinate taking priority
-                location = None
-                if sighting.get('coordinate'):
-                    location = sighting['coordinate']
+                location = sighting.get('coordinate')
                 
                 if location:
                     # Try different possible location property names
@@ -166,14 +164,26 @@ class CatSightingsStore:
                     lng = location.get('_longitude') or location.get('longitude') or location.get('lng')
                     
                     if lat is not None and lng is not None:
-                        sighting['coordinate'] = {
-                            'latitude': float(lat),
-                            'longitude': float(lng)
-                        }
+                        # Ensure coordinates are floats and in the standard format
+                        try:
+                            lat = float(lat)
+                            lng = float(lng)
+                            if -90 <= lat <= 90 and -180 <= lng <= 180:
+                                sighting['coordinate'] = {
+                                    'latitude': lat,
+                                    'longitude': lng
+                                }
+                            else:
+                                print(f"Invalid coordinate values for sighting {sighting.get('id')}: lat={lat}, lng={lng}")
+                                sighting['coordinate'] = None
+                        except (ValueError, TypeError):
+                            print(f"Error converting coordinates for sighting {sighting.get('id')}: lat={lat}, lng={lng}")
+                            sighting['coordinate'] = None
                     else:
-                        # If no valid coordinates found, set coordinate to None
+                        print(f"Missing lat/lng values for sighting {sighting.get('id')}")
                         sighting['coordinate'] = None
                 else:
+                    print(f"No coordinate data found for sighting {sighting.get('id')}")
                     sighting['coordinate'] = None
                 
                 # Normalize timestamp

@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Hawaii Cats{% endblock %}
+
+{% block head %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- Custom CSS -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div class="flex h-screen">
+    <!-- Left sidebar with tabs -->
+    <div class="w-96 bg-white shadow-lg overflow-hidden flex flex-col">
+        <div class="px-4 py-5 border-b">
+            <h2 class="text-lg font-medium" id="sidebarTitle">Hawaii Cats Dashboard</h2>
+        </div>
+        
+        <!-- Tab buttons -->
+        <div class="flex border-b">
+            <button class="tab flex-1 py-2 px-4 text-center bg-blue-500 text-white hover:bg-blue-600 focus:outline-none" 
+                    id="coloniesTab" 
+                    data-view="colonies">
+                Colonies
+            </button>
+            <button class="tab flex-1 py-2 px-4 text-center bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none" 
+                    id="sightingsTab" 
+                    data-view="sightings">
+                Sightings
+            </button>
+        </div>
+
+        <!-- Tab content -->
+        <div class="flex-1 overflow-auto">
+            <!-- Colonies tab -->
+            <div id="coloniesContent" class="content p-4" data-view="colonies">
+                <!-- Colony list view -->
+                <div id="colonyList" class="space-y-2">
+                    <div id="colonyListContainer" class="space-y-2">
+                        <!-- Colony list items will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Colony detail view -->
+                <div id="colonyDetails" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium" id="colonyDetailName"></h3>
+                        <div class="flex gap-2">
+                            <button onclick="toggleColonyEdit()" class="text-blue-500 hover:text-blue-700">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button onclick="showColonyList()" class="text-blue-500 hover:text-blue-700">
+                                <i class="fas fa-arrow-left"></i> Back to List
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- View Mode -->
+                    <div id="colonyViewMode" class="space-y-4">
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h2 class="text-xl font-semibold mb-4" id="colonyDetailName"></h2>
+                            <div class="space-y-2">
+                                <p><span class="font-medium">Population:</span> <span id="colonyDetailPopulation"></span></p>
+                                <p><span class="font-medium">Location:</span> <span id="colonyDetailLocation"></span></p>
+                                <p><span class="font-medium">Created:</span> <span id="colonyDetailCreatedAt"></span></p>
+                                <p><span class="font-medium">Last Updated:</span> <span id="colonyDetailUpdatedAt"></span></p>
+                                <div class="mt-4">
+                                    <p class="font-medium">Notes:</p>
+                                    <p id="colonyDetailNotes" class="mt-1 text-gray-600"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Edit Mode -->
+                    <div id="colonyEditMode" class="hidden space-y-6">
+                        <form id="colonyEditForm" class="space-y-6">
+                            <input type="hidden" id="editColonyId">
+                            
+                            <!-- Basic Information -->
+                            <div class="mb-4">
+                                <h3 class="text-lg font-semibold mb-2">Basic Information</h3>
+                                <div class="grid grid-cols-1 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Colony Name</label>
+                                        <input type="text" id="editColonyName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Current Population</label>
+                                        <input type="number" id="editColonyPopulation" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Sterilized Count</label>
+                                        <input type="number" id="editColonySterilized" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Monthly Sterilization Rate</label>
+                                        <input type="number" id="editColonyMonthlyRate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Notes Section -->
+                            <div class="mb-4 w-full">
+                                <h3 class="text-lg font-semibold mb-2">Notes</h3>
+                                <div class="w-full">
+                                    <textarea id="editColonyNotes" rows="4" class="w-full p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Add notes about the colony..."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Environmental Factors -->
+                            <div class="mb-4">
+                                <h3 class="text-lg font-semibold mb-2">Environmental Factors</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Water Availability (0-1)</label>
+                                        <input type="number" id="editWaterAvailability" step="0.1" min="0" max="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Shelter Quality (0-1)</label>
+                                        <input type="number" id="editShelterQuality" step="0.1" min="0" max="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Territory Size (sq m)</label>
+                                        <input type="number" id="editTerritorySize" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Breeding Parameters -->
+                            <div class="mb-4">
+                                <h3 class="text-lg font-semibold mb-2">Breeding Parameters</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Breeding Rate (0-1)</label>
+                                        <input type="number" id="editBreedingRate" step="0.1" min="0" max="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Kittens per Litter</label>
+                                        <input type="number" id="editKittensPerLitter" step="0.1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Litters per Year</label>
+                                        <input type="number" id="editLittersPerYear" step="0.1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Kitten Survival Rate (0-1)</label>
+                                        <input type="number" id="editKittenSurvival" step="0.1" min="0" max="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Adult Survival Rate (0-1)</label>
+                                        <input type="number" id="editAdultSurvival" step="0.1" min="0" max="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Risk Factors -->
+                            <div class="mb-4">
+                                <h3 class="text-lg font-semibold mb-2">Risk Factors</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Urban Risk (0-1)</label>
+                                        <input type="number" id="editUrbanRisk" step="0.1" min="0" max="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Disease Risk (0-1)</label>
+                                        <input type="number" id="editDiseaseRisk" step="0.1" min="0" max="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Support Factors -->
+                            <div class="mb-4">
+                                <h3 class="text-lg font-semibold mb-2">Support Factors</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Caretaker Support (0-1)</label>
+                                        <input type="number" id="editCaretakerSupport" step="0.1" min="0" max="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Feeding Consistency (0-1)</label>
+                                        <input type="number" id="editFeedingConsistency" step="0.1" min="0" max="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Form Buttons -->
+                            <div class="flex justify-end space-x-3">
+                                <button type="button" onclick="toggleColonyEdit()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+                                    Cancel
+                                </button>
+                                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sightings tab -->
+            <div id="sightingsContent" class="content p-4 hidden" data-view="sightings">
+                <!-- Sighting list view -->
+                <div id="sightingList" class="space-y-2">
+                    <div id="sightingListContainer" class="space-y-2">
+                        <!-- Sighting list items will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Sighting detail view -->
+                <div id="sightingDetails" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium">Sighting Details</h3>
+                        <button onclick="showSightingList()" class="text-blue-500 hover:text-blue-700">
+                            <i class="fas fa-arrow-left"></i> Back to List
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-sm text-gray-500">Cats Seen</label>
+                                    <p id="sightingDetailCount" class="font-medium"></p>
+                                </div>
+                                <div>
+                                    <label class="text-sm text-gray-500">Location Type</label>
+                                    <p id="sightingDetailType" class="font-medium"></p>
+                                </div>
+                                <div>
+                                    <label class="text-sm text-gray-500">Date</label>
+                                    <p id="sightingDetailDate" class="font-medium"></p>
+                                </div>
+                                <div>
+                                    <label class="text-sm text-gray-500">Feeding Site</label>
+                                    <p id="sightingDetailFeeding" class="font-medium"></p>
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-sm text-gray-500">Location</label>
+                                    <p id="sightingDetailLocation" class="font-medium"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map container -->
+    <div class="flex-1">
+        <div id="map" class="h-full w-full relative"></div>
+    </div>
+</div>
+
+<div id="notification" class="notification"></div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Leaflet JavaScript -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Custom JavaScript -->
+<script src="{{ url_for('static', filename='js/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script src="{{ url_for('static', filename='js/colony.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+{% endblock %}
