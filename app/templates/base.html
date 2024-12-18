@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-gray-50">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +8,7 @@
     <!-- Tailwind UI -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="{{ url_for('static', filename='css/tailwind.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/dark-theme.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="//rsms.me/inter/inter.css">
     
     <!-- Plotly -->
@@ -15,15 +16,17 @@
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script type="module" src="{{ url_for('static', filename='js/auth.js') }}"></script>
     <script>
         // Initialize Firebase
         const firebaseConfig = {
-            apiKey: "{{ config.get('FIREBASE_API_KEY', '') }}",
-            projectId: "{{ config.get('FIREBASE_PROJECT_ID', '') }}",
-            authDomain: "{{ config.get('FIREBASE_AUTH_DOMAIN', '') }}",
-            storageBucket: "{{ config.get('FIREBASE_STORAGE_BUCKET', '') }}",
-            messagingSenderId: "{{ config.get('FIREBASE_MESSAGING_SENDER_ID', '') }}"
+            apiKey: "{{ config['FIREBASE_API_KEY'] }}",
+            projectId: "{{ config['FIREBASE_PROJECT_ID'] }}",
+            authDomain: "{{ config['FIREBASE_AUTH_DOMAIN'] }}",
+            storageBucket: "{{ config['FIREBASE_STORAGE_BUCKET'] }}",
+            messagingSenderId: "{{ config['FIREBASE_MESSAGING_SENDER_ID'] }}"
         };
         
         console.log('Firebase Config:', {
@@ -32,8 +35,24 @@
         });
         
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        try {
+            if (typeof firebase !== 'undefined') {
+                if (!firebase.apps.length) {
+                    console.log('Initializing Firebase app...');
+                    const app = firebase.initializeApp(firebaseConfig);
+                    console.log('Firebase app initialized:', app);
+                } else {
+                    console.log('Firebase app already initialized');
+                }
+                window.auth = firebase.auth();
+                window.db = firebase.firestore();
+                console.log('Firebase auth and db initialized');
+            } else {
+                console.error('Firebase SDK not loaded');
+            }
+        } catch (error) {
+            console.error('Error initializing Firebase:', error);
+        }
         
         tailwind.config = {
             theme: {
@@ -58,24 +77,33 @@
     
     {% block head %}{% endblock %}
 </head>
-<body class="h-full">
+<body class="h-full bg-gray-50 dark:bg-gray-900">
     <div class="min-h-full">
         <!-- Navigation -->
-        <nav class="bg-white shadow">
+        <nav class="bg-white dark:bg-gray-800 shadow">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex">
                         <div class="flex-shrink-0 flex items-center">
-                            <img class="h-8 w-auto" src="{{ url_for('static', filename='images/logo.png') }}" alt="Hawaii Cats">
+                            <img class="h-8 w-auto" src="{{ url_for('static', filename='img/logo.png') }}" alt="Hawaii Cats">
                         </div>
                         <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                            <a href="{{ url_for('simulation.home') }}" class="inline-flex items-center border-b-2 {% if request.endpoint == 'simulation.home' %}border-hawaii-blue text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} px-1 pt-1 text-sm font-medium">Home</a>
-                            <a href="{{ url_for('simulation.calculator') }}" class="inline-flex items-center border-b-2 {% if request.endpoint == 'simulation.calculator' %}border-hawaii-blue text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} px-1 pt-1 text-sm font-medium">Calculator</a>
-                            <a href="{{ url_for('sightings.catmap') }}" class="inline-flex items-center border-b-2 {% if request.endpoint == 'sightings.catmap' %}border-hawaii-blue text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} px-1 pt-1 text-sm font-medium">Cat Map</a>
+                            <a href="{{ url_for('main.index') }}" class="inline-flex items-center border-b-2 {% if request.endpoint == 'main.index' %}border-hawaii-blue text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} px-1 pt-1 text-sm font-medium">Home</a>
+                            <a href="{{ url_for('main.calculator') }}" class="inline-flex items-center border-b-2 {% if request.endpoint == 'main.calculator' %}border-hawaii-blue text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} px-1 pt-1 text-sm font-medium">Calculator</a>
+                            <a href="{{ url_for('main.catmap') }}" class="inline-flex items-center border-b-2 {% if request.endpoint == 'main.catmap' %}border-hawaii-blue text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} px-1 pt-1 text-sm font-medium">Cat Map</a>
+                            {% if session.user_id %}
+                            <a href="{{ url_for('auth.dashboard') }}" class="inline-flex items-center border-b-2 {% if request.endpoint == 'auth.dashboard' %}border-hawaii-blue text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} px-1 pt-1 text-sm font-medium">Dashboard</a>
+                            {% endif %}
                         </div>
                     </div>
-                    <div class="flex items-center">
+                    <div class="flex items-center space-x-4">
                         <span class="text-sm text-gray-500 font-medium">v2.4.0-beta</span>
+                        <a href="{{ url_for('auth.login') }}" id="login-button" class="hidden text-sm font-medium text-hawaii-blue hover:text-blue-700">
+                            Sign In
+                        </a>
+                        <button id="logout-button" class="hidden text-sm font-medium text-gray-500 hover:text-gray-700">
+                            Sign Out
+                        </button>
                     </div>
                 </div>
             </div>
@@ -90,6 +118,13 @@
             </main>
         </div>
     </div>
+    
+    <script type="module">
+        import { initAuthStateObserver } from '/static/js/auth.js';
+        document.addEventListener('DOMContentLoaded', function() {
+            initAuthStateObserver();
+        });
+    </script>
     
     {% block scripts %}{% endblock %}
 </body>

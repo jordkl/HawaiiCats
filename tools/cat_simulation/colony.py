@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import List, Optional, Dict
 import json
 import os
+from firebase_admin import firestore
 from .config import DEFAULT_PARAMS
 
 @dataclass
@@ -25,16 +26,39 @@ class Colony:
     timestamp: datetime
     id: Optional[str] = None
     
-    # Colony characteristics
-    territory_size: Optional[float] = None
-    caretaker_support: Optional[float] = None
-    feeding_consistency: Optional[float] = None
+    # Basic colony information
+    current_size: Optional[int] = None
+    sterilized_count: Optional[int] = None
     
     # Environmental factors
-    urban_risk: Optional[float] = None
-    shelter_quality: Optional[float] = None
-    food_availability: Optional[float] = None
     water_availability: Optional[float] = None
+    shelter_quality: Optional[float] = None
+    territory_size: Optional[float] = None
+    
+    # Caretaker support
+    caretaker_support: Optional[float] = None
+    feeding_consistency: Optional[float] = None
+    base_food_capacity: Optional[float] = None
+    food_scaling_factor: Optional[float] = None
+    
+    # Breeding parameters
+    breeding_rate: Optional[float] = None
+    kittens_per_litter: Optional[int] = None
+    litters_per_year: Optional[int] = None
+    seasonal_breeding_amplitude: Optional[float] = None
+    peak_breeding_month: Optional[int] = None
+    
+    # Survival and mortality
+    kitten_survival_rate: Optional[float] = None
+    adult_survival_rate: Optional[float] = None
+    density_mortality_factor: Optional[float] = None
+    mortality_threshold: Optional[int] = None
+    survival_density_factor: Optional[float] = None
+    
+    # Risk factors
+    urban_risk: Optional[float] = None
+    disease_risk: Optional[float] = None
+    natural_risk: Optional[float] = None
     
     # Population metrics
     total_cats: Optional[int] = None
@@ -165,72 +189,79 @@ class Colony:
         return params
 
 class ColonyManager:
-    def __init__(self, data_file):
-        self.data_file = data_file
-        self._ensure_data_file()
-        
-    def _ensure_data_file(self):
-        """Create the data file if it doesn't exist"""
-        if not os.path.exists(self.data_file):
-            os.makedirs(os.path.dirname(self.data_file), exist_ok=True)
-            self._save_colonies([])
-    
-    def _load_colonies(self) -> List[Colony]:
-        """Load colonies from the JSON file"""
-        try:
-            with open(self.data_file, 'r') as f:
-                data = json.load(f)
-                return [Colony.from_dict(colony_data) for colony_data in data]
-        except (json.JSONDecodeError, FileNotFoundError):
-            return []
+    def __init__(self):
+        self.db = firestore.client()
+        self.colonies_ref = self.db.collection('colonies')
 
-    def _save_colonies(self, colonies: List[Colony]):
-        """Save colonies to the JSON file"""
-        data = [colony.to_dict() for colony in colonies]
-        with open(self.data_file, 'w') as f:
-            json.dump(data, f, indent=2)
+    def update_colony(self, colony_id: str, data: dict):
+        """Update a colony in both Firestore and cache."""
+        try:
+            # Get the colony reference
+            colony_ref = self.colonies_ref.document(colony_id)
+            colony_doc = colony_ref.get()
+            
+            if not colony_doc.exists:
+                return None
+                
+            # Update in Firestore
+            colony_ref.update(data)
+            
+            # Get the updated document
+            updated_doc = colony_ref.get()
+            return updated_doc
+            
+        except Exception as e:
+            print(f"Error updating colony {colony_id}: {str(e)}")
+            raise e
+
+    def get_colony(self, colony_id: str):
+        """Get a colony by ID from Firestore."""
+        try:
+            colony_ref = self.colonies_ref.document(colony_id)
+            colony_doc = colony_ref.get()
+            
+            if not colony_doc.exists:
+                return None
+                
+            return colony_doc
+            
+        except Exception as e:
+            print(f"Error getting colony {colony_id}: {str(e)}")
+            return None
+
+    def get_colonies(self):
+        """Get all colonies from Firestore."""
+        try:
+            colonies = []
+            for doc in self.colonies_ref.stream():
+                colony_data = doc.to_dict()
+                colony_data['id'] = doc.id
+                colonies.append(colony_data)
+            return colonies
+        except Exception as e:
+            print(f"Error getting colonies: {str(e)}")
+            return []
 
     def add_colony(self, colony: Colony) -> Colony:
         """Add a new colony"""
-        colonies = self._load_colonies()
-        
-        # Generate a simple ID if none exists
-        if not colony.id:
-            colony.id = str(len(colonies) + 1)
-        
-        colonies.append(colony)
-        self._save_colonies(colonies)
-        return colony
-
-    def get_colonies(self) -> List[Colony]:
-        """Get all colonies"""
-        return self._load_colonies()
-
-    def get_colony(self, colony_id: str) -> Optional[Colony]:
-        """Get a specific colony by ID"""
-        colonies = self._load_colonies()
-        for colony in colonies:
-            if colony.id == colony_id:
-                return colony
-        return None
-
-    def update_colony(self, colony_id: str, updated_colony: Colony) -> Optional[Colony]:
-        """Update an existing colony"""
-        colonies = self._load_colonies()
-        for i, colony in enumerate(colonies):
-            if colony.id == colony_id:
-                updated_colony.id = colony_id
-                colonies[i] = updated_colony
-                self._save_colonies(colonies)
-                return updated_colony
-        return None
+        try:
+            # Generate a simple ID if none exists
+            if not colony.id:
+                colony.id = str(len(self.get_colonies()) + 1)
+            
+            # Add to Firestore
+            self.colonies_ref.document(colony.id).set(colony.to_dict())
+            return colony
+        except Exception as e:
+            print(f"Error adding colony: {str(e)}")
+            raise e
 
     def delete_colony(self, colony_id: str) -> bool:
         """Delete a colony"""
-        colonies = self._load_colonies()
-        initial_length = len(colonies)
-        colonies = [c for c in colonies if c.id != colony_id]
-        if len(colonies) < initial_length:
-            self._save_colonies(colonies)
+        try:
+            # Delete from Firestore
+            self.colonies_ref.document(colony_id).delete()
             return True
-        return False
+        except Exception as e:
+            print(f"Error deleting colony {colony_id}: {str(e)}")
+            return False

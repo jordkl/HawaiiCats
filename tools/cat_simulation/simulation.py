@@ -18,7 +18,7 @@ from .utils.simulation_utils import (
     calculate_resource_availability,
     calculate_monthly_mortality
 )
-from .constants import DEFAULT_PARAMS, MIN_BREEDING_AGE, MAX_BREEDING_AGE, GESTATION_MONTHS
+from .constants import DEFAULT_PARAMS, MIN_BREEDING_AGE, MAX_BREEDING_AGE, GESTATION_MONTHS, TERRITORY_SIZE_RANGES, DENSITY_THRESHOLD_RANGES
 
 logger = logging.getLogger('debug')
 
@@ -108,6 +108,9 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
         from .models import initialize_colony_with_ages
         colony, initial_pregnant = initialize_colony_with_ages(current_size, sterilized_count, params)
         
+        # Add sterilized_kittens list to colony structure
+        colony['sterilized_kittens'] = []
+        
         # Track total costs and deaths
         total_cost = 0.0
         cumulative_deaths = {
@@ -140,6 +143,10 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
                 sum(int(float(count)) for count, _ in colony['sterilized'])
             )
             
+            # Calculate total sterilized population for tracking
+            current_sterilized = sum(int(float(count)) for count, _ in colony['sterilized'])
+            monthly_sterilized.append(current_sterilized)
+            
             # Calculate environmental factors
             from .utils.simulation_utils import (
                 calculate_seasonal_factor,
@@ -169,7 +176,7 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
             )
             
             # Track density for monitoring
-            monthly_densities.append(current_population / carrying_capacity)
+            monthly_densities.append(current_population / calculate_carrying_capacity(params))
             
             # Calculate mortality rates with stronger risk impacts
             from .utils.simulation_utils import calculate_monthly_mortality
@@ -364,12 +371,12 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
                             if age >= MIN_BREEDING_AGE:
                                 if cats_to_sterilize > 0:
                                     if count <= cats_to_sterilize:
-                                        # Sterilize entire group
-                                        colony['sterilized_kittens'].append([count, age])
+                                        # Sterilize entire group and move to sterilized
+                                        colony['sterilized'].append([count, age])
                                         cats_to_sterilize -= count
                                     else:
                                         # Split group
-                                        colony['sterilized_kittens'].append([cats_to_sterilize, age])
+                                        colony['sterilized'].append([cats_to_sterilize, age])
                                         remaining_kittens.append([count - cats_to_sterilize, age])
                                         cats_to_sterilize = 0
                                 else:
@@ -442,7 +449,7 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
                 
                 # Base monthly breeding chance from yearly litters
                 litters_per_year = float(params['litters_per_year'])
-                monthly_breeding_chance = min(1.0, litters_per_year / (12 - gestation_months))
+                monthly_breeding_chance = min(0.95, litters_per_year / (12 - GESTATION_MONTHS))
                 
                 # Only count females of breeding age
                 breeding_females = sum(
@@ -463,58 +470,58 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
                     from .utils.simulation_utils import calculate_breeding_success
                     breeding_success = calculate_breeding_success(params, colony, environment_factor, current_month % 12)
                     
-                    # Enhanced breeding chance calculation
+                    # Enhanced breeding chance calculation - more sensitive to parameters
                     base_chance = monthly_breeding_chance * breeding_success
                     
-                    # Small colony bonus - increased for better survival
+                    # Small colony bonus - gentler scaling
                     if breeding_females < 5:
-                        base_chance = min(1.0, base_chance * 2.0)  # 100% bonus for very small colonies
+                        base_chance = min(0.95, base_chance * 1.5)  # 50% bonus for very small colonies
                     elif breeding_females < 10:
-                        base_chance = min(1.0, base_chance * 1.5)  # 50% bonus for small colonies
+                        base_chance = min(0.95, base_chance * 1.25)  # 25% bonus for small colonies
                         
-                    # Minimum breeding chance to ensure reproduction
-                    pregnancy_chance = max(0.3, base_chance)  # At least 30% chance
+                    # Minimum breeding chance scales with parameters
+                    min_chance = 0.1 * (1.0 + float(params.get('breeding_rate', 0.85)))
+                    pregnancy_chance = max(min_chance, base_chance)
                     
                     # Calculate new pregnancies with enhanced success
                     new_pregnant = np.random.binomial(int(available_females), pregnancy_chance)
                     
-                    # Ensure at least one pregnancy in good conditions
+                    # Small chance of pregnancy in good conditions
                     if new_pregnant == 0 and available_females >= 1:
-                        if breeding_success > 0.4 or breeding_females < 5:  # More lenient conditions
-                            if np.random.random() < pregnancy_chance * 1.5:  # 50% higher chance
+                        if breeding_success > 0.6 or breeding_females < 5:  # Stricter conditions
+                            if np.random.random() < pregnancy_chance:  # No bonus multiplier
                                 new_pregnant = 1
-                        
                     if new_pregnant > 0:
                         log_debug('DEBUG', f'Month {current_month}: {new_pregnant} new females became pregnant (chance: {pregnancy_chance:.2f})')
                         pregnant_females.append(new_pregnant)
             
             # Process births from previous pregnancies
-            if pregnant_females and len(pregnant_females) >= gestation_months:
+            if pregnant_females and len(pregnant_females) >= GESTATION_MONTHS:
                 births = pregnant_females.pop(0)  # Get the oldest pregnancy group
                 if births > 0:
                     # Calculate base number of kittens
                     base_litter_size = float(params['kittens_per_litter'])
                     
-                    # Seasonal effect on litter size
+                    # Seasonal effect on litter size - more pronounced
                     season_bonus = 1.0
                     if current_month % 12 in [2, 3, 4, 8, 9, 10]:  # Peak months
-                        season_bonus = 1.2
+                        season_bonus = 1.3
                     elif current_month % 12 in [5, 6, 7]:  # Moderate months
-                        season_bonus = 1.1
+                        season_bonus = 1.15
                     
-                    # Resource quality affects litter size (more forgiving)
-                    resource_bonus = 0.8 + (0.2 * environment_factor)
+                    # Resource quality affects litter size (more impact)
+                    resource_bonus = 0.7 + (0.6 * environment_factor)  # Wider range from 0.7 to 1.3
                     
                     # Calculate final litter size
                     adjusted_litter_size = base_litter_size * season_bonus * resource_bonus
                     
-                    # Ensure minimum viable litter size
-                    min_litter = max(2, base_litter_size - 1)
-                    max_litter = min(6, base_litter_size + 2)  # Cap at 6 kittens
+                    # Dynamic litter size bounds based on base size
+                    min_litter = max(1, round(base_litter_size * 0.6))  # Can be smaller in poor conditions
+                    max_litter = min(8, round(base_litter_size * 1.4))  # Can be larger in good conditions
                     adjusted_litter_size = max(min_litter, min(max_litter, adjusted_litter_size))
                     
                     # Add small random variation
-                    variation = np.random.normal(0, 0.1)  # Reduced variation to 10%
+                    variation = np.random.normal(0, 0.15)  # Slightly more variation (15%)
                     final_litter_size = max(min_litter, min(max_litter, adjusted_litter_size * (1 + variation)))
                     
                     # Calculate total kittens born
@@ -539,7 +546,6 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
             
             # Update monthly tracking arrays
             monthly_populations.append(current_population)
-            monthly_sterilized.append(sterilized_count + sterilized_kitten_count)
             monthly_reproductive.append(reproductive_count)
             monthly_kittens.append(unsterilized_kitten_count + sterilized_kitten_count)
             monthly_costs.append(month_cost)
@@ -595,8 +601,7 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
             'months_over_threshold': sum(1 for d in monthly_densities if d > params['density_impact_threshold'])
         }
 
-        # Log calculation parameters and results to CSV
-        from .utils.logging_utils import log_calculation_result
+        # Create calculation parameters dictionary
         calculation_params = {
             'current_size': current_size,
             'sterilized_count': sterilized_count,
@@ -604,7 +609,11 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
             'months': months,
             **params  # Include all simulation parameters
         }
-        log_calculation_result(calculation_params, results)
+
+        # Only log if not running in test mode
+        if not params.get('test_mode', False):
+            from .utils.logging_utils import log_calculation_result
+            log_calculation_result(calculation_params, results)
         
         if use_monte_carlo:
             # Initialize arrays for Monte Carlo results
