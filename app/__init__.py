@@ -10,12 +10,14 @@ from firebase_admin import credentials
 db = SQLAlchemy()
 
 def create_app():
-    # Load environment variables from .env.local
-    load_dotenv('.env.local')
-
-    # Get the absolute path to the app directory
+    # Get the absolute path to the app directory and project root
     app_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(app_dir)
     
+    # Load environment variables from .env.local using absolute path
+    env_path = os.path.join(project_root, '.env.local')
+    load_dotenv(env_path)
+
     app = Flask(__name__,
                 template_folder='templates',
                 static_folder='static')
@@ -26,6 +28,16 @@ def create_app():
     
     # Initialize extensions
     db.init_app(app)
+
+    # Initialize Firebase Admin SDK if not already initialized
+    try:
+        firebase_admin.get_app()
+    except ValueError:
+        cred_path = os.path.join(project_root, 'tools', 'sightings', 'firebase-credentials.json')
+        if not os.path.exists(cred_path):
+            raise FileNotFoundError(f"Firebase credentials file not found at {cred_path}")
+        cred = credentials.Certificate(cred_path)
+        firebase_admin.initialize_app(cred)
 
     # Add Firebase configuration to Flask app
     app.config['FIREBASE_API_KEY'] = os.getenv('FIREBASE_API_KEY')

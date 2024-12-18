@@ -1,6 +1,10 @@
 # Environment files
 .env
 .env.local
+.env.dev
+.env.prod
+.env.staging
+!.env.example
 .env.*
 
 # Firebase credentials
@@ -45,7 +49,6 @@ logs/
 
 # Local data
 *.local
-logs/debug.log
 logs/debug.log
 data/sightings.json
 data/last_sync.txt

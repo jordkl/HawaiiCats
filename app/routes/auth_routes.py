@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session, current_app
 import firebase_admin
 from firebase_admin import auth, credentials
 from functools import wraps
@@ -40,8 +40,14 @@ def login():
         except Exception as e:
             return jsonify({'error': str(e)}), 401
     
-    # GET request - show the login form
-    return render_template('login.html')
+    # GET request - show the login form with Firebase config
+    return render_template('login.html', config={
+        'FIREBASE_API_KEY': current_app.config['FIREBASE_API_KEY'],
+        'FIREBASE_PROJECT_ID': current_app.config['FIREBASE_PROJECT_ID'],
+        'FIREBASE_AUTH_DOMAIN': current_app.config['FIREBASE_AUTH_DOMAIN'],
+        'FIREBASE_STORAGE_BUCKET': current_app.config['FIREBASE_STORAGE_BUCKET'],
+        'FIREBASE_MESSAGING_SENDER_ID': current_app.config['FIREBASE_MESSAGING_SENDER_ID']
+    })
 
 @bp.route('/admin')
 @login_required

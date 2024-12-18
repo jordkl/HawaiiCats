@@ -29,6 +29,16 @@ pip install -r requirements.txt
 npm install
 ```
 
+4. Set up Firebase:
+   - Create a new Firebase project at https://console.firebase.google.com/
+   - Download your Firebase Admin SDK service account key (firebase-credentials.json)
+   - Place the credentials file in `tools/sightings/firebase-credentials.json`
+   - Copy `.env.example` to `.env.local` and update with your Firebase configuration:
+     ```bash
+     cp .env.example .env.local
+     ```
+   - Update the values in `.env.local` with your Firebase project settings
+
 ## Usage
 
 Start the Flask development server:
