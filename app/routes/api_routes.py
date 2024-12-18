@@ -234,6 +234,53 @@ def colonies():
         print(f"Error fetching colonies: {e}")
         return jsonify({'error': str(e)}), 500
 
+@bp.route('/colonies/<colony_id>', methods=['PUT'])
+def update_firebase_colony(colony_id):
+    try:
+        data = request.get_json()
+        
+        # Update Firebase
+        firebase_data = {
+            'name': data['name'],
+            'location': {
+                'latitude': data['latitude'],
+                'longitude': data['longitude']
+            },
+            'current_size': data['current_size'],
+            'size': data['current_size'],  # For backward compatibility
+            'sterilized_count': data['sterilized_count'],
+            'monthly_sterilization_rate': data.get('monthly_sterilization_rate', 0),
+            'breeding_rate': data.get('breeding_rate', 0.85),
+            'kittens_per_litter': data.get('kittens_per_litter', 4),
+            'litters_per_year': data.get('litters_per_year', 2.5),
+            'kitten_survival_rate': data.get('kitten_survival_rate', 0.75),
+            'adult_survival_rate': data.get('adult_survival_rate', 0.85),
+            'water_availability': data.get('water_availability', 0.8),
+            'shelter_quality': data.get('shelter_quality', 0.7),
+            'territory_size': data.get('territory_size', 500),
+            'urban_risk': data.get('urban_risk', 0.15),
+            'disease_risk': data.get('disease_risk', 0.1),
+            'caretaker_support': data.get('caretaker_support', 0.8),
+            'feeding_consistency': data.get('feeding_consistency', 0.8),
+            'updated_at': datetime.utcnow()
+        }
+        
+        # Update the Firebase document directly using the ID
+        colony_ref = firebase_db.collection('colonies').document(colony_id)
+        colony_ref.update(firebase_data)
+        
+        return jsonify({
+            'id': colony_id,
+            'name': data['name'],
+            'latitude': data['latitude'],
+            'longitude': data['longitude'],
+            'current_size': data['current_size'],
+            'sterilized_count': data['sterilized_count']
+        })
+    except Exception as e:
+        print(f"Error updating Firebase colony: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @bp.route('/colonies/<int:colony_id>', methods=['PUT'])
 def update_colony(colony_id):
     try:
