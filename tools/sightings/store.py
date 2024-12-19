@@ -27,8 +27,8 @@ class CatSightingsStore:
         self.last_sync_file = os.path.join(data_dir, 'last_sync.txt')
         self.lock = threading.Lock()
         
-        try:
-            if ENABLE_FIREBASE_SYNC:
+        if ENABLE_FIREBASE_SYNC:
+            try:
                 if not firebase_admin._apps:
                     print("Initializing Firebase Admin SDK...")
                     cred_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'firebase-credentials.json')
@@ -41,23 +41,22 @@ class CatSightingsStore:
                 
                 self.db = firestore.client()
                 print("Firestore client created successfully")
-            else:
-                print("Firebase sync is disabled")
+            except Exception as e:
+                print(f"Error initializing Firebase: {str(e)}")
+                print(f"Stack trace: {traceback.format_exc()}")
                 self.db = None
-        except Exception as e:
-            print(f"Error initializing Firebase: {str(e)}")
-            print(f"Stack trace: {traceback.format_exc()}")
-            if ENABLE_FIREBASE_SYNC:
-                raise
-            else:
-                print("Continuing without Firebase")
-                self.db = None
-        
+        else:
+            print("Firebase sync is disabled")
+            self.db = None
+
+        # Create data directory if it doesn't exist
         os.makedirs(data_dir, exist_ok=True)
-        
+
+        # Initialize empty data if file doesn't exist
         if not os.path.exists(self.data_file):
-            self._save_local_data([])
-        
+            with open(self.data_file, 'w') as f:
+                json.dump([], f)
+
         if not os.path.exists(self.last_sync_file):
             self._save_last_sync_time(datetime.min)
         

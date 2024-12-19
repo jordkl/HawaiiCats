@@ -19,25 +19,50 @@ git clone https://github.com/yourusername/HawaiiCats.git
 cd HawaiiCats
 ```
 
-2. Install Python dependencies:
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install Python dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Install Node.js dependencies:
+4. Install Node.js dependencies:
 ```bash
 npm install
 ```
 
-4. Set up Firebase:
-   - Create a new Firebase project at https://console.firebase.google.com/
-   - Download your Firebase Admin SDK service account key (firebase-credentials.json)
-   - Place the credentials file in `tools/sightings/firebase-credentials.json`
-   - Copy `.env.example` to `.env.local` and update with your Firebase configuration:
-     ```bash
-     cp .env.example .env.local
-     ```
-   - Update the values in `.env.local` with your Firebase project settings
+5. Set up environment variables:
+Create a `.env` file in the root directory with the following variables:
+```
+FLASK_APP=wsgi:app
+FLASK_ENV=development
+DISABLE_FIREBASE=true  # Set to false if you have Firebase credentials
+```
+
+If you want to use Firebase authentication:
+1. Create a Firebase project and download the service account credentials
+2. Save the credentials as `firebase-credentials.json` in the `app` directory
+3. Set `DISABLE_FIREBASE=false` in your `.env` file
+
+## Development
+
+### Running Locally
+```bash
+# Start the Flask development server
+python wsgi.py
+```
+The application will be available at `http://localhost:5001`
+
+### Production Deployment
+The application uses gunicorn and nginx in production. The deployment configuration is handled by:
+- `hard-deploy.sh`: Sets up directories and permissions
+- `/etc/systemd/system/gunicorn.service`: Gunicorn service configuration
+- `/etc/nginx/sites-available/default`: Nginx configuration
+- `/etc/gunicorn.d/gunicorn.py`: Gunicorn configuration
 
 ## Usage
 

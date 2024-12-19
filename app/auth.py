@@ -6,6 +6,11 @@ import os
 
 def init_firebase():
     """Initialize Firebase Admin SDK"""
+    # Check if Firebase sync is enabled
+    if os.getenv('ENABLE_FIREBASE_SYNC', 'false').lower() == 'false':
+        print("Firebase sync is disabled")
+        return
+
     try:
         # Check if already initialized
         firebase_admin.get_app()
@@ -13,7 +18,7 @@ def init_firebase():
     except ValueError:
         print("Initializing Firebase Admin SDK...")
         # Get the path to the service account key file
-        cred_path = os.path.join(os.path.dirname(__file__), '..', 'tools', 'sightings', 'firebase-credentials.json')
+        cred_path = os.path.join(os.path.dirname(__file__), 'firebase-credentials.json')
         print(f"Looking for credentials at: {cred_path}")
         if not os.path.exists(cred_path):
             raise FileNotFoundError(f"Firebase credentials file not found at {cred_path}")
@@ -27,9 +32,12 @@ def login_required(f):
     """Decorator to require authentication for routes"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # Skip authentication if Firebase sync is disabled
+        if os.getenv('ENABLE_FIREBASE_SYNC', 'false').lower() == 'false':
+            return f(*args, **kwargs)
+
         # Get the ID token from the session
         id_token = session.get('id_token')
-        
         if not id_token:
             return redirect(url_for('auth.login'))
         
