@@ -39,18 +39,9 @@ function debounce(func, wait) {
 // Initialize map and load data
 async function initMap() {
     try {
-        // Initialize the map
-        map = L.map('map', {
-            dragging: true,
-            touchZoom: true,
-            scrollWheelZoom: true,
-            doubleClickZoom: true
-        }).setView([21.3099, -157.8581], 11);
+        // Initialize the map using our dark theme
+        map = initializeMap('map', [21.3099, -157.8581], 11);
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-        }).addTo(map);
-
         // Set up map click handler for colony placement
         map.on('click', function(e) {
             // Only show modal if we're in colony placement mode
@@ -72,6 +63,9 @@ async function initMap() {
             exitAddColonyMode();
         });
 
+        // Set up UI components first
+        setupAddColonyButton();
+
         // Load initial data
         await Promise.all([
             loadColonies(),
@@ -84,9 +78,6 @@ async function initMap() {
 
         // Initial update of visible items
         updateVisibleItems();
-        
-        // Set up add colony button
-        setupAddColonyButton();
     } catch (error) {
         console.error('Error initializing map:', error);
         showNotification('Failed to initialize map', 'error');
@@ -402,19 +393,28 @@ function updateVisibleItems() {
                 colonyList.innerHTML = '';
                 visibleColonies.forEach(colony => {
                     const item = document.createElement('div');
-                    item.className = 'p-2 hover:bg-gray-100 cursor-pointer flex items-center justify-between';
+                    item.className = 'p-2 cursor-pointer transition-colors duration-200 dark:text-gray-100 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 flex items-center justify-between';
                     item.innerHTML = `
                         <span>${colony.name || 'Unnamed Colony'}</span>
-                        <span class="text-sm text-gray-500">${colony.current_size || 0} cats</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">${colony.current_size || 0} cats</span>
                     `;
                     item.onclick = () => {
-                        map.setView([colony.latitude, colony.longitude], 15);
                         showColonyDetails(colony);
+                        // Find and highlight the corresponding marker
+                        const marker = colonyMarkers.find(m => 
+                            m.colony && m.colony.id === colony.id
+                        );
+                        if (marker) {
+                            marker.getElement().classList.add('selected');
+                            selectedMarker = marker;
+                            map.flyTo(marker.getLngLat(), 16);
+                        }
                     };
                     colonyList.appendChild(item);
                     addColonyMarker(colony);
                 });
             }
+
         } else if (window.currentView === 'sightings' && cachedSightings && cachedSightings.length > 0) {
             // Filter sightings within current bounds
             const visibleSightings = cachedSightings.filter(sighting => 
@@ -429,11 +429,20 @@ function updateVisibleItems() {
                 sightingList.innerHTML = '';
                 visibleSightings.forEach(sighting => {
                     const item = document.createElement('div');
-                    item.className = 'p-2 hover:bg-gray-100 cursor-pointer';
-                    item.textContent = formatSightingTitle(sighting);
+                    item.className = 'p-2 cursor-pointer transition-colors duration-200 dark:text-gray-100 hover:bg-gray-100/50 dark:hover:bg-gray-700/50';
+                    const date = new Date(sighting.timestamp);
+                    item.textContent = `${date.toLocaleDateString()} - ${sighting.best_count || 0} cats`;
                     item.onclick = () => {
-                        map.setView([sighting.latitude, sighting.longitude], 15);
                         showSightingDetails(sighting);
+                        // Find and highlight the corresponding marker
+                        const marker = sightingMarkers.find(m => 
+                            m.sighting && m.sighting.id === sighting.id
+                        );
+                        if (marker) {
+                            marker.getElement().classList.add('selected');
+                            selectedMarker = marker;
+                            map.flyTo(marker.getLngLat(), 16);
+                        }
                     };
                     sightingList.appendChild(item);
                     addSightingMarker(sighting);
@@ -556,4 +565,49 @@ function showColonyList() {
 }
 
 // Initialize map when document is ready
-document.addEventListener('DOMContentLoaded', initMap);
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Initialize the map using our dark theme
+        map = initializeMap('map', [21.3099, -157.8581], 11);
+        
+        // Set up map click handler for colony placement
+        map.on('click', function(e) {
+            // Only show modal if we're in colony placement mode
+            if (!isAddingColony) {
+                return;
+            }
+            
+            const lat = e.latlng.lat.toFixed(6);
+            const lng = e.latlng.lng.toFixed(6);
+            
+            // Fill in the form with the coordinates
+            document.getElementById('colonyLat').value = lat;
+            document.getElementById('colonyLng').value = lng;
+            
+            // Show the modal
+            document.getElementById('addColonyModal').classList.remove('hidden');
+            
+            // Exit colony placement mode
+            exitAddColonyMode();
+        });
+
+        // Set up UI components first
+        setupAddColonyButton();
+
+        // Load initial data
+        await Promise.all([
+            loadColonies(),
+            loadSightings()
+        ]);
+
+        // Set up map event listeners
+        map.on('moveend', updateVisibleItems);
+        map.on('zoomend', updateVisibleItems);
+
+        // Initial update of visible items
+        updateVisibleItems();
+    } catch (error) {
+        console.error('Error initializing map:', error);
+        showNotification('Failed to initialize map', 'error');
+    }
+});

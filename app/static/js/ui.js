@@ -21,11 +21,9 @@ function switchView(view) {
     // Update tab styles
     document.querySelectorAll('.tab').forEach(tab => {
         if (tab.dataset.view === view) {
-            tab.classList.add('bg-blue-500', 'text-white');
-            tab.classList.remove('bg-gray-200', 'text-gray-700');
+            tab.classList.add('active');
         } else {
-            tab.classList.remove('bg-blue-500', 'text-white');
-            tab.classList.add('bg-gray-200', 'text-gray-700');
+            tab.classList.remove('active');
         }
     });
     
@@ -135,10 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     coloniesTab.addEventListener('click', () => {
         // Update tab styles
-        coloniesTab.classList.add('border-b-2', 'border-blue-500', 'text-blue-500');
-        coloniesTab.classList.remove('text-gray-500');
-        sightingsTab.classList.remove('border-b-2', 'border-blue-500', 'text-blue-500');
-        sightingsTab.classList.add('text-gray-500');
+        coloniesTab.classList.add('active');
+        sightingsTab.classList.remove('active');
 
         // Show/hide lists
         colonyList.classList.remove('hidden');
@@ -151,10 +147,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     sightingsTab.addEventListener('click', () => {
         // Update tab styles
-        sightingsTab.classList.add('border-b-2', 'border-blue-500', 'text-blue-500');
-        sightingsTab.classList.remove('text-gray-500');
-        coloniesTab.classList.remove('border-b-2', 'border-blue-500', 'text-blue-500');
-        coloniesTab.classList.add('text-gray-500');
+        sightingsTab.classList.add('active');
+        coloniesTab.classList.remove('active');
 
         // Show/hide lists
         sightingList.classList.remove('hidden');

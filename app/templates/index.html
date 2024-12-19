@@ -3,111 +3,193 @@
 {% block title %}Hawaiʻi Cats - Data-Driven Feral Cat Management{% endblock %}
 
 {% block content %}
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div class="px-4 py-6 sm:px-0">
-            <div class="max-w-4xl mx-auto">
-                <!-- Header Section -->
-                <div class="text-center mb-12">
-                    <h1 class="text-4xl font-extrabold text-gray-900 sm:text-5xl">
-                        Hawaiʻi Cats
-                    </h1>
-                    <p class="mt-4 text-lg text-gray-600">
-                        Empowering communities with tools and insights to manage feral cat colonies while protecting Hawaiʻi’s native species.
+<main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="px-4 py-6 sm:px-0">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header Section -->
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl">
+                    Hawaiʻi Cats
+                </h1>
+                <p class="mt-4 text-lg text-gray-600 dark:text-gray-300">
+                    Empowering communities with tools and insights to manage feral cat colonies while protecting Hawaiʻi's native species.
+                </p>
+            </div>
+
+            <!-- About Section -->
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg mb-12 transition-colors duration-200">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">About Hawaiʻi Cats</h2>
+                    <p class="mt-4 text-gray-700 dark:text-gray-300">
+                        Hawaiʻi Cats is a community-focused initiative supported by <a href="https://nene.org" class="text-indigo-600 dark:text-indigo-400 hover:underline">Nene.org</a>, dedicated to addressing the complex challenges posed by feral cat populations. Using data-driven tools and collaborative approaches, Hawaiʻi Cats provides solutions for humane and effective colony management while minimizing the impact on native wildlife.
+                    </p>
+                    <h3 class="mt-6 text-xl font-bold text-gray-900 dark:text-white">Our Goals</h3>
+                    <ul class="mt-4 list-disc list-inside text-gray-700 dark:text-gray-300">
+                        <li>Identify priority areas where cat colonies overlap with habitats of protected species.</li>
+                        <li>Quantify the costs and resources required for effective colony management strategies.</li>
+                    </ul>
+                    <p class="mt-4 text-gray-700 dark:text-gray-300">
+                        By combining technology, research, and local collaboration, Hawaiʻi Cats seeks to create a sustainable balance between conservation and humane cat care.
                     </p>
                 </div>
+            </div>
 
-                <!-- About Section -->
-                <div class="bg-white overflow-hidden shadow rounded-lg mb-12">
-                    <div class="px-4 py-5 sm:p-6">
-                        <h2 class="text-2xl font-bold text-gray-900">About Hawaiʻi Cats</h2>
-                        <p class="mt-4 text-gray-700">
-                            Hawaiʻi Cats is a community-focused initiative supported by <a href="https://nene.org" class="text-indigo-600 underline">Nene.org</a>, dedicated to addressing the complex challenges posed by feral cat populations. Using data-driven tools and collaborative approaches, Hawaiʻi Cats provides solutions for humane and effective colony management while minimizing the impact on native wildlife.
-                        </p>
-                        <h3 class="mt-6 text-xl font-bold text-gray-900">Our Goals</h3>
-                        <ul class="mt-4 list-disc list-inside text-gray-700">
-                            <li>Identify priority areas where cat colonies overlap with habitats of protected species.</li>
-                            <li>Quantify the costs and resources required for effective colony management strategies.</li>
-                            <li>Critically evaluate the impact of trap-neuter-return (TNR) programs on colony growth and wildlife conservation.</li>
-                        </ul>
-                        <p class="mt-4 text-gray-700">
-                            By combining technology, research, and local collaboration, Hawaiʻi Cats seeks to create a sustainable balance between conservation and humane cat care.
-                        </p>
+            <!-- Current Features Section -->
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg mb-12 transition-colors duration-200">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Current Features</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg">
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Colony Management</h3>
+                            <ul class="space-y-3 text-gray-700 dark:text-gray-300">
+                                <li class="flex items-start">
+                                    <span class="text-blue-500 mr-2">•</span>
+                                    Interactive map interface for colony locations
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-blue-500 mr-2">•</span>
+                                    Add and edit colony information
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-blue-500 mr-2">•</span>
+                                    Track colony size and sterilization rates
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-blue-500 mr-2">•</span>
+                                    Record environmental factors and risk assessments
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-blue-500 mr-2">•</span>
+                                    Colony population modeling and forecasting
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg">
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Sighting Tracking</h3>
+                            <ul class="space-y-3 text-gray-700 dark:text-gray-300">
+                                <li class="flex items-start">
+                                    <span class="text-blue-500 mr-2">•</span>
+                                    Record and view cat sightings on the map
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-blue-500 mr-2">•</span>
+                                    Track movement patterns and behaviors
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-blue-500 mr-2">•</span>
+                                    Document feeding locations and schedules
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-blue-500 mr-2">•</span>
+                                    Real-time updates and notifications
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-blue-500 mr-2">•</span>
+                                    Historical sighting data analysis
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Tools Section -->
-                <div class="mt-12 grid gap-8 grid-cols-1 md:grid-cols-2">
-                    <!-- Population Calculator Card -->
-                    <div class="bg-white overflow-hidden shadow rounded-lg">
-                        <div class="px-4 py-5 sm:p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 bg-indigo-500 rounded-md p-3">
-                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                                    </svg>
-                                </div>
-                                <div class="ml-5">
-                                    <h3 class="text-lg font-medium text-gray-900">Population Calculator</h3>
-                                    <p class="mt-2 text-sm text-gray-500">
-                                        Use this tool to model colony growth and explore intervention scenarios tailored to your community.
-                                    </p>
-                                </div>
+            <!-- Roadmap Section -->
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg mb-12 transition-colors duration-200">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Development Roadmap</h2>
+                    <div class="relative">
+                        <div class="border-l-2 border-blue-500 ml-4">
+                            <div class="mb-8 ml-6">
+                                <div class="absolute w-4 h-4 bg-blue-500 rounded-full -left-[9px] ring-4 ring-white dark:ring-gray-800"></div>
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">February 2025</h3>
+                                <ul class="mt-2 space-y-2 text-gray-700 dark:text-gray-300">
+                                    <li class="flex items-start">
+                                        <span class="text-blue-500 mr-2">•</span>
+                                        iOS App Launch
+                                    </li>
+                                </ul>
                             </div>
-                            <div class="mt-6">
-                                <a href="{{ url_for('simulation.calculator') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-                                    Open Calculator
-                                </a>
+                            <div class="mb-8 ml-6">
+                                <div class="absolute w-4 h-4 bg-blue-500 rounded-full -left-[9px] ring-4 ring-white dark:ring-gray-800"></div>
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">July 2025</h3>
+                                <ul class="mt-2 space-y-2 text-gray-700 dark:text-gray-300">
+                                    <li class="flex items-start">
+                                        <span class="text-blue-500 mr-2">•</span>
+                                        Full Release of Colony Locations
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="mb-8 ml-6">
+                                <div class="absolute w-4 h-4 bg-blue-500 rounded-full -left-[9px] ring-4 ring-white dark:ring-gray-800"></div>
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Q3 2025</h3>
+                                <ul class="mt-2 space-y-2 text-gray-700 dark:text-gray-300">
+                                    <li class="flex items-start">
+                                        <span class="text-blue-500 mr-2">•</span>
+                                        Community Cat Survey Training Programs
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="mb-8 ml-6">
+                                <div class="absolute w-4 h-4 bg-blue-500 rounded-full -left-[9px] ring-4 ring-white dark:ring-gray-800"></div>
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Q4 2025</h3>
+                                <ul class="mt-2 space-y-2 text-gray-700 dark:text-gray-300">
+                                    <li class="flex items-start">
+                                        <span class="text-blue-500 mr-2">•</span>
+                                        Population Estimates Implementation
+                                    </li>
+                                </ul>
                             </div>
                         </div>
                     </div>
 
-                    <!-- CatMap Card -->
-                    <div class="bg-white overflow-hidden shadow rounded-lg">
-                        <div class="px-4 py-5 sm:p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 bg-indigo-500 rounded-md p-3">
-                                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-                                    </svg>
-                                </div>
-                                <div class="ml-5">
-                                    <h3 class="text-lg font-medium text-gray-900">CatMap Web Explorer</h3>
-                                    <p class="mt-2 text-sm text-gray-500">
-                                        Explore interactive maps to track, monitor, and manage cat colonies across Hawaiʻi.
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="mt-6">
-                                <a href="{{ url_for('sightings.catmap') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-                                    Open CatMap
-                                </a>
-                            </div>
+                    <!-- Features in Development -->
+                    <div class="mt-8">
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Features in Development</h3>
+                        <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg">
+                            <ul class="space-y-3 text-gray-700 dark:text-gray-300">
+                                <li class="flex items-start">
+                                    <span class="text-blue-500 mr-2">•</span>
+                                    Lost Pet Reporting System with Automatic Colony Manager Notifications
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-blue-500 mr-2">•</span>
+                                    Colony Population Forecasting and Resource Planning Tools
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-blue-500 mr-2">•</span>
+                                    Protected Species Overlap Analysis
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-blue-500 mr-2">•</span>
+                                    Toxoplasmosis Exposure Modeling
+                                </li>
+                            </ul>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- CatMap iOS App Card -->
-                    <div class="bg-white overflow-hidden shadow rounded-lg">
-                        <div class="px-4 py-5 sm:p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <img src="{{ url_for('static', filename='img/catmapIOSicon.jpg') }}" alt="CatMap iOS App Icon" class="h-12 w-12 rounded-xl">
-                                </div>
-                                <div class="ml-5">
-                                    <h3 class="text-lg font-medium text-gray-900">CatMap iOS App</h3>
-                                    <p class="mt-2 text-sm text-gray-500">
-                                        Log sightings and manage colonies on the go with our mobile app, available on the App Store.
-                                    </p>
-                                </div>
+            <!-- Tools Section -->
+            <div class="mt-12 grid gap-8 grid-cols-1 md:grid-cols-2">
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg transition-colors duration-200 hover:shadow-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <img src="{{ url_for('static', filename='img/catmapIOSicon.jpg') }}" alt="CatMap iOS App Icon" class="h-12 w-12 rounded-xl">
                             </div>
-                        </div>
-                        <div class="bg-gray-50 px-4 py-4 sm:px-6">
-                            <div class="text-sm">
-                                <a href="#" class="font-medium text-indigo-600 hover:text-indigo-500">Coming Soon</a>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                                    CatMap Mobile App
+                                </h3>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                    Track and manage cat colonies on the go with our iOS app
+                                </p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
+</main>
 {% endblock %}
