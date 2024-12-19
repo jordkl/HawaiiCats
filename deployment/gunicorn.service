@@ -5,7 +5,9 @@ After=network.target
 
 [Service]
 WorkingDirectory=/home/flask/Hawaii_Cats
-ExecStart=/usr/bin/gunicorn3 --name=hawaii_cats --pythonpath=/home/flask/Hawaii_Cats --bind unix:/run/gunicorn/gunicorn.socket --config /etc/gunicorn.d/gunicorn.py main:app
+Environment="PATH=/home/flask/Hawaii_Cats/venv/bin"
+Environment="PYTHONPATH=/home/flask/Hawaii_Cats:/home/flask/Hawaii_Cats/app"
+ExecStart=/home/flask/Hawaii_Cats/venv/bin/gunicorn --name=hawaii_cats --pythonpath=/home/flask/Hawaii_Cats --bind unix:/run/gunicorn/gunicorn.socket --config /etc/gunicorn.d/gunicorn.py main:app
 Restart=always
 SyslogIdentifier=gunicorn
 User=www-data

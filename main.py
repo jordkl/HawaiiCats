@@ -1,6 +1,6 @@
 from app import create_app
-from tools.cat_simulation.utils.logging_utils import setup_logging
-from tools.sightings.store import init_store
+from app.tools.cat_simulation.utils.logging_utils import setup_logging
+from app.tools.sightings.store import init_store
 from app.auth import init_firebase
 import logging
 import traceback

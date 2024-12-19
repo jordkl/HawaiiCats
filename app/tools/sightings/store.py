@@ -31,10 +31,12 @@ class CatSightingsStore:
             try:
                 if not firebase_admin._apps:
                     print("Initializing Firebase Admin SDK...")
-                    cred_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'firebase-credentials.json')
+                    cred_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'firebase-credentials.json')
                     print(f"Looking for credentials at: {cred_path}")
                     if not os.path.exists(cred_path):
-                        raise FileNotFoundError(f"Firebase credentials file not found at {cred_path}")
+                        print(f"Warning: Firebase credentials not found at {cred_path}. Disabling Firebase sync.")
+                        self.db = None
+                        return
                     cred = credentials.Certificate(cred_path)
                     firebase_admin.initialize_app(cred)
                     print("Firebase Admin SDK initialized successfully")
@@ -42,8 +44,9 @@ class CatSightingsStore:
                 self.db = firestore.client()
                 print("Firestore client created successfully")
             except Exception as e:
-                print(f"Error initializing Firebase: {str(e)}")
+                print(f"Warning: Error initializing Firebase: {str(e)}")
                 print(f"Stack trace: {traceback.format_exc()}")
+                print("Continuing without Firebase sync")
                 self.db = None
         else:
             print("Firebase sync is disabled")
@@ -60,7 +63,7 @@ class CatSightingsStore:
         if not os.path.exists(self.last_sync_file):
             self._save_last_sync_time(datetime.min)
         
-        if ENABLE_FIREBASE_SYNC:
+        if ENABLE_FIREBASE_SYNC and self.db is not None:
             self.sync_thread = threading.Thread(target=self._background_sync, daemon=True)
             self.sync_thread.start()
     
@@ -102,7 +105,7 @@ class CatSightingsStore:
 
     def sync_with_firebase(self):
         """Synchronize local data with Firebase"""
-        if not ENABLE_FIREBASE_SYNC:
+        if not ENABLE_FIREBASE_SYNC or self.db is None:
             print("Firebase sync is disabled, skipping sync")
             return
 
@@ -205,7 +208,7 @@ class CatSightingsStore:
 
     def force_sync(self):
         """Force an immediate sync with Firebase"""
-        if ENABLE_FIREBASE_SYNC:
+        if ENABLE_FIREBASE_SYNC and self.db is not None:
             self.sync_with_firebase()
 
     def _save_last_sync_time(self, sync_time):
@@ -221,15 +224,18 @@ class CatSightingsStore:
             return datetime.min
     
     def _background_sync(self):
+        """Background thread for periodic Firebase sync"""
+        print("Starting background sync...")
         while True:
             try:
-                print("Starting background sync...")
-                self.sync_with_firebase()
-                print("Background sync completed successfully")
+                if ENABLE_FIREBASE_SYNC and self.db is not None:
+                    print("Starting Firebase sync...")
+                    self.sync_with_firebase()
+                time.sleep(60)  # Sync every minute
             except Exception as e:
                 print(f"Error during background sync: {str(e)}")
                 print(f"Stack trace: {traceback.format_exc()}")
-            time.sleep(3600)
+                time.sleep(60)  # Still wait before retrying
 
 # Global instance
 _store = None

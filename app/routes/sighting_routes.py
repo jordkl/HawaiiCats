@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, jsonify
-from tools.sightings.store import get_store
+from app.tools.sightings.store import get_store
 
 bp = Blueprint('sightings', __name__)
 
