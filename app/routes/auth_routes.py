@@ -2,16 +2,9 @@ from flask import Blueprint, render_template, request, redirect, url_for, jsonif
 import firebase_admin
 from firebase_admin import auth, credentials
 from functools import wraps
+from ..auth import login_required
 
 bp = Blueprint('auth', __name__)
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('auth.login'))
-        return f(*args, **kwargs)
-    return decorated_function
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -34,6 +27,7 @@ def login():
             # Set session data
             session['user_id'] = user_id
             session['email'] = decoded_token.get('email', '')
+            session['id_token'] = token  # Store the ID token in session
             
             return jsonify({'success': True, 'redirect': url_for('auth.dashboard')})
             

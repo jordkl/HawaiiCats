@@ -52,3 +52,4 @@ logs/
 logs/debug.log
 data/sightings.json
 data/last_sync.txt
+logs/calculations.csv
