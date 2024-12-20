@@ -99,13 +99,43 @@
     <style>
         [x-cloak] { display: none !important; }
     </style>
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+        
+        .mobile-menu-enter {
+            transition: opacity 0.1s ease-out, transform 0.1s ease-out;
+        }
+        .mobile-menu-enter-from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        .mobile-menu-enter-to {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .mobile-menu-leave {
+            transition: opacity 0.1s ease-in, transform 0.1s ease-in;
+        }
+        .mobile-menu-leave-from {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .mobile-menu-leave-to {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+    </style>
     
     {% block head %}{% endblock %}
 </head>
 <body class="h-full bg-gray-50 dark:bg-gray-900">
     <div class="min-h-full">
         <!-- Navigation -->
-        <nav class="bg-white dark:bg-gray-800 shadow">
+        <nav class="bg-white dark:bg-gray-800 shadow" x-data="{ mobileMenuOpen: false }">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex">
@@ -116,20 +146,50 @@
                             <a href="{{ url_for('main.index') }}" class="inline-flex items-center border-b-2 {% if request.endpoint == 'main.index' %}border-hawaii-blue text-gray-900 dark:text-white dark:border-hawaii-blue{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-gray-200{% endif %} px-1 pt-1 text-sm font-medium">Home</a>
                             <a href="{{ url_for('main.calculator') }}" class="inline-flex items-center border-b-2 {% if request.endpoint == 'main.calculator' %}border-hawaii-blue text-gray-900 dark:text-white dark:border-hawaii-blue{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-gray-200{% endif %} px-1 pt-1 text-sm font-medium">Calculator</a>
                             <a href="{{ url_for('main.catmap') }}" class="inline-flex items-center border-b-2 {% if request.endpoint == 'main.catmap' %}border-hawaii-blue text-gray-900 dark:text-white dark:border-hawaii-blue{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-gray-200{% endif %} px-1 pt-1 text-sm font-medium">Cat Map</a>
+                            <a href="{{ url_for('main.mobile_app') }}" class="inline-flex items-center border-b-2 {% if request.endpoint == 'main.mobile_app' %}border-hawaii-blue text-gray-900 dark:text-white dark:border-hawaii-blue{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-gray-200{% endif %} px-1 pt-1 text-sm font-medium">Mobile App</a>
                             {% if session.user_id %}
                             <a href="{{ url_for('auth.dashboard') }}" class="inline-flex items-center border-b-2 {% if request.endpoint == 'auth.dashboard' %}border-hawaii-blue text-gray-900 dark:text-white dark:border-hawaii-blue{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-gray-200{% endif %} px-1 pt-1 text-sm font-medium">Dashboard</a>
                             {% endif %}
                         </div>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <span class="text-sm text-gray-500 font-medium">v2.4.0-beta</span>
-                        <a href="{{ url_for('auth.login') }}" id="login-button" class="hidden text-sm font-medium text-hawaii-blue hover:text-blue-700">
-                            Sign In
-                        </a>
-                        <button id="logout-button" class="hidden text-sm font-medium text-gray-500 hover:text-gray-700">
-                            Sign Out
+                        <!-- Mobile menu button -->
+                        <button type="button" class="sm:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-hawaii-blue" @click="mobileMenuOpen = !mobileMenuOpen" aria-controls="mobile-menu" :aria-expanded="mobileMenuOpen">
+                            <span class="sr-only">Open main menu</span>
+                            <!-- Icon when menu is closed -->
+                            <svg class="h-6 w-6" :class="{'hidden': mobileMenuOpen, 'block': !mobileMenuOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                            <!-- Icon when menu is open -->
+                            <svg class="h-6 w-6" :class="{'block': mobileMenuOpen, 'hidden': !mobileMenuOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
                         </button>
+                        {% if session.user_id %}
+                        <a href="{{ url_for('auth.logout') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100 text-sm font-medium">Sign Out</a>
+                        {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100 text-sm font-medium">Sign In</a>
+                        {% endif %}
                     </div>
+                </div>
+            </div>
+
+            <!-- Mobile menu -->
+            <div class="sm:hidden" id="mobile-menu" x-show="mobileMenuOpen" x-cloak
+                x-transition:enter="mobile-menu-enter"
+                x-transition:enter-start="mobile-menu-enter-from"
+                x-transition:enter-end="mobile-menu-enter-to"
+                x-transition:leave="mobile-menu-leave"
+                x-transition:leave-start="mobile-menu-leave-from"
+                x-transition:leave-end="mobile-menu-leave-to">
+                <div class="pt-2 pb-3 space-y-1">
+                    <a href="{{ url_for('main.index') }}" class="{% if request.endpoint == 'main.index' %}bg-hawaii-blue bg-opacity-10 border-hawaii-blue text-hawaii-blue dark:text-white{% else %}border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-200{% endif %} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Home</a>
+                    <a href="{{ url_for('main.calculator') }}" class="{% if request.endpoint == 'main.calculator' %}bg-hawaii-blue bg-opacity-10 border-hawaii-blue text-hawaii-blue dark:text-white{% else %}border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-200{% endif %} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Calculator</a>
+                    <a href="{{ url_for('main.catmap') }}" class="{% if request.endpoint == 'main.catmap' %}bg-hawaii-blue bg-opacity-10 border-hawaii-blue text-hawaii-blue dark:text-white{% else %}border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-200{% endif %} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Cat Map</a>
+                    <a href="{{ url_for('main.mobile_app') }}" class="{% if request.endpoint == 'main.mobile_app' %}bg-hawaii-blue bg-opacity-10 border-hawaii-blue text-hawaii-blue dark:text-white{% else %}border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-200{% endif %} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Mobile App</a>
+                    {% if session.user_id %}
+                    <a href="{{ url_for('auth.dashboard') }}" class="{% if request.endpoint == 'auth.dashboard' %}bg-hawaii-blue bg-opacity-10 border-hawaii-blue text-hawaii-blue dark:text-white{% else %}border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-200{% endif %} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Dashboard</a>
+                    {% endif %}
                 </div>
             </div>
         </nav>

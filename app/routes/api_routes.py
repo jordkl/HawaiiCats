@@ -3,9 +3,20 @@ from firebase_admin import firestore
 from datetime import datetime
 from ..models import Colony, Sighting
 from .. import db
+import os
+import requests
+import re
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 firebase_db = firestore.client()
+
+# Initialize rate limiter
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"]
+)
 
 def format_firebase_colony(doc_id, data):
     """Helper function to format Firebase colony data"""
@@ -62,6 +73,32 @@ def format_firebase_sighting(doc_id, data):
         'time_spent': data.get('timeSpent') or details.get('timeSpent'),
         'notes': data.get('notes') or details.get('notes', '')
     }
+
+def is_valid_email(email):
+    """Basic email validation"""
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return bool(re.match(pattern, email))
+
+def verify_recaptcha(token):
+    """Verify reCAPTCHA token"""
+    try:
+        secret_key = os.environ.get('RECAPTCHA_SECRET_KEY')
+        if not secret_key:
+            print("Warning: RECAPTCHA_SECRET_KEY not set")
+            return True  # Allow in development
+            
+        response = requests.post(
+            'https://www.google.com/recaptcha/api/siteverify',
+            data={
+                'secret': secret_key,
+                'response': token
+            }
+        )
+        result = response.json()
+        return result.get('success', False)
+    except Exception as e:
+        print(f"reCAPTCHA verification error: {e}")
+        return False
 
 @bp.route('/sightings', methods=['GET', 'POST'])
 def sightings():
@@ -365,3 +402,95 @@ def update_colony(colony_id):
     except Exception as e:
         print(f"Error updating colony: {e}")
         return jsonify({'error': str(e)}), 500
+
+@bp.route('/submit-beta', methods=['POST'])
+@limiter.limit("5 per hour")  # Limit to 5 submissions per hour per IP
+def submit_beta_form():
+    """Handle HubSpot beta form submission with spam protection"""
+    try:
+        data = request.json
+        
+        # Basic validation
+        if not all(data.get(field) for field in ['firstname', 'lastname', 'email']):
+            return jsonify({
+                "success": False,
+                "message": "All fields are required"
+            }), 400
+            
+        # Email validation
+        if not is_valid_email(data['email']):
+            return jsonify({
+                "success": False,
+                "message": "Invalid email format"
+            }), 400
+            
+        # reCAPTCHA verification
+        recaptcha_token = request.headers.get('X-Recaptcha-Token')
+        if not recaptcha_token or not verify_recaptcha(recaptcha_token):
+            return jsonify({
+                "success": False,
+                "message": "Invalid reCAPTCHA"
+            }), 400
+            
+        # HubSpot API configuration from environment variables
+        portal_id = os.environ.get('HUBSPOT_PORTAL_ID')
+        form_id = os.environ.get('HUBSPOT_FORM_ID')
+        access_token = os.environ.get('HUBSPOT_ACCESS_TOKEN')
+        
+        if not all([portal_id, form_id, access_token]):
+            raise ValueError("Missing required HubSpot configuration")
+        
+        # Prepare the submission data
+        submission = {
+            "fields": [
+                {
+                    "name": "firstname",
+                    "value": data.get('firstname')[:50]  # Limit length
+                },
+                {
+                    "name": "lastname",
+                    "value": data.get('lastname')[:50]  # Limit length
+                },
+                {
+                    "name": "email",
+                    "value": data.get('email')[:100]  # Limit length
+                }
+            ],
+            "context": {
+                "pageUri": request.headers.get('Referer'),
+                "pageName": "Hawaii Cats Beta Signup",
+                "ipAddress": request.remote_addr  # Store IP for tracking
+            }
+        }
+        
+        # Submit to HubSpot
+        response = requests.post(
+            f"https://api.hsforms.com/submissions/v3/integration/submit/{portal_id}/{form_id}",
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json"
+            },
+            json=submission
+        )
+        
+        response.raise_for_status()
+        return jsonify({"success": True, "message": "Form submitted successfully"})
+        
+    except ValueError as e:
+        print(f"Configuration Error: {str(e)}")
+        return jsonify({
+            "success": False,
+            "message": "Server configuration error"
+        }), 500
+    except requests.exceptions.RequestException as e:
+        print(f"HubSpot API Error: {str(e)}")
+        return jsonify({
+            "success": False,
+            "message": "Error submitting form to HubSpot"
+        }), 500
+    except Exception as e:
+        print(f"Server Error: {str(e)}")
+        return jsonify({
+            "success": False,
+            "message": "Server error processing form submission"
+        }), 500

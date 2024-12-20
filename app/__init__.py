@@ -26,6 +26,10 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(app_dir, 'database.sqlite')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
+    # Configure reCAPTCHA
+    app.config['RECAPTCHA_SITE_KEY'] = os.environ.get('RECAPTCHA_SITE_KEY')
+    app.config['RECAPTCHA_SECRET_KEY'] = os.environ.get('RECAPTCHA_SECRET_KEY')
+    
     # Initialize extensions
     db.init_app(app)
 

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, current_app
 
 bp = Blueprint('main', __name__, template_folder='templates')
 
@@ -21,3 +21,9 @@ def catmap():
 def dashboard():
     """Render the dashboard page"""
     return render_template('dashboard.html')
+
+@bp.route('/mobile-app')
+def mobile_app():
+    """Render the mobile app page"""
+    return render_template('mobile_app.html', 
+                         recaptcha_site_key=current_app.config['RECAPTCHA_SITE_KEY'])
