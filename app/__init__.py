@@ -33,9 +33,21 @@ def create_app():
     try:
         firebase_admin.get_app()
     except ValueError:
-        cred_path = os.path.join(project_root, 'tools', 'sightings', 'firebase-credentials.json')
-        if not os.path.exists(cred_path):
-            raise FileNotFoundError(f"Firebase credentials file not found at {cred_path}")
+        # Check both possible locations for the credentials file
+        cred_paths = [
+            os.path.join(project_root, 'firebase-credentials.json'),  # Root directory (production)
+            os.path.join(app_dir, 'tools', 'sightings', 'firebase-credentials.json')  # App directory
+        ]
+        
+        cred_path = None
+        for path in cred_paths:
+            if os.path.exists(path):
+                cred_path = path
+                break
+                
+        if not cred_path:
+            raise FileNotFoundError(f"Firebase credentials file not found. Checked: {', '.join(cred_paths)}")
+            
         cred = credentials.Certificate(cred_path)
         firebase_admin.initialize_app(cred)
 

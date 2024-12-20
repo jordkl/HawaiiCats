@@ -16,7 +16,8 @@
     <script src="{{ url_for('static', filename='js/map-theme.js') }}"></script>
     <style>
         #map {
-            height: 600px;
+            height: 400px; /* Smaller on mobile */
+            height: min(60vh, 600px); /* Responsive height */
             width: 100%;
             border-radius: 0.5rem;
         }
@@ -24,7 +25,7 @@
             max-width: 300px;
         }
         .sightings-container {
-            height: 600px; /* Match map height */
+            height: min(50vh, 600px); /* Responsive height */
             display: flex;
             flex-direction: column;
         }
@@ -33,6 +34,7 @@
             overflow-y: auto;
             scrollbar-width: thin;
             scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+            padding-right: 0.5rem; /* Add padding for scrollbar */
         }
         .sightings-list::-webkit-scrollbar {
             width: 6px;
@@ -44,21 +46,31 @@
             background-color: rgba(156, 163, 175, 0.5);
             border-radius: 3px;
         }
+        @media (max-width: 768px) {
+            #map {
+                height: 50vh; /* Viewport-based height on mobile */
+                margin-bottom: 1rem;
+            }
+            .sightings-container {
+                height: auto; /* Auto height on mobile */
+                max-height: 50vh; /* But limit maximum height */
+            }
+        }
     </style>
 {% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 md:p-0">
     <div class="md:col-span-2">
         <div id="map" class="shadow-lg"></div>
     </div>
     <div>
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sightings-container transition-colors duration-200">
-            <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">10 Most Recent Sightings</h2>
-            <div id="connectionStatus" class="text-sm mb-4 text-gray-600 dark:text-gray-400">
+            <h2 class="text-lg font-semibold mb-2 md:mb-4 text-gray-900 dark:text-white">10 Most Recent Sightings</h2>
+            <div id="connectionStatus" class="text-sm mb-2 md:mb-4 text-gray-600 dark:text-gray-400">
                 Checking API connection...
             </div>
-            <div id="sightingsList" class="space-y-4 sightings-list">
+            <div id="sightingsList" class="space-y-2 md:space-y-4 sightings-list">
                 <!-- Sightings will be populated here -->
             </div>
         </div>
