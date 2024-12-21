@@ -15,15 +15,15 @@
             <button type="button" class="preset-button" data-preset="beach">Beach Area</button>
             <button type="button" class="preset-button" data-preset="custom">Custom</button>
         </div>
-        <div id="preset_info" class="mt-2 text-sm text-gray-600"></div>
+        <div id="presetInfo" class="mt-2 text-sm text-gray-600"></div>
     </div>
 
     <!-- Territory Size -->
     <div>
-        <label class="parameter-label" for="territory_size">Territory Size</label>
-        <input type="range" id="territory_size" min="100" max="100000" value="1000" class="slider">
+        <label class="parameter-label" for="territorySize">Territory Size</label>
+        <input type="range" id="territorySize" min="100" max="100000" value="1000" class="slider">
         <div class="flex justify-between">
-            <input type="number" id="territory_size_custom" min="100" max="100000" value="1000" 
+            <input type="number" id="territorySizeCustom" min="100" max="100000" value="1000" 
                    class="w-24 p-1 border rounded text-right">
             <span class="parameter-description">square meters</span>
         </div>
@@ -31,10 +31,10 @@
 
     <!-- Density Threshold -->
     <div>
-        <label class="parameter-label" for="density_threshold">Environment Density</label>
-        <input type="range" id="density_threshold" min="0.2" max="5.0" step="0.1" value="1.2" class="slider">
+        <label class="parameter-label" for="densityThreshold">Environment Density</label>
+        <input type="range" id="densityThreshold" min="0.2" max="5.0" step="0.1" value="1.2" class="slider">
         <div class="flex justify-between">
-            <input type="number" id="density_threshold_custom" min="0.2" max="5.0" step="0.1" value="1.2" 
+            <input type="number" id="densityThresholdCustom" min="0.2" max="5.0" step="0.1" value="1.2" 
                    class="w-24 p-1 border rounded text-right">
             <span class="parameter-description">cats per 100m²</span>
         </div>
@@ -42,30 +42,30 @@
     
     <!-- Initial Colony Size -->
     <div>
-        <label class="parameter-label" for="currentSize">Initial Colony Size</label>
-        <input type="range" id="currentSize" min="1" max="250" value="10" class="slider">
+        <label class="parameter-label" for="initialColonySize">Initial Colony Size</label>
+        <input type="range" id="initialColonySize" min="1" max="250" value="10" class="slider">
         <div class="flex justify-between">
-            <span class="parameter-value" id="currentSizeValue">10</span>
+            <span class="parameter-value" id="initialColonySizeValue">10</span>
             <span class="parameter-description">cats</span>
         </div>
     </div>
 
     <!-- Already Sterilized -->
     <div>
-        <label class="parameter-label" for="sterilizedCount">Already Sterilized</label>
-        <input type="range" id="sterilizedCount" min="0" max="10" value="0" class="slider">
+        <label class="parameter-label" for="alreadySterilized">Already Sterilized</label>
+        <input type="range" id="alreadySterilized" min="0" max="10" value="0" class="slider">
         <div class="flex justify-between">
-            <span class="parameter-value" id="sterilizedCountValue">0</span>
+            <span class="parameter-value" id="alreadySterilizedValue">0</span>
             <span class="parameter-description">cats</span>
         </div>
     </div>
 
     <!-- Monthly Sterilization Rate -->
     <div>
-        <label class="parameter-label" for="monthlysterilization">Monthly Sterilization Rate</label>
-        <input type="range" id="monthlysterilization" min="0" max="10" value="1" class="slider">
+        <label class="parameter-label" for="monthlySterilizationRate">Monthly Sterilization Rate</label>
+        <input type="range" id="monthlySterilizationRate" min="0" max="10" value="1" class="slider">
         <div class="flex justify-between">
-            <span class="parameter-value" id="monthlysterilizationValue">1</span>
+            <span class="parameter-value" id="monthlySterilizationRateValue">1</span>
             <span class="parameter-description">cats/month</span>
         </div>
     </div>
@@ -81,10 +81,10 @@
 
     <!-- Simulation Length -->
     <div>
-        <label class="parameter-label" for="months">Simulation Length</label>
-        <input type="range" id="months" min="1" max="60" value="12" class="slider">
+        <label class="parameter-label" for="simulationLength">Simulation Length</label>
+        <input type="range" id="simulationLength" min="1" max="60" value="12" class="slider">
         <div class="flex justify-between">
-            <span class="parameter-value" id="monthsValue">12</span>
+            <span class="parameter-value" id="simulationLengthValue">12</span>
             <span class="parameter-description">months</span>
         </div>
     </div>
@@ -104,10 +104,10 @@
         
         <!-- Number of Simulations -->
         <div>
-            <label class="parameter-label" for="numSimulations">Number of Simulations</label>
-            <input type="range" id="numSimulations" min="100" max="1000" value="500" step="100" class="slider">
+            <label class="parameter-label" for="numberOfSimulations">Number of Simulations</label>
+            <input type="range" id="numberOfSimulations" min="100" max="1000" value="500" step="100" class="slider">
             <div class="flex justify-between">
-                <span class="parameter-value" id="numSimulationsValue">500</span>
+                <span class="parameter-value" id="numberOfSimulationsValue">500</span>
                 <span class="parameter-description">simulations</span>
             </div>
         </div>

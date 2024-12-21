@@ -57,16 +57,16 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
         return None
         
     if current_size < 1:
-        log_simulation_error(simulation_id, "Invalid input parameters: current_size must be a positive number")
+        log_simulation_error(simulation_id, "Invalid input parameters: initialColonySize must be a positive number")
         return None
     if months < 1:
-        log_simulation_error(simulation_id, "Invalid input parameters: months must be a positive number")
+        log_simulation_error(simulation_id, "Invalid input parameters: simulationLength must be a positive number")
         return None
     if sterilized_count < 0:
-        log_simulation_error(simulation_id, "Invalid input parameters: sterilized_count must be a non-negative number")
+        log_simulation_error(simulation_id, "Invalid input parameters: alreadySterilized must be a non-negative number")
         return None
     if monthly_sterilization < 0:
-        log_simulation_error(simulation_id, "Invalid input parameters: monthly_sterilization must be a non-negative number")
+        log_simulation_error(simulation_id, "Invalid input parameters: monthlySterilizationRate must be a non-negative number")
         return None
         
     try:
@@ -603,10 +603,10 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
 
         # Create calculation parameters dictionary
         calculation_params = {
-            'current_size': current_size,
-            'sterilized_count': sterilized_count,
-            'monthly_sterilization': monthly_sterilization,
-            'months': months,
+            'initialColonySize': current_size,
+            'alreadySterilized': sterilized_count,
+            'monthlySterilizationRate': monthly_sterilization,
+            'simulationLength': months,
             **params  # Include all simulation parameters
         }
 

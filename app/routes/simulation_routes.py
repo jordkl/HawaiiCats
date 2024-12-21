@@ -47,14 +47,14 @@ def calculate_population():
             return jsonify({'error': 'No data received'}), 400
 
         # Parse input parameters
-        current_size = int(float(data.get('current_size', 10)))
-        sterilized_count = int(float(data.get('sterilized_count', 0)))
-        monthly_sterilization = float(data.get('monthly_sterilization', 0))
-        months = int(data.get('months', 12))
-        sterilization_cost = float(data.get('sterilization_cost', 50))
-        use_monte_carlo = bool(data.get('use_monte_carlo', False))
+        current_size = int(float(data.get('initialColonySize', 10)))
+        sterilized_count = int(float(data.get('alreadySterilized', 0)))
+        monthly_sterilization = float(data.get('monthlySterilizationRate', 0))
+        months = int(data.get('simulationLength', 12))
+        sterilization_cost = float(data.get('sterilizationCost', 50))
+        use_monte_carlo = bool(data.get('useMonteCarlo', False))
         
-        log_debug('INFO', f'Parsed parameters: current_size={current_size}, sterilized={sterilized_count}, monthly_steril={monthly_sterilization}, months={months}, cost={sterilization_cost}, monte_carlo={use_monte_carlo}')
+        log_debug('INFO', f'Parsed parameters: initialColonySize={current_size}, alreadySterilized={sterilized_count}, monthlySterilizationRate={monthly_sterilization}, simulationLength={months}, sterilizationCost={sterilization_cost}, useMonteCarlo={use_monte_carlo}')
         
         # Validate input
         if current_size < 1:
@@ -92,11 +92,11 @@ def calculate_population():
         # Add or update top-level parameters with type conversion
         try:
             top_level_params = {
-                'territory_size': float(data.get('territory_size', 1000)),
-                'density_impact_threshold': float(data.get('density_impact_threshold', 1.2)),
-                'base_food_capacity': float(data.get('base_food_capacity', 0.9)),
-                'food_scaling_factor': float(data.get('food_scaling_factor', 0.8)),
-                'monthly_abandonment': float(data.get('monthly_abandonment', 2.0))
+                'territorySize': float(data.get('territorySize', 1000)),
+                'densityImpactThreshold': float(data.get('densityImpactThreshold', 1.2)),
+                'baseFoodCapacity': float(data.get('baseFoodCapacity', 0.9)),
+                'foodScalingFactor': float(data.get('foodScalingFactor', 0.8)),
+                'monthlyAbandonment': float(data.get('monthlyAbandonment', 2.0))
             }
             params.update(top_level_params)
         except (TypeError, ValueError) as e:
@@ -114,8 +114,8 @@ def calculate_population():
         if use_monte_carlo:
             try:
                 log_debug('INFO', 'Setting up Monte Carlo simulation')
-                monte_carlo_runs = int(data.get('monte_carlo_runs', 500))
-                variation_coefficient = min(float(data.get('variation_coefficient', 0.1)), 0.5)  # Cap at 0.5
+                monte_carlo_runs = int(data.get('monteCarloRuns', 500))
+                variation_coefficient = min(float(data.get('variationCoefficient', 0.1)), 0.5)  # Cap at 0.5
                 
                 # Validate Monte Carlo parameters
                 if monte_carlo_runs < 1:
@@ -127,14 +127,14 @@ def calculate_population():
                 
                 # Add Monte Carlo specific parameters to params
                 params.update({
-                    'num_simulations': monte_carlo_runs,
-                    'variation_coefficient': variation_coefficient,
-                    'kitten_maturity_months': float(params.get('kitten_maturity_months', 5)),
-                    'peak_breeding_month': int(params.get('peak_breeding_month', 4)),
-                    'density_impact_threshold': float(params.get('density_impact_threshold', 1.2)),
-                    'base_breeding_success': float(params.get('base_breeding_success', 0.95)),
-                    'age_breeding_factor': float(params.get('age_breeding_factor', 0.06)),
-                    'stress_impact': float(params.get('stress_impact', 0.12))
+                    'numSimulations': monte_carlo_runs,
+                    'variationCoefficient': variation_coefficient,
+                    'kittenMaturityMonths': float(params.get('kittenMaturityMonths', 5)),
+                    'peakBreedingMonth': int(params.get('peakBreedingMonth', 4)),
+                    'densityImpactThreshold': float(params.get('densityImpactThreshold', 1.2)),
+                    'baseBreedingSuccess': float(params.get('baseBreedingSuccess', 0.95)),
+                    'ageBreedingFactor': float(params.get('ageBreedingFactor', 0.06)),
+                    'stressImpact': float(params.get('stressImpact', 0.12))
                 })
             except (TypeError, ValueError) as e:
                 return jsonify({'error': f'Invalid Monte Carlo parameters: {str(e)}'}), 400
@@ -174,44 +174,39 @@ def calculate_population():
             total_cost = total_sterilizations * sterilization_cost
 
             # Prepare data for logging
-            row_data = {
-                # Input parameters
+            log_data = {
                 'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'current_size': current_size,
-                'sterilized_count': sterilized_count,
-                'monthly_sterilization': monthly_sterilization,
-                'months': months,
-                'sterilization_cost': sterilization_cost,
-                'use_monte_carlo': use_monte_carlo,
-                
-                # Results
-                'final_population': result['final_population'],
-                'final_sterilized': result['final_sterilized'],
-                'total_sterilizations': total_sterilizations,
-                'total_cost': total_cost,
-                'population_growth': result['population_growth'],
-                'monthly_populations': ','.join(map(str, result['monthly_populations'])),
-                'monthly_sterilized': ','.join(map(str, result['monthly_sterilized'])),
-                
-                # Parameters used
-                'params': str(params)
+                'initialColonySize': current_size,
+                'alreadySterilized': sterilized_count,
+                'monthlySterilizationRate': monthly_sterilization,
+                'simulationLength': months,
+                'sterilizationCost': sterilization_cost,
+                'useMonteCarlo': use_monte_carlo,
+                'finalPopulation': result['final_population'],
+                'finalSterilized': result['final_sterilized'],
+                'totalSterilizations': total_sterilizations,
+                'totalCost': total_cost,
+                'populationGrowth': result['population_growth'],
+                'monthlyPopulations': ','.join(map(str, result['monthly_populations'])),
+                'monthlySterilized': ','.join(map(str, result['monthly_sterilized'])),
+                'params': json.dumps(params)
             }
 
             # Add Monte Carlo specific results if applicable
             if use_monte_carlo:
-                row_data.update({
-                    'num_simulations': params['num_simulations'],
-                    'variation_coefficient': params['variation_coefficient'],
-                    'confidence_interval_lower': result.get('confidence_interval_lower', ''),
-                    'confidence_interval_upper': result.get('confidence_interval_upper', ''),
-                    'standard_deviation': result.get('standard_deviation', '')
+                log_data.update({
+                    'numSimulations': params['numSimulations'],
+                    'variationCoefficient': params['variationCoefficient'],
+                    'confidenceIntervalLower': result.get('confidence_interval_lower', ''),
+                    'confidenceIntervalUpper': result.get('confidence_interval_upper', ''),
+                    'standardDeviation': result.get('standard_deviation', '')
                 })
 
             # Log the calculation
             try:
                 log_debug('INFO', f"Writing calculation data to log file: {CALC_FILE}")
                 log_debug('INFO', f"Current working directory: {os.getcwd()}")
-                log_debug('INFO', f"Log entry: {row_data}")
+                log_debug('INFO', f"Log entry: {log_data}")
                 
                 # Create logs directory if it doesn't exist
                 os.makedirs(os.path.dirname(CALC_FILE), exist_ok=True)
@@ -219,10 +214,10 @@ def calculate_population():
                 # Check if file exists and write header if it doesn't
                 file_exists = os.path.isfile(CALC_FILE)
                 with open(CALC_FILE, 'a', newline='') as f:
-                    writer = csv.DictWriter(f, fieldnames=row_data.keys())
+                    writer = csv.DictWriter(f, fieldnames=log_data.keys())
                     if not file_exists:
                         writer.writeheader()
-                    writer.writerow(row_data)
+                    writer.writerow(log_data)
                 
                 log_debug('INFO', "Successfully wrote calculation data to log file")
             except Exception as e:
@@ -235,39 +230,39 @@ def calculate_population():
             response_data = {
                 'success': True,
                 'result': {
-                    'final_population': result['final_population'],
-                    'final_sterilized': result['final_sterilized'],
-                    'total_sterilizations': total_sterilizations,
-                    'total_cost': total_cost,
-                    'population_growth': result['population_growth'],
-                    'monthly_populations': result['monthly_populations'],
-                    'monthly_sterilized': result['monthly_sterilized'],
-                    'monthly_kittens': result['monthly_kittens'],
-                    'monthly_reproductive': result['monthly_reproductive'],
-                    'total_deaths': result['total_deaths'],
-                    'kitten_deaths': result['kitten_deaths'],
-                    'adult_deaths': result['adult_deaths'],
-                    'natural_deaths': result['natural_deaths'],
-                    'urban_deaths': result['urban_deaths'],
-                    'disease_deaths': result['disease_deaths'],
-                    'monthly_deaths_kittens': result['monthly_deaths_kittens'],
-                    'monthly_deaths_adults': result['monthly_deaths_adults'],
-                    'monthly_deaths_natural': result['monthly_deaths_natural'],
-                    'monthly_deaths_urban': result['monthly_deaths_urban'],
-                    'monthly_deaths_disease': result['monthly_deaths_disease'],
-                    'monthly_deaths_other': result['monthly_deaths_other']
+                    'finalPopulation': result['final_population'],
+                    'finalSterilized': result['final_sterilized'],
+                    'totalSterilizations': total_sterilizations,
+                    'totalCost': total_cost,
+                    'populationGrowth': result['population_growth'],
+                    'monthlyPopulations': result['monthly_populations'],
+                    'monthlySterilized': result['monthly_sterilized'],
+                    'monthlyKittens': result['monthly_kittens'],
+                    'monthlyReproductive': result['monthly_reproductive'],
+                    'totalDeaths': result['total_deaths'],
+                    'kittenDeaths': result['kitten_deaths'],
+                    'adultDeaths': result['adult_deaths'],
+                    'naturalDeaths': result['natural_deaths'],
+                    'urbanDeaths': result['urban_deaths'],
+                    'diseaseDeaths': result['disease_deaths'],
+                    'monthlyDeathsKittens': result['monthly_deaths_kittens'],
+                    'monthlyDeathsAdults': result['monthly_deaths_adults'],
+                    'monthlyDeathsNatural': result['monthly_deaths_natural'],
+                    'monthlyDeathsUrban': result['monthly_deaths_urban'],
+                    'monthlyDeathsDisease': result['monthly_deaths_disease'],
+                    'monthlyDeathsOther': result['monthly_deaths_other']
                 }
             }
 
             # Add Monte Carlo specific results if applicable
             if use_monte_carlo:
                 response_data['result'].update({
-                    'confidence_interval': [
+                    'confidenceInterval': [
                         result['confidence_interval'][0],
                         result['confidence_interval'][1]
                     ],
-                    'standard_deviation': result['standard_deviation'],
-                    'all_results': result.get('all_results', None)
+                    'standardDeviation': result['standard_deviation'],
+                    'allResults': result.get('all_results', None)
                 })
 
             return jsonify(response_data)
@@ -333,7 +328,7 @@ def flag_scenario():
 
         # Add metadata
         data['timestamp'] = timestamp
-        data['ip_address'] = request.remote_addr
+        data['ipAddress'] = request.remote_addr
         
         # Write the data to a JSON file
         with open(filepath, 'w') as f:

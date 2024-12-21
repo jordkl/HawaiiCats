@@ -9,64 +9,64 @@ const baseUrl = isLocalhost ? `http://${window.location.host}` : 'https://hawaii
 // Function to collect advanced parameters from the form
 function collectAdvancedParameters() {
     return {
-        kitten_survival_rate: parseFloat(document.getElementById('kittenSurvivalRate')?.value || '0.5'),
-        birth_rate: parseFloat(document.getElementById('birthRate')?.value || '0.5'),
-        natural_death_rate: parseFloat(document.getElementById('naturalDeathRate')?.value || '0.1'),
-        urban_death_rate: parseFloat(document.getElementById('urbanDeathRate')?.value || '0.1'),
-        disease_death_rate: parseFloat(document.getElementById('diseaseDeathRate')?.value || '0.1'),
-        carrying_capacity: parseFloat(document.getElementById('carryingCapacity')?.value || '1000'),
-        density_dependent_birth_scale: parseFloat(document.getElementById('densityDependentBirthScale')?.value || '0.5'),
-        density_dependent_death_scale: parseFloat(document.getElementById('densityDependentDeathScale')?.value || '0.5')
+        kittenSurvivalRate: parseFloat(document.getElementById('kittenSurvivalRate')?.value || '0.5'),
+        birthRate: parseFloat(document.getElementById('birthRate')?.value || '0.5'),
+        naturalDeathRate: parseFloat(document.getElementById('naturalDeathRate')?.value || '0.1'),
+        urbanDeathRate: parseFloat(document.getElementById('urbanDeathRate')?.value || '0.1'),
+        diseaseDeathRate: parseFloat(document.getElementById('diseaseDeathRate')?.value || '0.1'),
+        carryingCapacity: parseFloat(document.getElementById('carryingCapacity')?.value || '1000'),
+        densityDependentBirthScale: parseFloat(document.getElementById('densityDependentBirthScale')?.value || '0.5'),
+        densityDependentDeathScale: parseFloat(document.getElementById('densityDependentDeathScale')?.value || '0.5')
     };
 }
 
 // Remove duplicate toggleAdvancedMode function since it's already in script.js
 
 function updateSliderConstraints() {
-    const currentSize = parseInt(document.getElementById('currentSize').value);
-    const sterilizedSlider = document.getElementById('sterilizedCount');
+    const currentSize = parseInt(document.getElementById('initialColonySize').value);
+    const sterilizedSlider = document.getElementById('alreadySterilized');
     sterilizedSlider.max = currentSize;
     if (parseInt(sterilizedSlider.value) > currentSize) {
         sterilizedSlider.value = currentSize;
-        document.getElementById('sterilizedCountValue').textContent = currentSize;
+        document.getElementById('alreadySterilizedValue').textContent = currentSize;
     }
 }
 
 // Function to update maximum sterilization rate based on colony size
 function updateMaxSterilization() {
-    const currentSize = parseInt(document.getElementById('currentSize').value) || 0;
-    const sterilizedCount = parseInt(document.getElementById('sterilizedCount').value) || 0;
-    const unsterilizedCount = Math.max(0, currentSize - sterilizedCount);
+    const initialColonySize = parseInt(document.getElementById('initialColonySize').value) || 0;
+    const alreadySterilized = parseInt(document.getElementById('alreadySterilized').value) || 0;
+    const unsterilizedCount = Math.max(0, initialColonySize - alreadySterilized);
     
-    const monthlysterilization = document.getElementById('monthlysterilization');
-    monthlysterilization.max = unsterilizedCount;
+    const monthlySterilizationRate = document.getElementById('monthlySterilizationRate');
+    monthlySterilizationRate.max = unsterilizedCount;
     
     // Adjust current value if it exceeds new maximum
-    if (parseInt(monthlysterilization.value) > unsterilizedCount) {
-        monthlysterilization.value = unsterilizedCount;
-        document.getElementById('monthlysterilizationValue').textContent = unsterilizedCount;
+    if (parseInt(monthlySterilizationRate.value) > unsterilizedCount) {
+        monthlySterilizationRate.value = unsterilizedCount;
+        document.getElementById('monthlySterilizationRateValue').textContent = unsterilizedCount;
     }
 }
 
 // Update sterilized count constraints when colony size changes
 function updateSterilizedConstraints() {
-    const currentSize = parseInt(document.getElementById('currentSize').value);
-    const sterilizedInput = document.getElementById('sterilizedCount');
-    const monthlyInput = document.getElementById('monthlysterilization');
+    const initialColonySize = parseInt(document.getElementById('initialColonySize').value);
+    const alreadySterilizedInput = document.getElementById('alreadySterilized');
+    const monthlySterilizationRateInput = document.getElementById('monthlySterilizationRate');
     
     // Update max values
-    sterilizedInput.max = currentSize;
-    monthlyInput.max = currentSize - parseInt(sterilizedInput.value);
+    alreadySterilizedInput.max = initialColonySize;
+    monthlySterilizationRateInput.max = initialColonySize - parseInt(alreadySterilizedInput.value);
     
     // Ensure current values don't exceed new max
-    if (parseInt(sterilizedInput.value) > currentSize) {
-        sterilizedInput.value = currentSize;
-        document.getElementById('sterilizedCountValue').textContent = currentSize;
+    if (parseInt(alreadySterilizedInput.value) > initialColonySize) {
+        alreadySterilizedInput.value = initialColonySize;
+        document.getElementById('alreadySterilizedValue').textContent = initialColonySize;
     }
     
-    if (parseInt(monthlyInput.value) > monthlyInput.max) {
-        monthlyInput.value = monthlyInput.max;
-        document.getElementById('monthlysterilizationValue').textContent = monthlyInput.max;
+    if (parseInt(monthlySterilizationRateInput.value) > monthlySterilizationRateInput.max) {
+        monthlySterilizationRateInput.value = monthlySterilizationRateInput.max;
+        document.getElementById('monthlySterilizationRateValue').textContent = monthlySterilizationRateInput.max;
     }
 }
 
@@ -99,37 +99,37 @@ function initializeInputListeners() {
     }
 
     // Initial Colony Size
-    const currentSizeInput = document.getElementById('currentSize');
-    if (currentSizeInput) {
-        currentSizeInput.addEventListener('input', function() {
-            document.getElementById('currentSizeValue').textContent = this.value;
+    const initialColonySizeInput = document.getElementById('initialColonySize');
+    if (initialColonySizeInput) {
+        initialColonySizeInput.addEventListener('input', function() {
+            document.getElementById('initialColonySizeValue').textContent = this.value;
             updateSliderConstraints();
             updateMaxSterilization();
         });
     }
 
     // Already Sterilized
-    const sterilizedCountInput = document.getElementById('sterilizedCount');
-    if (sterilizedCountInput) {
-        sterilizedCountInput.addEventListener('input', function() {
-            document.getElementById('sterilizedCountValue').textContent = this.value;
+    const alreadySterilizedInput = document.getElementById('alreadySterilized');
+    if (alreadySterilizedInput) {
+        alreadySterilizedInput.addEventListener('input', function() {
+            document.getElementById('alreadySterilizedValue').textContent = this.value;
             updateMaxSterilization();
         });
     }
 
     // Monthly Sterilization Rate
-    const monthlysterilizationInput = document.getElementById('monthlysterilization');
-    if (monthlysterilizationInput) {
-        monthlysterilizationInput.addEventListener('input', function() {
-            document.getElementById('monthlysterilizationValue').textContent = this.value;
+    const monthlySterilizationRateInput = document.getElementById('monthlySterilizationRate');
+    if (monthlySterilizationRateInput) {
+        monthlySterilizationRateInput.addEventListener('input', function() {
+            document.getElementById('monthlySterilizationRateValue').textContent = this.value;
         });
     }
 
     // Simulation Length
-    const monthsInput = document.getElementById('months');
-    if (monthsInput) {
-        monthsInput.addEventListener('input', function() {
-            document.getElementById('monthsValue').textContent = this.value;
+    const simulationLengthInput = document.getElementById('simulationLength');
+    if (simulationLengthInput) {
+        simulationLengthInput.addEventListener('input', function() {
+            document.getElementById('simulationLengthValue').textContent = this.value;
         });
     }
 
@@ -154,7 +154,7 @@ function initializeInputListeners() {
     }
 
     // Colony Size
-    const colonySizeInput = document.getElementById('currentSize');
+    const colonySizeInput = document.getElementById('initialColonySize');
     if (colonySizeInput) {
         colonySizeInput.addEventListener('input', updateSterilizedConstraints);
     }
@@ -219,11 +219,11 @@ function initializeInputListeners() {
         // Update territory and density values
         const presetData = environmentPresets[preset];
         if (presetData) {
-            document.getElementById('territory_size').value = presetData.territory;
-            document.getElementById('territory_size_custom').value = presetData.territory;
-            document.getElementById('density_threshold').value = presetData.density;
-            document.getElementById('density_threshold_custom').value = presetData.density;
-            document.getElementById('preset_info').textContent = presetData.description;
+            document.getElementById('territorySize').value = presetData.territory;
+            document.getElementById('territorySizeCustom').value = presetData.territory;
+            document.getElementById('densityThreshold').value = presetData.density;
+            document.getElementById('densityThresholdCustom').value = presetData.density;
+            document.getElementById('presetInfo').textContent = presetData.description;
         }
     }
 
@@ -243,22 +243,22 @@ function initializeInputListeners() {
     initializePresetButtons();
 
     // Update custom inputs when select values change
-    document.getElementById('territory_size').addEventListener('change', function(e) {
-        document.getElementById('territory_size_custom').value = e.target.value;
+    document.getElementById('territorySize').addEventListener('change', function(e) {
+        document.getElementById('territorySizeCustom').value = e.target.value;
     });
 
-    document.getElementById('density_threshold').addEventListener('change', function(e) {
-        document.getElementById('density_threshold_custom').value = e.target.value;
+    document.getElementById('densityThreshold').addEventListener('change', function(e) {
+        document.getElementById('densityThresholdCustom').value = e.target.value;
     });
 
     // Update select inputs when custom values change
-    document.getElementById('territory_size_custom').addEventListener('input', function(e) {
-        const select = document.getElementById('territory_size');
+    document.getElementById('territorySizeCustom').addEventListener('input', function(e) {
+        const select = document.getElementById('territorySize');
         select.value = Array.from(select.options).find(opt => opt.value === e.target.value)?.value || '';
     });
 
-    document.getElementById('density_threshold_custom').addEventListener('input', function(e) {
-        const select = document.getElementById('density_threshold');
+    document.getElementById('densityThresholdCustom').addEventListener('input', function(e) {
+        const select = document.getElementById('densityThreshold');
         select.value = Array.from(select.options).find(opt => opt.value === e.target.value)?.value || '';
     });
 
@@ -299,43 +299,43 @@ async function handleCalculate() {
         };
 
         // Collect and validate basic parameters
-        const currentSize = parseInt(document.getElementById('currentSize').value);
-        const sterilizedCount = parseInt(document.getElementById('sterilizedCount').value);
-        const monthlysterilization = parseInt(document.getElementById('monthlysterilization').value);
-        const months = parseInt(document.getElementById('months').value);
+        const initialColonySize = parseInt(document.getElementById('initialColonySize').value);
+        const alreadySterilized = parseInt(document.getElementById('alreadySterilized').value);
+        const monthlySterilizationRate = parseInt(document.getElementById('monthlySterilizationRate').value);
+        const simulationLength = parseInt(document.getElementById('simulationLength').value);
         const sterilizationCost = parseFloat(document.getElementById('sterilizationCost').value);
         const useMonteCarloCheckbox = document.getElementById('useMonteCarlo')?.checked || false;
 
         // Validate input
-        if (isNaN(currentSize) || currentSize < 1) {
+        if (isNaN(initialColonySize) || initialColonySize < 1) {
             throw new Error('Colony size must be at least 1');
         }
 
         // Prepare request data
         const data = {
-            current_size: currentSize,
-            sterilized_count: sterilizedCount,
-            monthly_sterilization: monthlysterilization,
-            months: months,
-            sterilization_cost: sterilizationCost,
-            use_monte_carlo: useMonteCarloCheckbox,
-            monthly_abandonment: validateInput(document.getElementById('monthlyAbandonment')?.value || '2', 'Monthly Abandonment', 0, 50),
+            initialColonySize: initialColonySize,
+            alreadySterilized: alreadySterilized,
+            monthlySterilizationRate: monthlySterilizationRate,
+            simulationLength: simulationLength,
+            sterilizationCost: sterilizationCost,
+            useMonteCarlo: useMonteCarloCheckbox,
+            monthlyAbandonment: validateInput(document.getElementById('monthlyAbandonment')?.value || '2', 'Monthly Abandonment', 0, 50),
         };
 
         // Add Monte Carlo specific parameters if enabled
         if (useMonteCarlo) {
             console.log('Adding Monte Carlo parameters');
-            data.monte_carlo_runs = validateInput(document.getElementById('numSimulations')?.value || '500', 'Number of Simulations', 100, 1000);
-            data.variation_coefficient = validateInput(document.getElementById('variationCoefficient')?.value || '0.2', 'Variation Coefficient', 0, 1);
+            data.monteCarloRuns = validateInput(document.getElementById('numSimulations')?.value || '500', 'Number of Simulations', 100, 1000);
+            data.variationCoefficient = validateInput(document.getElementById('variationCoefficient')?.value || '0.2', 'Variation Coefficient', 0, 1);
             console.log('Monte Carlo parameters:', { 
-                monte_carlo_runs: data.monte_carlo_runs, 
-                variation_coefficient: data.variation_coefficient,
-                use_monte_carlo: data.use_monte_carlo
+                monteCarloRuns: data.monteCarloRuns, 
+                variationCoefficient: data.variationCoefficient,
+                useMonteCarlo: data.useMonteCarlo
             });
         }
 
         // Validate dependencies between parameters
-        if (sterilizedCount > currentSize) {
+        if (alreadySterilized > initialColonySize) {
             throw new Error('Sterilized count cannot exceed colony size');
         }
 
@@ -392,15 +392,15 @@ async function handleCalculate() {
         
         // Ensure we have the correct data structure
         if (useMonteCarlo) {
-            if (!result.result || !result.result.confidence_interval || !result.result.standard_deviation) {
+            if (!result.result || !result.result.confidenceInterval || !result.result.standardDeviation) {
                 console.warn('Monte Carlo simulation was requested but data is missing:', result);
                 throw new Error('Monte Carlo simulation failed. Please try again with fewer simulations.');
             }
             
             // Validate the Monte Carlo data structure
             const monteCarloResult = result.result;
-            if (!monteCarloResult.final_population || !monteCarloResult.monthly_populations || 
-                !monteCarloResult.monthly_sterilized || !monteCarloResult.monthly_kittens) {
+            if (!monteCarloResult.finalPopulation || !monteCarloResult.monthlyPopulations || 
+                !monteCarloResult.monthlySterilized || !monteCarloResult.monthlyKittens) {
                 console.warn('Monte Carlo data is incomplete:', monteCarloResult);
                 throw new Error('Monte Carlo simulation returned incomplete data. Please try again.');
             }
@@ -494,13 +494,13 @@ async function displayResults(data) {
 
         // Process mortality data
         console.log('Processing mortality data...');
-        const totalDeaths = resultData.total_deaths;
-        const kittenDeaths = resultData.kitten_deaths;
-        const adultDeaths = resultData.adult_deaths;
-        const mortalityRate = ((totalDeaths / (resultData.final_population + totalDeaths)) * 100).toFixed(1);
-        const naturalDeaths = resultData.natural_deaths;
-        const urbanDeaths = resultData.urban_deaths;
-        const diseaseDeaths = resultData.disease_deaths;
+        const totalDeaths = resultData.totalDeaths;
+        const kittenDeaths = resultData.kittenDeaths;
+        const adultDeaths = resultData.adultDeaths;
+        const mortalityRate = ((totalDeaths / (resultData.finalPopulation + totalDeaths)) * 100).toFixed(1);
+        const naturalDeaths = resultData.naturalDeaths;
+        const urbanDeaths = resultData.urbanDeaths;
+        const diseaseDeaths = resultData.diseaseDeaths;
 
         // Update mortality statistics
         safeSetContent('totalDeaths', formatNumber(totalDeaths));
@@ -512,10 +512,10 @@ async function displayResults(data) {
         safeSetContent('diseaseDeaths', formatNumber(diseaseDeaths));
 
         // Update basic statistics
-        safeSetContent('finalPopulation', formatNumber(resultData.final_population));
-        safeSetContent('populationChange', formatNumber(resultData.population_growth));
-        safeSetContent('sterilizationRate', `${((resultData.final_sterilized / resultData.final_population) * 100).toFixed(1)}%`);
-        safeSetContent('totalCost', formatNumber(resultData.total_cost, true));
+        safeSetContent('finalPopulation', formatNumber(resultData.finalPopulation));
+        safeSetContent('populationChange', formatNumber(resultData.populationGrowth));
+        safeSetContent('sterilizationRate', `${((resultData.finalSterilized / resultData.finalPopulation) * 100).toFixed(1)}%`);
+        safeSetContent('totalCost', formatNumber(resultData.totalCost, true));
 
         // Update graphs
         await plotPopulationGraph(resultData);
@@ -550,22 +550,22 @@ async function plotPopulationGraph(data) {
         }
 
         // Generate months array for x-axis
-        const months = Array.from({length: resultData.monthly_populations.length}, (_, i) => i);
+        const months = Array.from({length: resultData.monthlyPopulations.length}, (_, i) => i);
 
         // Create datasets array starting with the main population line
         const datasets = [];
 
         // If we have Monte Carlo results, calculate confidence intervals
-        if (resultData.all_results && resultData.all_results.length > 0) {
+        if (resultData.allResults && resultData.allResults.length > 0) {
             // Calculate mean and bounds for each month
-            const numMonths = resultData.all_results[0].monthly_populations.length;
+            const numMonths = resultData.allResults[0].monthlyPopulations.length;
             const meanPopulations = new Array(numMonths).fill(0);
             const lowerBounds = new Array(numMonths).fill(0);
             const upperBounds = new Array(numMonths).fill(0);
 
             // Calculate means
             for (let month = 0; month < numMonths; month++) {
-                const monthValues = resultData.all_results.map(r => r.monthly_populations[month]);
+                const monthValues = resultData.allResults.map(r => r.monthlyPopulations[month]);
                 meanPopulations[month] = monthValues.reduce((a, b) => a + b, 0) / monthValues.length;
                 
                 // Calculate 95% confidence interval
@@ -612,7 +612,7 @@ async function plotPopulationGraph(data) {
             // Regular single simulation datasets
             datasets.push({
                 label: 'Total Population',
-                data: resultData.monthly_populations,
+                data: resultData.monthlyPopulations,
                 borderColor: 'rgb(79, 70, 229)',
                 backgroundColor: 'rgba(79, 70, 229, 0.1)',
                 borderWidth: 2,
@@ -622,10 +622,10 @@ async function plotPopulationGraph(data) {
         }
 
         // Add sterilized population line if available
-        if (resultData.monthly_sterilized) {
+        if (resultData.monthlySterilized) {
             datasets.push({
                 label: 'Sterilized',
-                data: resultData.monthly_sterilized,
+                data: resultData.monthlySterilized,
                 borderColor: 'rgb(16, 185, 129)',
                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
                 borderWidth: 2,
@@ -635,10 +635,10 @@ async function plotPopulationGraph(data) {
         }
 
         // Add reproductive population line if available
-        if (resultData.monthly_reproductive) {
+        if (resultData.monthlyReproductive) {
             datasets.push({
                 label: 'Reproductive',
-                data: resultData.monthly_reproductive,
+                data: resultData.monthlyReproductive,
                 borderColor: 'rgb(244, 63, 94)',
                 backgroundColor: 'rgba(244, 63, 94, 0.1)',
                 borderWidth: 2,
@@ -786,51 +786,51 @@ async function runParameterTests() {
         // Base configuration for Hawaiʻi
         const baseConfig = {
             months: 24,
-            current_size: 50,
-            sterilized_count: 0,
-            monthly_sterilization: 0,
-            use_monte_carlo: true,
-            monte_carlo_runs: 50,
+            initialColonySize: 50,
+            alreadySterilized: 0,
+            monthlySterilizationRate: 0,
+            useMonteCarlo: true,
+            monteCarloRuns: 50,
             params: {
-                breeding_rate: 0.85,
-                kittens_per_litter: 4,
-                litters_per_year: 2.5,
-                female_ratio: 0.5,
-                kitten_survival_rate: 0.75,
-                adult_survival_rate: 0.90,
-                kitten_maturity_months: 6,
-                seasonal_breeding_amplitude: 0.1,
-                peak_breeding_month: 5,
-                base_food_capacity: 0.9,
-                food_scaling_factor: 0.8,
-                water_availability: 0.8,
-                urban_risk: 0.15,
-                disease_risk: 0.1,
-                natural_risk: 0.1,
-                caretaker_support: 1.0,
-                feeding_consistency: 0.8,
-                territory_size: 1000,
-                density_impact_threshold: 1.2
+                breedingRate: 0.85,
+                kittensPerLitter: 4,
+                littersPerYear: 2.5,
+                femaleRatio: 0.5,
+                kittenSurvivalRate: 0.75,
+                adultSurvivalRate: 0.90,
+                kittenMaturityMonths: 6,
+                seasonalBreedingAmplitude: 0.1,
+                peakBreedingMonth: 5,
+                baseFoodCapacity: 0.9,
+                foodScalingFactor: 0.8,
+                waterAvailability: 0.8,
+                urbanRisk: 0.15,
+                diseaseRisk: 0.1,
+                naturalRisk: 0.1,
+                caretakerSupport: 1.0,
+                feedingConsistency: 0.8,
+                territorySize: 1000,
+                densityImpactThreshold: 1.2
             }
         };
 
         // Parameter ranges for testing
         const parameterRanges = {
-            breeding_rate: { min: 0.3, max: 1.0, step: 0.1, name: "Breeding Rate" },
-            kittens_per_litter: { min: 1, max: 6, step: 1, name: "Kittens per Litter" },
-            litters_per_year: { min: 1, max: 4, step: 0.5, name: "Litters per Year" },
-            female_ratio: { min: 0.3, max: 0.7, step: 0.1, name: "Female Ratio" },
-            kitten_survival_rate: { min: 0.4, max: 0.9, step: 0.1, name: "Kitten Survival Rate" },
-            adult_survival_rate: { min: 0.6, max: 0.95, step: 0.05, name: "Adult Survival Rate" },
-            kitten_maturity_months: { min: 4, max: 8, step: 1, name: "Kitten Maturity Months" },
-            base_food_capacity: { min: 0.4, max: 1.0, step: 0.1, name: "Base Food Capacity" },
-            food_scaling_factor: { min: 0.4, max: 1.0, step: 0.1, name: "Food Scaling Factor" },
-            water_availability: { min: 0.4, max: 1.0, step: 0.1, name: "Water Availability" },
-            urban_risk: { min: 0.05, max: 0.3, step: 0.05, name: "Urban Risk" },
-            disease_risk: { min: 0.05, max: 0.3, step: 0.05, name: "Disease Risk" },
-            natural_risk: { min: 0.05, max: 0.3, step: 0.05, name: "Natural Risk" },
-            territory_size: { min: 200, max: 5000, step: 600, name: "Territory Size" },
-            density_impact_threshold: { min: 0.5, max: 2.0, step: 0.3, name: "Density Impact Threshold" }
+            breedingRate: { min: 0.3, max: 1.0, step: 0.1, name: "Breeding Rate" },
+            kittensPerLitter: { min: 1, max: 6, step: 1, name: "Kittens per Litter" },
+            littersPerYear: { min: 1, max: 4, step: 0.5, name: "Litters per Year" },
+            femaleRatio: { min: 0.3, max: 0.7, step: 0.1, name: "Female Ratio" },
+            kittenSurvivalRate: { min: 0.4, max: 0.9, step: 0.1, name: "Kitten Survival Rate" },
+            adultSurvivalRate: { min: 0.6, max: 0.95, step: 0.05, name: "Adult Survival Rate" },
+            kittenMaturityMonths: { min: 4, max: 8, step: 1, name: "Kitten Maturity Months" },
+            baseFoodCapacity: { min: 0.4, max: 1.0, step: 0.1, name: "Base Food Capacity" },
+            foodScalingFactor: { min: 0.4, max: 1.0, step: 0.1, name: "Food Scaling Factor" },
+            waterAvailability: { min: 0.4, max: 1.0, step: 0.1, name: "Water Availability" },
+            urbanRisk: { min: 0.05, max: 0.3, step: 0.05, name: "Urban Risk" },
+            diseaseRisk: { min: 0.05, max: 0.3, step: 0.05, name: "Disease Risk" },
+            naturalRisk: { min: 0.05, max: 0.3, step: 0.05, name: "Natural Risk" },
+            territorySize: { min: 200, max: 5000, step: 600, name: "Territory Size" },
+            densityImpactThreshold: { min: 0.5, max: 2.0, step: 0.3, name: "Density Impact Threshold" }
         };
 
         const tests = [];
@@ -876,24 +876,24 @@ async function runParameterTests() {
             
             // Extract key metrics
             const result = {
-                test_name: test.name,
+                testName: test.name,
                 parameter: test.parameter,
                 value: test.value,
-                final_population: data.final_population,
-                population_growth: data.population_growth,
-                total_deaths: data.total_deaths,
-                kitten_deaths: data.kitten_deaths,
-                adult_deaths: data.adult_deaths,
-                natural_deaths: data.natural_deaths,
-                urban_deaths: data.urban_deaths,
-                disease_deaths: data.disease_deaths
+                finalPopulation: data.finalPopulation,
+                populationGrowth: data.populationGrowth,
+                totalDeaths: data.totalDeaths,
+                kittenDeaths: data.kittenDeaths,
+                adultDeaths: data.adultDeaths,
+                naturalDeaths: data.naturalDeaths,
+                urbanDeaths: data.urbanDeaths,
+                diseaseDeaths: data.diseaseDeaths
             };
 
-            if (data.monte_carlo_summary) {
-                result.population_mean = data.monte_carlo_summary.final_population.mean;
-                result.population_std = data.monte_carlo_summary.final_population.std;
-                result.deaths_mean = data.monte_carlo_summary.total_deaths.mean;
-                result.deaths_std = data.monte_carlo_summary.total_deaths.std;
+            if (data.monteCarloSummary) {
+                result.populationMean = data.monteCarloSummary.finalPopulation.mean;
+                result.populationStd = data.monteCarloSummary.finalPopulation.std;
+                result.deathsMean = data.monteCarloSummary.totalDeaths.mean;
+                result.deathsStd = data.monteCarloSummary.totalDeaths.std;
             }
 
             results.push(result);
@@ -967,13 +967,13 @@ function showInitialState() {
     };
 
     // Update card values with placeholder data
-    safeSetContent('final_population', '---');
-    safeSetContent('population_change', '---');
-    safeSetContent('sterilization_rate', '---');
-    safeSetContent('total_cost', '---');
+    safeSetContent('finalPopulation', '---');
+    safeSetContent('populationChange', '---');
+    safeSetContent('sterilizationRate', '---');
+    safeSetContent('totalCost', '---');
 
     // Show initial message in the graph container
-    const graphContainer = document.getElementById('population_graph');
+    const graphContainer = document.getElementById('populationGraph');
     if (graphContainer) {
         const layout = {
             annotations: [{
@@ -1003,7 +1003,7 @@ function showInitialState() {
             }
         };
         
-        Plotly.newPlot('population_graph', [], layout);
+        Plotly.newPlot('populationGraph', [], layout);
     }
 
     // Show the results section

@@ -5,11 +5,11 @@
     <!-- Territory Size -->
     <div>
         <div class="flex justify-between">
-            <label for="territorySize" class="parameter-label">Territory Size (sq m)</label>
-            <span id="territorySizeValue" class="parameter-value">1000</span>
+            <label for="colonyTerritorySize" class="parameter-label">Territory Size (sq m)</label>
+            <span id="colonyTerritorySizeValue" class="parameter-value">1000</span>
         </div>
-        <input type="range" id="territorySize" min="100" max="5000" value="1000" step="100"
-               oninput="document.getElementById('territorySizeValue').textContent=this.value">
+        <input type="range" id="colonyTerritorySize" min="100" max="5000" value="1000" step="100"
+               oninput="document.getElementById('colonyTerritorySizeValue').textContent=this.value">
         <p class="parameter-description">Size of the colony's territory in square meters</p>
     </div>
 
