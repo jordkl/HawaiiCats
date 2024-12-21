@@ -18,7 +18,7 @@ function showColonyDetails(colony) {
     
     // Update view mode display
     document.getElementById('colonyDetailName').textContent = colony.name || 'Unnamed Colony';
-    document.getElementById('colonyDetailPopulation').textContent = colony.current_size || 'Unknown';
+    document.getElementById('colonyDetailPopulation').textContent = colony.currentSize || 'Unknown';
     document.getElementById('colonyDetailLocation').textContent = `${colony.latitude.toFixed(6)}, ${colony.longitude.toFixed(6)}`;
     
     // Format timestamps
@@ -71,7 +71,7 @@ function populateEditForm() {
     // Basic Information
     document.getElementById('editColonyId').value = colony.id;
     document.getElementById('editColonyName').value = colony.name;
-    document.getElementById('editColonyPopulation').value = colony.current_size;
+    document.getElementById('editColonyPopulation').value = colony.currentSize;
     document.getElementById('editColonySterilized').value = colony.sterilized_count;
     document.getElementById('editColonyMonthlyRate').value = colony.monthly_sterilization_rate || 0;
     document.getElementById('editColonyNotes').value = colony.notes || '';
@@ -105,52 +105,78 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const colonyId = document.getElementById('editColonyId').value;
 
+            console.log('Current colony data:', currentColony);
+            console.log('Form elements:', {
+                name: document.getElementById('editColonyName'),
+                population: document.getElementById('editColonyPopulation'),
+                sterilized: document.getElementById('editColonySterilized'),
+                monthlyRate: document.getElementById('editColonyMonthlyRate'),
+                notes: document.getElementById('editColonyNotes')
+            });
+
             const formData = {
-                name: document.getElementById('editColonyName').value,
-                current_size: parseInt(document.getElementById('editColonyPopulation').value),
-                sterilized_count: parseInt(document.getElementById('editColonySterilized').value),
-                monthly_sterilization_rate: parseFloat(document.getElementById('editColonyMonthlyRate').value),
-                notes: document.getElementById('editColonyNotes').value,
+                name: document.getElementById('editColonyName').value.trim(),
+                currentSize: parseInt(document.getElementById('editColonyPopulation').value) || 0,
+                sterilized_count: parseInt(document.getElementById('editColonySterilized').value) || 0,
+                monthly_sterilization_rate: parseFloat(document.getElementById('editColonyMonthlyRate').value) || 0,
+                notes: document.getElementById('editColonyNotes').value.trim(),
                 
                 // Keep location data
                 latitude: currentColony.latitude,
                 longitude: currentColony.longitude,
                 
                 // Environmental factors
-                water_availability: parseFloat(document.getElementById('editWaterAvailability').value),
-                shelter_quality: parseFloat(document.getElementById('editShelterQuality').value),
-                territory_size: parseInt(document.getElementById('editTerritorySize').value),
+                water_availability: parseFloat(document.getElementById('editWaterAvailability').value) || 0.8,
+                shelter_quality: parseFloat(document.getElementById('editShelterQuality').value) || 0.7,
+                territory_size: parseInt(document.getElementById('editTerritorySize').value) || 500,
                 
                 // Breeding parameters
-                breeding_rate: parseFloat(document.getElementById('editBreedingRate').value),
-                kittens_per_litter: parseFloat(document.getElementById('editKittensPerLitter').value),
-                litters_per_year: parseFloat(document.getElementById('editLittersPerYear').value),
-                kitten_survival_rate: parseFloat(document.getElementById('editKittenSurvival').value),
-                adult_survival_rate: parseFloat(document.getElementById('editAdultSurvival').value),
+                breeding_rate: parseFloat(document.getElementById('editBreedingRate').value) || 0.85,
+                kittens_per_litter: parseFloat(document.getElementById('editKittensPerLitter').value) || 4,
+                litters_per_year: parseFloat(document.getElementById('editLittersPerYear').value) || 2.5,
+                kitten_survival_rate: parseFloat(document.getElementById('editKittenSurvival').value) || 0.75,
+                adult_survival_rate: parseFloat(document.getElementById('editAdultSurvival').value) || 0.85,
                 
                 // Risk factors
-                urban_risk: parseFloat(document.getElementById('editUrbanRisk').value),
-                disease_risk: parseFloat(document.getElementById('editDiseaseRisk').value),
+                urban_risk: parseFloat(document.getElementById('editUrbanRisk').value) || 0.15,
+                disease_risk: parseFloat(document.getElementById('editDiseaseRisk').value) || 0.1,
                 
                 // Support factors
-                caretaker_support: parseFloat(document.getElementById('editCaretakerSupport').value),
-                feeding_consistency: parseFloat(document.getElementById('editFeedingConsistency').value)
+                caretaker_support: parseFloat(document.getElementById('editCaretakerSupport').value) || 0.8,
+                feeding_consistency: parseFloat(document.getElementById('editFeedingConsistency').value) || 0.8
             };
 
+            console.log('Form data object:', formData);
+            const jsonData = JSON.stringify(formData);
+            console.log('JSON string being sent:', jsonData);
+
             try {
+                console.log('Making PUT request to:', `/api/colonies/${colonyId}`);
                 const response = await fetch(`/api/colonies/${colonyId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(formData)
+                    body: jsonData
                 });
 
+                console.log('Response status:', response.status);
+                const responseText = await response.text();
+                console.log('Raw response:', responseText);
+
                 if (!response.ok) {
-                    throw new Error('Failed to update colony');
+                    let errorMessage;
+                    try {
+                        const errorData = JSON.parse(responseText);
+                        errorMessage = errorData.error || 'Failed to update colony';
+                    } catch (e) {
+                        errorMessage = responseText || 'Failed to update colony';
+                    }
+                    throw new Error(errorMessage);
                 }
 
-                const updatedColony = await response.json();
+                const updatedColony = JSON.parse(responseText);
+                console.log('Updated colony data:', updatedColony);
                 currentColony = updatedColony; // Update the current colony data
                 
                 // Switch back to view mode and refresh the display

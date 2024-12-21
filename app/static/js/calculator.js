@@ -50,18 +50,18 @@ function updateMaxSterilization() {
 
 // Update sterilized count constraints when colony size changes
 function updateSterilizedConstraints() {
-    const colonySize = parseInt(document.getElementById('currentSize').value);
+    const currentSize = parseInt(document.getElementById('currentSize').value);
     const sterilizedInput = document.getElementById('sterilizedCount');
     const monthlyInput = document.getElementById('monthlysterilization');
     
     // Update max values
-    sterilizedInput.max = colonySize;
-    monthlyInput.max = colonySize - parseInt(sterilizedInput.value);
+    sterilizedInput.max = currentSize;
+    monthlyInput.max = currentSize - parseInt(sterilizedInput.value);
     
     // Ensure current values don't exceed new max
-    if (parseInt(sterilizedInput.value) > colonySize) {
-        sterilizedInput.value = colonySize;
-        document.getElementById('sterilizedCountValue').textContent = colonySize;
+    if (parseInt(sterilizedInput.value) > currentSize) {
+        sterilizedInput.value = currentSize;
+        document.getElementById('sterilizedCountValue').textContent = currentSize;
     }
     
     if (parseInt(monthlyInput.value) > monthlyInput.max) {
@@ -299,13 +299,26 @@ async function handleCalculate() {
         };
 
         // Collect and validate basic parameters
+        const currentSize = parseInt(document.getElementById('currentSize').value);
+        const sterilizedCount = parseInt(document.getElementById('sterilizedCount').value);
+        const monthlysterilization = parseInt(document.getElementById('monthlysterilization').value);
+        const months = parseInt(document.getElementById('months').value);
+        const sterilizationCost = parseFloat(document.getElementById('sterilizationCost').value);
+        const useMonteCarloCheckbox = document.getElementById('useMonteCarloCheckbox').checked;
+
+        // Validate input
+        if (isNaN(currentSize) || currentSize < 1) {
+            throw new Error('Colony size must be at least 1');
+        }
+
+        // Prepare request data
         const data = {
-            current_size: validateInput(document.getElementById('currentSize')?.value, 'Colony Size', 1, 1000),
-            sterilized_count: validateInput(document.getElementById('sterilizedCount')?.value, 'Sterilized Count', 0),
-            monthly_sterilization: validateInput(document.getElementById('monthlysterilization')?.value, 'Monthly Sterilization Rate', 0),
-            sterilization_cost: validateInput(document.getElementById('sterilizationCost')?.value, 'Sterilization Cost', 0),
-            months: validateInput(document.getElementById('months')?.value, 'Months', 1, 120),
-            use_monte_carlo: useMonteCarlo,
+            currentSize: currentSize,
+            sterilized_count: sterilizedCount,
+            monthly_sterilization_rate: monthlysterilization,
+            months: months,
+            sterilization_cost: sterilizationCost,
+            use_monte_carlo: useMonteCarloCheckbox,
             monthly_abandonment: validateInput(document.getElementById('monthlyAbandonment')?.value || '2', 'Monthly Abandonment', 0, 50),
         };
 
@@ -322,7 +335,7 @@ async function handleCalculate() {
         }
 
         // Validate dependencies between parameters
-        if (data.sterilized_count > data.current_size) {
+        if (sterilizedCount > currentSize) {
             throw new Error('Sterilized count cannot exceed colony size');
         }
 
@@ -773,7 +786,7 @@ async function runParameterTests() {
         // Base configuration for Hawaiʻi
         const baseConfig = {
             months: 24,
-            current_size: 50,
+            currentSize: 50,
             sterilized_count: 0,
             monthly_sterilization: 0,
             use_monte_carlo: true,

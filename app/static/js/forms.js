@@ -48,39 +48,39 @@ async function handleFormSubmit(event) {
 function processColonyFormData(data) {
     return {
         name: data.colonyName,
-        current_size: parseInt(data.currentSize),
-        sterilized_count: parseInt(data.sterilizedCount),
-        monthly_sterilization_rate: parseInt(data.monthlysterilization),
+        currentSize: parseInt(data.currentSize),
+        sterilizedCount: parseInt(data.sterilizedCount),
+        monthlySterilizationRate: parseInt(data.monthlySterilizationRate),
         latitude: parseFloat(data.latitude),
         longitude: parseFloat(data.longitude),
-        breeding_rate: parseFloat(data.breedingRate),
-        kittens_per_litter: parseFloat(data.kittensPerLitter),
-        litters_per_year: parseFloat(data.littersPerYear),
-        kitten_survival_rate: parseFloat(data.kittenSurvivalRate),
-        adult_survival_rate: parseFloat(data.adultSurvivalRate),
-        water_availability: parseFloat(data.waterAvailability),
-        shelter_quality: parseFloat(data.shelterQuality),
-        territory_size: parseInt(data.territorySize),
-        urban_risk: parseFloat(data.urbanRisk),
-        disease_risk: parseFloat(data.diseaseRisk),
-        caretaker_support: parseFloat(data.caretakerSupport),
-        feeding_consistency: parseFloat(data.feedingConsistency)
+        breedingRate: parseFloat(data.breedingRate),
+        kittensPerLitter: parseFloat(data.kittensPerLitter),
+        littersPerYear: parseFloat(data.littersPerYear),
+        kittenSurvivalRate: parseFloat(data.kittenSurvivalRate),
+        adultSurvivalRate: parseFloat(data.adultSurvivalRate),
+        waterAvailability: parseFloat(data.waterAvailability),
+        shelterQuality: parseFloat(data.shelterQuality),
+        territorySize: parseInt(data.territorySize),
+        urbanRisk: parseFloat(data.urbanRisk),
+        diseaseRisk: parseFloat(data.diseaseRisk),
+        caretakerSupport: parseFloat(data.caretakerSupport),
+        feedingConsistency: parseFloat(data.feedingConsistency)
     };
 }
 
 function processSightingFormData(data) {
     return {
-        best_count: parseInt(data.bestCount),
-        minimum_count: parseInt(data.minimumCount),
-        maximum_count: parseInt(data.maximumCount),
-        visible_cats: parseInt(data.visibleCats),
-        location_type: data.locationType,
+        bestCount: parseInt(data.bestCount),
+        minimumCount: parseInt(data.minimumCount),
+        maximumCount: parseInt(data.maximumCount),
+        visibleCats: parseInt(data.visibleCats),
+        locationType: data.locationType,
         latitude: parseFloat(data.latitude),
         longitude: parseFloat(data.longitude),
-        observed_feeding: data.observedFeeding === 'on',
-        uncertainty_level: data.uncertaintyLevel,
-        movement_level: data.movementLevel,
-        time_spent: data.timeSpent,
+        observedFeeding: data.observedFeeding === 'on',
+        uncertaintyLevel: data.uncertaintyLevel,
+        movementLevel: data.movementLevel,
+        timeSpent: data.timeSpent,
         notes: data.notes || ''
     };
 }

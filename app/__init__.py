@@ -1,13 +1,15 @@
 from flask import Flask
-from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from flask_cors import CORS
 from dotenv import load_dotenv
 import os
 import firebase_admin
 from firebase_admin import credentials
 
-# Initialize SQLAlchemy
+# Initialize SQLAlchemy and Flask-Migrate
 db = SQLAlchemy()
+migrate = Migrate()
 
 def create_app():
     # Get the absolute path to the app directory and project root
@@ -32,6 +34,7 @@ def create_app():
     
     # Initialize extensions
     db.init_app(app)
+    migrate.init_app(app, db)
 
     # Initialize Firebase Admin SDK if not already initialized
     try:
@@ -70,8 +73,7 @@ def create_app():
     # Set secret key for sessions
     app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev')
 
-    # Configure CORS
-    CORS(app)
+    CORS(app)  # Enable CORS for all routes
 
     # Create database tables
     with app.app_context():

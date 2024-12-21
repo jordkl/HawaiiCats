@@ -187,7 +187,7 @@ function setupAddColonyButton() {
             };
             
             try {
-                const response = await fetch('/api/colonies', {
+                const response = await fetch('http://127.0.0.1:5000/api/colonies', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -268,11 +268,12 @@ function exitAddColonyMode() {
 // Load colonies data
 async function loadColonies() {
     try {
-        const response = await fetch('/api/colonies');
+        const response = await fetch('http://127.0.0.1:5000/api/colonies');
         if (!response.ok) {
             throw new Error('Failed to fetch colonies');
         }
         const coloniesData = await response.json();
+        console.log('Raw colonies data:', coloniesData);
         
         // Process colonies data
         cachedColonies = coloniesData.filter(colony => {
@@ -291,6 +292,7 @@ async function loadColonies() {
             // Add normalized coordinates
             colony.latitude = lat;
             colony.longitude = lng;
+            console.log('Processed colony:', colony);
             return true;
         });
         
@@ -304,7 +306,7 @@ async function loadColonies() {
 // Load sightings data
 async function loadSightings() {
     try {
-        const response = await fetch('/api/sightings');
+        const response = await fetch('http://127.0.0.1:5000/api/sightings');
         if (!response.ok) {
             throw new Error('Failed to fetch sightings');
         }
@@ -392,11 +394,12 @@ function updateVisibleItems() {
             if (colonyList) {
                 colonyList.innerHTML = '';
                 visibleColonies.forEach(colony => {
+                    console.log('Rendering colony:', colony);
                     const item = document.createElement('div');
                     item.className = 'p-2 cursor-pointer transition-colors duration-200 dark:text-gray-100 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 flex items-center justify-between';
                     item.innerHTML = `
                         <span>${colony.name || 'Unnamed Colony'}</span>
-                        <span class="text-sm text-gray-500 dark:text-gray-400">${colony.current_size || 0} cats</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">${colony.currentSize || colony.current_size || 0} cats</span>
                     `;
                     item.onclick = () => {
                         showColonyDetails(colony);
@@ -494,7 +497,7 @@ function showColonyDetails(colony) {
         <div class="p-4">
             <h3 class="text-lg font-bold mb-2">${colony.name || 'Unnamed Colony'}</h3>
             <div class="space-y-2">
-                <p><strong>Current Size:</strong> ${colony.current_size || 'Unknown'} cats</p>
+                <p><strong>Current Size:</strong> ${colony.currentSize || 'Unknown'} cats</p>
                 <p><strong>Location:</strong> ${colony.location_description || 'No description available'}</p>
                 <p><strong>Status:</strong> ${colony.status || 'Unknown'}</p>
                 <p><strong>Notes:</strong> ${colony.notes || 'No notes available'}</p>

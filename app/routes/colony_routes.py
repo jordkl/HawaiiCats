@@ -38,41 +38,41 @@ def add_colony():
         
         # Create colony data dictionary
         colony_data = {
+            # Basic colony data
             'name': data.get('name'),
-            'size': data.get('currentSize', 0),
-            'status': 'active',
+            'currentSize': data.get('currentSize', 0),
+            'sterilized_count': data.get('sterilized_count', 0),
+            'monthly_sterilization_rate': data.get('monthly_sterilization_rate', 0),
             'notes': data.get('notes', ''),
-            'location': {
-                'latitude': float(data.get('latitude', 0)),
-                'longitude': float(data.get('longitude', 0))
-            },
-            'created_at': datetime.now(),  
-            'updated_at': datetime.now(),  
+            'status': 'active',
+            'created_at': datetime.utcnow(),
+            'updated_at': datetime.utcnow(),
             
-            # Basic colony information
-            'current_size': data.get('currentSize'),
-            'sterilized_count': data.get('sterilizedCount'),
-            'monthly_sterilization_rate': data.get('monthlySterilizationRate', 0),
+            # Location data
+            'location': {
+                'latitude': data.get('latitude'),
+                'longitude': data.get('longitude')
+            },
             
             # Environmental factors
-            'water_availability': data.get('waterAvailability', 0.8),
-            'shelter_quality': data.get('shelterQuality', 0.7),
-            'territory_size': data.get('territorySize', 500),
+            'water_availability': data.get('water_availability', 0.8),
+            'shelter_quality': data.get('shelter_quality', 0.7),
+            'territory_size': data.get('territory_size', 500),
             
             # Breeding parameters
-            'breeding_rate': data.get('breedingRate', 0.85),
-            'kittens_per_litter': data.get('kittensPerLitter', 4),
-            'litters_per_year': data.get('littersPerYear', 2.5),
-            'kitten_survival_rate': data.get('kittenSurvivalRate', 0.75),
-            'adult_survival_rate': data.get('adultSurvivalRate', 0.85),
+            'breeding_rate': data.get('breeding_rate', 0.85),
+            'kittens_per_litter': data.get('kittens_per_litter', 4),
+            'litters_per_year': data.get('litters_per_year', 2.5),
+            'kitten_survival_rate': data.get('kitten_survival_rate', 0.75),
+            'adult_survival_rate': data.get('adult_survival_rate', 0.85),
             
             # Risk factors
-            'urban_risk': data.get('urbanRisk', 0.15),
-            'disease_risk': data.get('diseaseRisk', 0.1),
+            'urban_risk': data.get('urban_risk', 0.15),
+            'disease_risk': data.get('disease_risk', 0.1),
             
             # Support factors
-            'caretaker_support': data.get('caretakerSupport', 0.8),
-            'feeding_consistency': data.get('feedingConsistency', 0.8)
+            'caretaker_support': data.get('caretaker_support', 0.8),
+            'feeding_consistency': data.get('feeding_consistency', 0.8)
         }
         
         # Add to Firestore
@@ -118,7 +118,7 @@ def update_colony(colony_id):
         colony_manager = ColonyManager()
         
         # Update timestamp
-        data['updated_at'] = datetime.now()
+        data['updated_at'] = datetime.utcnow()
         
         # Handle location data
         if 'latitude' in data and 'longitude' in data:

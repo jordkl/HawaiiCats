@@ -8,6 +8,7 @@ class Colony(db.Model):
     longitude = db.Column(db.Float, nullable=False)
     current_size = db.Column(db.Integer, nullable=False)
     sterilized_count = db.Column(db.Integer, nullable=False)
+    notes = db.Column(db.Text)  # Add notes field
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

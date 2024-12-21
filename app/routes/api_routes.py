@@ -32,19 +32,22 @@ limiter = Limiter(
 def format_firebase_colony(doc_id, data):
     """Helper function to format Firebase colony data"""
     location = data.get('location', {})
-    return {
+    logger.info(f"Raw colony data from Firebase: {data}")
+    formatted = {
         'id': doc_id,
         'name': data.get('name', ''),
         'latitude': location.get('latitude') if location else data.get('latitude'),
         'longitude': location.get('longitude') if location else data.get('longitude'),
-        'current_size': data.get('current_size') or data.get('size', 0),
-        'sterilized_count': data.get('sterilized_count', 0),
+        'currentSize': data.get('currentSize') or data.get('current_size') or data.get('size', 0),
+        'sterilizedCount': data.get('sterilizedCount') or data.get('sterilized_count', 0),
         # Additional fields stored but not used in frontend
-        'water_availability': data.get('water_availability'),
-        'shelter_quality': data.get('shelter_quality'),
-        'territory_size': data.get('territory_size'),
+        'waterAvailability': data.get('waterAvailability') or data.get('water_availability'),
+        'shelterQuality': data.get('shelterQuality') or data.get('shelter_quality'),
+        'territorySize': data.get('territorySize') or data.get('territory_size'),
         'status': data.get('status')
     }
+    logger.info(f"Formatted colony data: {formatted}")
+    return formatted
 
 def format_firebase_sighting(doc_id, data):
     """Helper function to format Firebase sighting data"""
@@ -59,8 +62,8 @@ def format_firebase_sighting(doc_id, data):
         }
     
     # Handle user location if coordinate is not available
-    if coordinate is None and isinstance(data.get('userLocation'), firestore.GeoPoint):
-        geopoint = data['userLocation']
+    if coordinate is None and isinstance(data.get('user_location'), firestore.GeoPoint):
+        geopoint = data['user_location']
         coordinate = {
             'latitude': geopoint.latitude,
             'longitude': geopoint.longitude
@@ -72,16 +75,16 @@ def format_firebase_sighting(doc_id, data):
     return {
         'id': doc_id,
         'timestamp': data.get('timestamp'),
-        'best_count': data.get('bestCount') or details.get('bestCount', 0),
-        'location_type': data.get('locationType') or details.get('locationType', ''),
+        'best_count': data.get('best_count') or details.get('best_count', 0),
+        'location_type': data.get('location_type') or details.get('location_type', ''),
         'coordinate': coordinate,
-        'visible_cats': data.get('visibleCats') or details.get('visibleCats'),
-        'min_count': data.get('minCount') or details.get('minCount'),
-        'max_count': data.get('maxCount') or details.get('maxCount'),
-        'movement_level': data.get('movementLevel') or details.get('movementLevel'),
-        'uncertainty_level': data.get('uncertaintyLevel') or details.get('uncertaintyLevel'),
-        'is_feeding': data.get('isFeeding') or details.get('isFeeding', False),
-        'time_spent': data.get('timeSpent') or details.get('timeSpent'),
+        'visible_cats': data.get('visible_cats') or details.get('visible_cats'),
+        'min_count': data.get('min_count') or details.get('min_count'),
+        'max_count': data.get('max_count') or details.get('max_count'),
+        'movement_level': data.get('movement_level') or details.get('movement_level'),
+        'uncertainty_level': data.get('uncertainty_level') or details.get('uncertainty_level'),
+        'is_feeding': data.get('is_feeding') or details.get('is_feeding', False),
+        'time_spent': data.get('time_spent') or details.get('time_spent'),
         'notes': data.get('notes') or details.get('notes', '')
     }
 
@@ -111,6 +114,21 @@ def verify_recaptcha(token):
         logger.error(f"reCAPTCHA verification error: {e}")
         return False
 
+@bp.before_request
+def log_request_info():
+    if request.method in ['POST', 'PUT']:
+        try:
+            # Get the raw request data
+            raw_data = request.get_data()
+            logger.info(f"Raw request body: {raw_data.decode('utf-8')}")
+            
+            # Try to parse as JSON
+            if request.is_json:
+                json_data = request.get_json(force=True)
+                logger.info(f"Parsed JSON data: {json_data}")
+        except Exception as e:
+            logger.error(f"Error logging request: {e}")
+
 @bp.route('/sightings', methods=['GET', 'POST'])
 def sightings():
     if request.method == 'POST':
@@ -121,8 +139,8 @@ def sightings():
             sighting = Sighting(
                 latitude=data['latitude'],
                 longitude=data['longitude'],
-                best_count=data.get('bestCount'),
-                location_type=data.get('locationType')
+                best_count=data.get('best_count'),
+                location_type=data.get('location_type')
             )
             db.session.add(sighting)
             db.session.commit()
@@ -130,20 +148,20 @@ def sightings():
             # Sync to Firebase using GeoPoint for coordinates
             firebase_data = {
                 'coordinate': firestore.GeoPoint(float(sighting.latitude), float(sighting.longitude)),
-                'bestCount': sighting.best_count,
-                'locationType': sighting.location_type,
+                'best_count': sighting.best_count,
+                'location_type': sighting.location_type,
                 'timestamp': datetime.utcnow(),
                 'details': {
-                    'bestCount': sighting.best_count,
-                    'locationType': sighting.location_type,
-                    'isFeeding': False,
-                    'timeSpent': 'quick',
-                    'uncertaintyLevel': 'medium',
-                    'movementLevel': 'low',
+                    'best_count': sighting.best_count,
+                    'location_type': sighting.location_type,
+                    'is_feeding': False,
+                    'time_spent': 'quick',
+                    'uncertainty_level': 'medium',
+                    'movement_level': 'low',
                     'notes': '',
-                    'visibleCats': sighting.best_count,
-                    'minCount': max(0, sighting.best_count - 3),
-                    'maxCount': sighting.best_count + 3
+                    'visible_cats': sighting.best_count,
+                    'min_count': max(0, sighting.best_count - 3),
+                    'max_count': sighting.best_count + 3
                 }
             }
             firebase_db.collection('sightings').add(firebase_data)
@@ -198,8 +216,8 @@ def colonies():
                 name=data['name'],
                 latitude=data['latitude'],
                 longitude=data['longitude'],
-                current_size=data['current_size'],
-                sterilized_count=data['sterilized_count']
+                current_size=data['currentSize'],
+                sterilized_count=data['sterilizedCount']
             )
             db.session.add(colony)
             db.session.commit()
@@ -211,22 +229,21 @@ def colonies():
                     'latitude': colony.latitude,
                     'longitude': colony.longitude
                 },
-                'current_size': colony.current_size,
-                'size': colony.current_size,  # For backward compatibility
-                'sterilized_count': colony.sterilized_count,
-                'monthly_sterilization_rate': data.get('monthly_sterilization_rate', 0),
-                'breeding_rate': data.get('breeding_rate', 0.85),
-                'kittens_per_litter': data.get('kittens_per_litter', 4),
-                'litters_per_year': data.get('litters_per_year', 2.5),
-                'kitten_survival_rate': data.get('kitten_survival_rate', 0.75),
-                'adult_survival_rate': data.get('adult_survival_rate', 0.85),
-                'water_availability': data.get('water_availability', 0.8),
-                'shelter_quality': data.get('shelter_quality', 0.7),
-                'territory_size': data.get('territory_size', 500),
-                'urban_risk': data.get('urban_risk', 0.15),
-                'disease_risk': data.get('disease_risk', 0.1),
-                'caretaker_support': data.get('caretaker_support', 0.8),
-                'feeding_consistency': data.get('feeding_consistency', 0.8),
+                'currentSize': colony.current_size,
+                'sterilizedCount': colony.sterilized_count,
+                'monthlysterilizationRate': data.get('monthlysterilizationRate', 0),
+                'breedingRate': data.get('breedingRate', 0.85),
+                'kittensPerLitter': data.get('kittensPerLitter', 4),
+                'littersPerYear': data.get('littersPerYear', 2.5),
+                'kittenSurvivalRate': data.get('kittenSurvivalRate', 0.75),
+                'adultSurvivalRate': data.get('adultSurvivalRate', 0.85),
+                'waterAvailability': data.get('waterAvailability', 0.8),
+                'shelterQuality': data.get('shelterQuality', 0.7),
+                'territorySize': data.get('territorySize', 500),
+                'urbanRisk': data.get('urbanRisk', 0.15),
+                'diseaseRisk': data.get('diseaseRisk', 0.1),
+                'caretakerSupport': data.get('caretakerSupport', 0.8),
+                'feedingConsistency': data.get('feedingConsistency', 0.8),
                 'status': 'active',
                 'timestamp': datetime.utcnow(),
                 'created_at': datetime.utcnow(),
@@ -239,179 +256,170 @@ def colonies():
                 'name': colony.name,
                 'latitude': colony.latitude,
                 'longitude': colony.longitude,
-                'current_size': colony.current_size,
-                'sterilized_count': colony.sterilized_count,
-                'monthly_sterilization_rate': data.get('monthly_sterilization_rate', 0),
-                'breeding_rate': data.get('breeding_rate', 0.85),
-                'kittens_per_litter': data.get('kittens_per_litter', 4),
-                'litters_per_year': data.get('litters_per_year', 2.5),
-                'kitten_survival_rate': data.get('kitten_survival_rate', 0.75),
-                'adult_survival_rate': data.get('adult_survival_rate', 0.85),
-                'water_availability': data.get('water_availability', 0.8),
-                'shelter_quality': data.get('shelter_quality', 0.7),
-                'territory_size': data.get('territory_size', 500),
-                'urban_risk': data.get('urban_risk', 0.15),
-                'disease_risk': data.get('disease_risk', 0.1),
-                'caretaker_support': data.get('caretaker_support', 0.8),
-                'feeding_consistency': data.get('feeding_consistency', 0.8)
+                'currentSize': colony.current_size,
+                'sterilizedCount': colony.sterilized_count,
+                'monthlysterilizationRate': data.get('monthlysterilizationRate', 0),
+                'breedingRate': data.get('breedingRate', 0.85),
+                'kittensPerLitter': data.get('kittensPerLitter', 4),
+                'littersPerYear': data.get('littersPerYear', 2.5),
+                'kittenSurvivalRate': data.get('kittenSurvivalRate', 0.75),
+                'adultSurvivalRate': data.get('adultSurvivalRate', 0.85),
+                'waterAvailability': data.get('waterAvailability', 0.8),
+                'shelterQuality': data.get('shelterQuality', 0.7),
+                'territorySize': data.get('territorySize', 500),
+                'urbanRisk': data.get('urbanRisk', 0.15),
+                'diseaseRisk': data.get('diseaseRisk', 0.1),
+                'caretakerSupport': data.get('caretakerSupport', 0.8),
+                'feedingConsistency': data.get('feedingConsistency', 0.8)
             }), 201
         except Exception as e:
             logger.error(f"Error creating colony: {e}")
             return jsonify({'error': str(e)}), 500
     
-    try:
-        # Get Firebase colonies
-        colonies = []
-        firebase_docs = firebase_db.collection('colonies').stream()
-        for doc in firebase_docs:
-            colonies.append(format_firebase_colony(doc.id, doc.to_dict()))
-        
-        # Add local colonies
-        for c in Colony.query.all():
-            colonies.append({
-                'id': c.id,
-                'name': c.name,
-                'latitude': c.latitude,
-                'longitude': c.longitude,
-                'current_size': c.current_size,
-                'sterilized_count': c.sterilized_count
-            })
-        
-        return jsonify(colonies)
-    except Exception as e:
-        logger.error(f"Error fetching colonies: {e}")
-        return jsonify({'error': str(e)}), 500
+    if request.method == 'GET':
+        try:
+            # Get Firebase colonies
+            colonies = []
+            logger.info("Fetching colonies from Firebase...")
+            firebase_docs = firebase_db.collection('colonies').stream()
+            
+            for doc in firebase_docs:
+                doc_dict = doc.to_dict()
+                logger.info(f"Raw Firebase doc {doc.id}: {doc_dict}")
+                try:
+                    formatted = format_firebase_colony(doc.id, doc_dict)
+                    logger.info(f"Formatted colony: {formatted}")
+                    colonies.append(formatted)
+                except Exception as e:
+                    logger.error(f"Error formatting colony {doc.id}: {e}")
+            
+            # Add local colonies
+            logger.info("Fetching local colonies...")
+            local_colonies = Colony.query.all()
+            for c in local_colonies:
+                try:
+                    local_colony = {
+                        'id': c.id,
+                        'name': c.name,
+                        'latitude': c.latitude,
+                        'longitude': c.longitude,
+                        'currentSize': c.current_size,
+                        'sterilizedCount': c.sterilized_count
+                    }
+                    logger.info(f"Adding local colony: {local_colony}")
+                    colonies.append(local_colony)
+                except Exception as e:
+                    logger.error(f"Error adding local colony {c.id}: {e}")
+            
+            logger.info(f"Total colonies to return: {len(colonies)}")
+            return jsonify(colonies)
+        except Exception as e:
+            logger.error(f"Error in /colonies GET: {e}")
+            return jsonify({'error': str(e)}), 500
 
-@bp.route('/colonies/<colony_id>', methods=['PUT'])
-def update_firebase_colony(colony_id):
-    try:
-        data = request.get_json()
-        
-        # Update Firebase
-        firebase_data = {
-            'name': data['name'],
-            'location': {
-                'latitude': data['latitude'],
-                'longitude': data['longitude']
-            },
-            'current_size': data['current_size'],
-            'size': data['current_size'],  # For backward compatibility
-            'sterilized_count': data['sterilized_count'],
-            'monthly_sterilization_rate': data.get('monthly_sterilization_rate', 0),
-            'breeding_rate': data.get('breeding_rate', 0.85),
-            'kittens_per_litter': data.get('kittens_per_litter', 4),
-            'litters_per_year': data.get('litters_per_year', 2.5),
-            'kitten_survival_rate': data.get('kitten_survival_rate', 0.75),
-            'adult_survival_rate': data.get('adult_survival_rate', 0.85),
-            'water_availability': data.get('water_availability', 0.8),
-            'shelter_quality': data.get('shelter_quality', 0.7),
-            'territory_size': data.get('territory_size', 500),
-            'urban_risk': data.get('urban_risk', 0.15),
-            'disease_risk': data.get('disease_risk', 0.1),
-            'caretaker_support': data.get('caretaker_support', 0.8),
-            'feeding_consistency': data.get('feeding_consistency', 0.8),
-            'updated_at': datetime.utcnow()
-        }
-        
-        # Update the Firebase document directly using the ID
-        colony_ref = firebase_db.collection('colonies').document(colony_id)
-        colony_ref.update(firebase_data)
-        
-        return jsonify({
-            'id': colony_id,
-            'name': data['name'],
-            'latitude': data['latitude'],
-            'longitude': data['longitude'],
-            'current_size': data['current_size'],
-            'sterilized_count': data['sterilized_count']
-        })
-    except Exception as e:
-        logger.error(f"Error updating Firebase colony: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@bp.route('/colonies/<int:colony_id>', methods=['PUT'])
+@bp.route('/colonies/<string:colony_id>', methods=['PUT'])
 def update_colony(colony_id):
     try:
+        logger.info(f"Received PUT request for colony {colony_id}")
+        
+        # Log raw request data
         data = request.get_json()
-        colony = Colony.query.get(colony_id)
+        logger.info(f"Raw request data type: {type(data)}")
+        logger.info(f"Raw request data keys: {data.keys() if data else None}")
+        logger.info(f"Raw request data: {data}")
         
-        if not colony:
+        if not data:
+            logger.error("No data provided in request")
+            return jsonify({'error': 'No data provided'}), 400
+
+        # Get the colony from Firebase
+        colony_ref = firebase_db.collection('colonies').document(colony_id)
+        colony_doc = colony_ref.get()
+        
+        if not colony_doc.exists:
+            logger.error(f"Colony {colony_id} not found")
             return jsonify({'error': 'Colony not found'}), 404
+
+        current_colony = colony_doc.to_dict()
+        logger.info(f"Current colony data: {current_colony}")
+
+        # Validate required fields
+        if not data.get('name'):
+            logger.error("Colony name is required but not provided")
+            return jsonify({'error': 'Missing required field: name'}), 400
         
-        # Update SQLAlchemy record
-        colony.name = data['name']
-        colony.current_size = data['current_size']
-        colony.sterilized_count = data['sterilized_count']
-        colony.latitude = data['latitude']
-        colony.longitude = data['longitude']
-        db.session.commit()
+        # Validate numeric fields
+        try:
+            # Log the population-related fields we receive
+            logger.info(f"Checking population fields in data: {data}")
+            
+            # Get currentSize from request data
+            current_size = data.get('currentSize')
+            if current_size is None:
+                logger.error("Population size not found in request data")
+                return jsonify({'error': 'Missing required field: currentSize'}), 400
+            
+            try:
+                current_size = int(current_size)
+                logger.info(f"Successfully converted population size to int: {current_size}")
+            except (ValueError, TypeError) as e:
+                logger.error(f"Failed to convert population size to int: {e}")
+                return jsonify({'error': f'Invalid population size value: {current_size}'}), 400
+            
+            sterilized_count = int(data.get('sterilizedCount', 0))
+            logger.info(f"Final values - current_size: {current_size}, sterilized_count: {sterilized_count}")
+            
+            if current_size < 0 or sterilized_count < 0:
+                logger.error(f"Invalid negative values - current_size: {current_size}, sterilized_count: {sterilized_count}")
+                return jsonify({'error': 'Population and sterilized count must be non-negative'}), 400
+            if sterilized_count > current_size:
+                logger.error(f"Sterilized count ({sterilized_count}) greater than current size ({current_size})")
+                return jsonify({'error': 'Sterilized count cannot be greater than total population'}), 400
+        except ValueError as e:
+            logger.error(f"Error converting numeric values: {e}")
+            return jsonify({'error': 'Invalid numeric values provided'}), 400
         
-        # Update Firebase
+        # Prepare Firebase data
         firebase_data = {
-            'name': colony.name,
+            'name': data['name'],
             'location': {
-                'latitude': colony.latitude,
-                'longitude': colony.longitude
+                'latitude': float(data['latitude']),
+                'longitude': float(data['longitude'])
             },
-            'current_size': colony.current_size,
-            'size': colony.current_size,  # For backward compatibility
-            'sterilized_count': colony.sterilized_count,
-            'monthly_sterilization_rate': data.get('monthly_sterilization_rate', 0),
-            'breeding_rate': data.get('breeding_rate', 0.85),
-            'kittens_per_litter': data.get('kittens_per_litter', 4),
-            'litters_per_year': data.get('litters_per_year', 2.5),
-            'kitten_survival_rate': data.get('kitten_survival_rate', 0.75),
-            'adult_survival_rate': data.get('adult_survival_rate', 0.85),
-            'water_availability': data.get('water_availability', 0.8),
-            'shelter_quality': data.get('shelter_quality', 0.7),
-            'territory_size': data.get('territory_size', 500),
-            'urban_risk': data.get('urban_risk', 0.15),
-            'disease_risk': data.get('disease_risk', 0.1),
-            'caretaker_support': data.get('caretaker_support', 0.8),
-            'feeding_consistency': data.get('feeding_consistency', 0.8),
+            'currentSize': current_size,  # Use only one field name
+            'sterilizedCount': sterilized_count,
+            'notes': data.get('notes', ''),
+            'monthlysterilizationRate': float(data.get('monthlysterilizationRate', 0)),
+            'breedingRate': float(data.get('breedingRate', 0.85)),
+            'kittensPerLitter': float(data.get('kittensPerLitter', 4)),
+            'littersPerYear': float(data.get('littersPerYear', 2.5)),
+            'kittenSurvivalRate': float(data.get('kittenSurvivalRate', 0.75)),
+            'adultSurvivalRate': float(data.get('adultSurvivalRate', 0.85)),
+            'waterAvailability': float(data.get('waterAvailability', 0.8)),
+            'shelterQuality': float(data.get('shelterQuality', 0.7)),
+            'territorySize': int(data.get('territorySize', 500)),
+            'urbanRisk': float(data.get('urbanRisk', 0.15)),
+            'diseaseRisk': float(data.get('diseaseRisk', 0.1)),
+            'caretakerSupport': float(data.get('caretakerSupport', 0.8)),
+            'feedingConsistency': float(data.get('feedingConsistency', 0.8)),
             'updated_at': datetime.utcnow()
         }
         
-        # Find and update the Firebase document
-        colony_ref = None
-        docs = firebase_db.collection('colonies').stream()
-        for doc in docs:
-            doc_data = doc.to_dict()
-            if (doc_data.get('name') == colony.name and 
-                doc_data.get('location', {}).get('latitude') == colony.latitude and
-                doc_data.get('location', {}).get('longitude') == colony.longitude):
-                colony_ref = doc.reference
-                break
+        logger.info(f"Prepared Firebase data: {firebase_data}")
         
-        if colony_ref:
-            colony_ref.update(firebase_data)
-        else:
-            # If no matching document found, create a new one
-            firebase_db.collection('colonies').add(firebase_data)
+        # Update Firebase
+        colony_ref.update(firebase_data)
+        logger.info("Successfully updated Firebase")
         
-        return jsonify({
-            'id': colony.id,
-            'name': colony.name,
-            'latitude': colony.latitude,
-            'longitude': colony.longitude,
-            'current_size': colony.current_size,
-            'sterilized_count': colony.sterilized_count,
-            'monthly_sterilization_rate': data.get('monthly_sterilization_rate', 0),
-            'breeding_rate': data.get('breeding_rate', 0.85),
-            'kittens_per_litter': data.get('kittens_per_litter', 4),
-            'litters_per_year': data.get('litters_per_year', 2.5),
-            'kitten_survival_rate': data.get('kitten_survival_rate', 0.75),
-            'adult_survival_rate': data.get('adult_survival_rate', 0.85),
-            'water_availability': data.get('water_availability', 0.8),
-            'shelter_quality': data.get('shelter_quality', 0.7),
-            'territory_size': data.get('territory_size', 500),
-            'urban_risk': data.get('urban_risk', 0.15),
-            'disease_risk': data.get('disease_risk', 0.1),
-            'caretaker_support': data.get('caretaker_support', 0.8),
-            'feeding_consistency': data.get('feeding_consistency', 0.8)
-        })
+        # Return the updated data
+        response_data = {
+            'id': colony_id,
+            **firebase_data
+        }
+        logger.info(f"Sending response: {response_data}")
+        return jsonify(response_data)
     except Exception as e:
-        logger.error(f"Error updating colony: {e}")
+        logger.error(f"Error updating colony: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @bp.route('/submit-beta', methods=['POST'])
