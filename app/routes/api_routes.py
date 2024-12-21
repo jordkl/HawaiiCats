@@ -6,8 +6,19 @@ from .. import db
 import os
 import requests
 import re
+import logging
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+
+# Set up logging to use only StreamHandler
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 firebase_db = firestore.client()
@@ -84,7 +95,7 @@ def verify_recaptcha(token):
     try:
         secret_key = os.environ.get('RECAPTCHA_SECRET_KEY')
         if not secret_key:
-            print("Warning: RECAPTCHA_SECRET_KEY not set")
+            logger.warning("Warning: RECAPTCHA_SECRET_KEY not set")
             return True  # Allow in development
             
         response = requests.post(
@@ -97,7 +108,7 @@ def verify_recaptcha(token):
         result = response.json()
         return result.get('success', False)
     except Exception as e:
-        print(f"reCAPTCHA verification error: {e}")
+        logger.error(f"reCAPTCHA verification error: {e}")
         return False
 
 @bp.route('/sightings', methods=['GET', 'POST'])
@@ -148,7 +159,7 @@ def sightings():
                 }
             }), 201
         except Exception as e:
-            print(f"Error creating sighting: {e}")
+            logger.error(f"Error creating sighting: {e}")
             return jsonify({'error': str(e)}), 500
     
     try:
@@ -173,7 +184,7 @@ def sightings():
         
         return jsonify(sightings)
     except Exception as e:
-        print(f"Error fetching sightings: {e}")
+        logger.error(f"Error fetching sightings: {e}")
         return jsonify({'error': str(e)}), 500
 
 @bp.route('/colonies', methods=['GET', 'POST'])
@@ -245,7 +256,7 @@ def colonies():
                 'feeding_consistency': data.get('feeding_consistency', 0.8)
             }), 201
         except Exception as e:
-            print(f"Error creating colony: {e}")
+            logger.error(f"Error creating colony: {e}")
             return jsonify({'error': str(e)}), 500
     
     try:
@@ -268,7 +279,7 @@ def colonies():
         
         return jsonify(colonies)
     except Exception as e:
-        print(f"Error fetching colonies: {e}")
+        logger.error(f"Error fetching colonies: {e}")
         return jsonify({'error': str(e)}), 500
 
 @bp.route('/colonies/<colony_id>', methods=['PUT'])
@@ -315,7 +326,7 @@ def update_firebase_colony(colony_id):
             'sterilized_count': data['sterilized_count']
         })
     except Exception as e:
-        print(f"Error updating Firebase colony: {e}")
+        logger.error(f"Error updating Firebase colony: {e}")
         return jsonify({'error': str(e)}), 500
 
 @bp.route('/colonies/<int:colony_id>', methods=['PUT'])
@@ -400,7 +411,7 @@ def update_colony(colony_id):
             'feeding_consistency': data.get('feeding_consistency', 0.8)
         })
     except Exception as e:
-        print(f"Error updating colony: {e}")
+        logger.error(f"Error updating colony: {e}")
         return jsonify({'error': str(e)}), 500
 
 @bp.route('/submit-beta', methods=['POST'])
@@ -409,9 +420,11 @@ def submit_beta_form():
     """Handle HubSpot beta form submission with spam protection"""
     try:
         data = request.json
+        logger.info(f"Received form data: {data}")
         
         # Basic validation
         if not all(data.get(field) for field in ['firstname', 'lastname', 'email']):
+            logger.info(f"Missing required fields. Received fields: {data.keys()}")
             return jsonify({
                 "success": False,
                 "message": "All fields are required"
@@ -419,6 +432,7 @@ def submit_beta_form():
             
         # Email validation
         if not is_valid_email(data['email']):
+            logger.info(f"Invalid email format: {data['email']}")
             return jsonify({
                 "success": False,
                 "message": "Invalid email format"
@@ -426,7 +440,9 @@ def submit_beta_form():
             
         # reCAPTCHA verification
         recaptcha_token = request.headers.get('X-Recaptcha-Token')
+        logger.info(f"reCAPTCHA token present: {bool(recaptcha_token)}")
         if not recaptcha_token or not verify_recaptcha(recaptcha_token):
+            logger.info("reCAPTCHA verification failed")
             return jsonify({
                 "success": False,
                 "message": "Invalid reCAPTCHA"
@@ -437,8 +453,16 @@ def submit_beta_form():
         form_id = os.environ.get('HUBSPOT_FORM_ID')
         access_token = os.environ.get('HUBSPOT_ACCESS_TOKEN')
         
+        logger.info(f"HubSpot Configuration - Portal ID: {portal_id}, Form ID: {form_id}, Token present: {bool(access_token)}")
+        
         if not all([portal_id, form_id, access_token]):
-            raise ValueError("Missing required HubSpot configuration")
+            missing = []
+            if not portal_id: missing.append('HUBSPOT_PORTAL_ID')
+            if not form_id: missing.append('HUBSPOT_FORM_ID')
+            if not access_token: missing.append('HUBSPOT_ACCESS_TOKEN')
+            error_msg = f"Missing HubSpot configuration: {', '.join(missing)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         
         # Prepare the submission data
         submission = {
@@ -459,37 +483,66 @@ def submit_beta_form():
             "context": {
                 "pageUri": request.headers.get('Referer'),
                 "pageName": "Hawaii Cats Beta Signup",
-                "ipAddress": request.remote_addr  # Store IP for tracking
+                "ipAddress": request.headers.get('X-Forwarded-For', request.remote_addr)
             }
         }
         
+        logger.info(f"Submitting to HubSpot with portal_id={portal_id}, form_id={form_id}")
+        logger.info(f"Submission data: {submission}")
+        
         # Submit to HubSpot
-        response = requests.post(
-            f"https://api.hsforms.com/submissions/v3/integration/submit/{portal_id}/{form_id}",
-            headers={
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/json"
-            },
-            json=submission
-        )
-        
-        response.raise_for_status()
-        return jsonify({"success": True, "message": "Form submitted successfully"})
-        
+        try:
+            response = requests.post(
+                f"https://api.hsforms.com/submissions/v3/integration/submit/{portal_id}/{form_id}",
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json"
+                },
+                json=submission,
+                timeout=10  # Add timeout to prevent hanging
+            )
+            
+            logger.info(f"HubSpot Response Status: {response.status_code}")
+            logger.info(f"HubSpot Response Headers: {dict(response.headers)}")
+            logger.info(f"HubSpot Response Body: {response.text}")
+            
+            if not response.ok:
+                error_body = response.json() if response.text else "No error details available"
+                logger.error(f"HubSpot Error Details: {error_body}")
+                raise requests.exceptions.RequestException(f"HubSpot API error: {error_body}")
+                
+            response.raise_for_status()
+            return jsonify({"success": True, "message": "Form submitted successfully"})
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"HubSpot API Error: {str(e)}")
+            if hasattr(e, 'response'):
+                logger.error(f"Response status: {e.response.status_code}")
+                logger.error(f"Response headers: {dict(e.response.headers)}")
+                logger.error(f"Response content: {e.response.text}")
+            raise
+                
+        except Exception as e:
+            logger.error(f"Server Error: {str(e)}", exc_info=True)
+            return jsonify({
+                "success": False,
+                "message": "Error submitting form to HubSpot"
+            }), 500
     except ValueError as e:
-        print(f"Configuration Error: {str(e)}")
+        logger.error(f"Configuration Error: {str(e)}")
         return jsonify({
             "success": False,
             "message": "Server configuration error"
         }), 500
     except requests.exceptions.RequestException as e:
-        print(f"HubSpot API Error: {str(e)}")
+        logger.error(f"HubSpot API Error: {str(e)}")
+        logger.error(f"Response content: {e.response.text if hasattr(e, 'response') else 'No response content'}")
         return jsonify({
             "success": False,
             "message": "Error submitting form to HubSpot"
         }), 500
     except Exception as e:
-        print(f"Server Error: {str(e)}")
+        logger.error(f"Server Error: {str(e)}")
         return jsonify({
             "success": False,
             "message": "Server error processing form submission"
