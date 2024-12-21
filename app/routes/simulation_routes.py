@@ -47,20 +47,20 @@ def calculate_population():
             return jsonify({'error': 'No data received'}), 400
 
         # Parse input parameters
-        currentSize = int(float(data.get('currentSize', 10)))
+        current_size = int(float(data.get('current_size', 10)))
         sterilized_count = int(float(data.get('sterilized_count', 0)))
-        monthly_sterilization = float(data.get('monthly_sterilization_rate', 0))
+        monthly_sterilization = float(data.get('monthly_sterilization', 0))
         months = int(data.get('months', 12))
         sterilization_cost = float(data.get('sterilization_cost', 50))
         use_monte_carlo = bool(data.get('use_monte_carlo', False))
         
-        log_debug('INFO', f'Parsed parameters: currentSize={currentSize}, sterilized={sterilized_count}, monthly_steril={monthly_sterilization}, months={months}, cost={sterilization_cost}, monte_carlo={use_monte_carlo}')
+        log_debug('INFO', f'Parsed parameters: current_size={current_size}, sterilized={sterilized_count}, monthly_steril={monthly_sterilization}, months={months}, cost={sterilization_cost}, monte_carlo={use_monte_carlo}')
         
         # Validate input
-        if currentSize < 1:
+        if current_size < 1:
             return jsonify({'error': 'Current size must be at least 1'}), 400
         
-        if sterilized_count > currentSize:
+        if sterilized_count > current_size:
             return jsonify({'error': 'Sterilized count cannot exceed current size'}), 400
         
         if sterilized_count < 0:
@@ -114,20 +114,20 @@ def calculate_population():
         if use_monte_carlo:
             try:
                 log_debug('INFO', 'Setting up Monte Carlo simulation')
-                num_simulations = min(int(float(data.get('num_simulations', 100))), 1000)  # Cap at 1000
+                monte_carlo_runs = int(data.get('monte_carlo_runs', 500))
                 variation_coefficient = min(float(data.get('variation_coefficient', 0.1)), 0.5)  # Cap at 0.5
                 
                 # Validate Monte Carlo parameters
-                if num_simulations < 1:
+                if monte_carlo_runs < 1:
                     return jsonify({'error': 'Number of simulations must be at least 1'}), 400
                 if variation_coefficient <= 0:
                     return jsonify({'error': 'Variation coefficient must be positive'}), 400
                 
-                log_debug('INFO', f'Monte Carlo parameters: sims={num_simulations}, var_coef={variation_coefficient}')
+                log_debug('INFO', f'Monte Carlo parameters: sims={monte_carlo_runs}, var_coef={variation_coefficient}')
                 
                 # Add Monte Carlo specific parameters to params
                 params.update({
-                    'num_simulations': num_simulations,
+                    'num_simulations': monte_carlo_runs,
                     'variation_coefficient': variation_coefficient,
                     'kitten_maturity_months': float(params.get('kitten_maturity_months', 5)),
                     'peak_breeding_month': int(params.get('peak_breeding_month', 4)),
@@ -141,66 +141,33 @@ def calculate_population():
 
         try:
             if use_monte_carlo:
+                log_debug('INFO', 'Running Monte Carlo simulation')
                 try:
-                    log_debug('INFO', 'Running Monte Carlo simulation...')
-                    summary, all_results = run_monte_carlo(
-                        base_params=params,
-                        currentSize=currentSize,
+                    result = run_monte_carlo(
+                        params=params,
+                        current_size=current_size,
+                        months=months,
                         sterilized_count=sterilized_count,
                         monthly_sterilization=monthly_sterilization,
-                        months=months,
-                        num_simulations=num_simulations,
-                        variation_coefficient=variation_coefficient
+                        num_simulations=monte_carlo_runs
                     )
-                    log_debug('INFO', f'Monte Carlo monthly stats: {summary["monthly_stats"]}')
-                    
-                    # Convert Monte Carlo summary to match regular simulation format
-                    result = {
-                        'final_population': summary['population']['mean'],
-                        'final_sterilized': summary['sterilized']['mean'],
-                        'total_sterilizations': monthly_sterilization * months,
-                        'total_cost': summary['cost']['mean'],
-                        'population_growth': summary['population']['mean'] - currentSize,
-                        'monthly_populations': [stat['mean'] for stat in summary['monthly_stats']],
-                        'monthly_sterilized': [stat['sterilized_mean'] for stat in summary['monthly_stats']],
-                        'monthly_reproductive': [stat['reproductive_mean'] for stat in summary['monthly_stats']],
-                        'monthly_kittens': [stat['kittens_mean'] for stat in summary['monthly_stats']],
-                        'monthly_stats': summary['monthly_stats'],  # Include full monthly statistics
-                        'monte_carlo': True,  # Flag to indicate this is Monte Carlo data
-                        'confidence_interval': [
-                            summary['population']['ci_lower'],
-                            summary['population']['ci_upper']
-                        ],
-                        'standard_deviation': summary['population']['std'],
-                        # Add mortality statistics
-                        'total_deaths': summary['mortality']['total']['mean'],
-                        'kitten_deaths': summary['mortality']['kittens']['mean'],
-                        'adult_deaths': summary['mortality']['adults']['mean'],
-                        'natural_deaths': summary['mortality'].get('natural', {}).get('mean', 0),
-                        'urban_deaths': summary['mortality'].get('urban', {}).get('mean', 0),
-                        'disease_deaths': summary['mortality'].get('disease', {}).get('mean', 0),
-                        'monthly_deaths_kittens': [],  # Placeholder for monthly stats
-                        'monthly_deaths_adults': [],   # Placeholder for monthly stats
-                        'monthly_deaths_natural': [],  # Placeholder for monthly stats
-                        'monthly_deaths_urban': [],    # Placeholder for monthly stats
-                        'monthly_deaths_disease': [],  # Placeholder for monthly stats
-                        'monthly_deaths_other': []     # Placeholder for monthly stats
-                    }
-                    log_debug('INFO', f'Monte Carlo result prepared: {result}')
                 except Exception as e:
-                    log_debug('ERROR', f'Monte Carlo simulation failed: {str(e)}')
-                    raise e
+                    log_debug('ERROR', f'Monte Carlo simulation error: {str(e)}')
+                    return jsonify({'error': str(e)}), 500
             else:
-                # Run regular simulation
                 log_debug('INFO', 'Running regular simulation')
-                result = simulate_population(
-                    currentSize=currentSize,
-                    sterilized_count=sterilized_count,
-                    monthly_sterilization=monthly_sterilization,
-                    months=months,
-                    params=params
-                )
-                log_debug('INFO', f'Regular simulation result: {result}')
+                try:
+                    result = simulate_population(
+                        params=params,
+                        current_size=current_size,
+                        months=months,
+                        sterilized_count=sterilized_count,
+                        monthly_sterilization=monthly_sterilization,
+                        use_monte_carlo=use_monte_carlo
+                    )
+                except Exception as e:
+                    log_debug('ERROR', f'Simulation error: {str(e)}')
+                    return jsonify({'error': str(e)}), 500
 
             # Calculate costs
             total_sterilizations = result['total_sterilizations']
@@ -210,7 +177,7 @@ def calculate_population():
             row_data = {
                 # Input parameters
                 'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'currentSize': currentSize,
+                'current_size': current_size,
                 'sterilized_count': sterilized_count,
                 'monthly_sterilization': monthly_sterilization,
                 'months': months,
@@ -300,7 +267,7 @@ def calculate_population():
                         result['confidence_interval'][1]
                     ],
                     'standard_deviation': result['standard_deviation'],
-                    'all_results': all_results if 'all_results' in locals() else None
+                    'all_results': result.get('all_results', None)
                 })
 
             return jsonify(response_data)

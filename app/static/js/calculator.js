@@ -304,7 +304,7 @@ async function handleCalculate() {
         const monthlysterilization = parseInt(document.getElementById('monthlysterilization').value);
         const months = parseInt(document.getElementById('months').value);
         const sterilizationCost = parseFloat(document.getElementById('sterilizationCost').value);
-        const useMonteCarloCheckbox = document.getElementById('useMonteCarloCheckbox').checked;
+        const useMonteCarloCheckbox = document.getElementById('useMonteCarlo')?.checked || false;
 
         // Validate input
         if (isNaN(currentSize) || currentSize < 1) {
@@ -313,9 +313,9 @@ async function handleCalculate() {
 
         // Prepare request data
         const data = {
-            currentSize: currentSize,
+            current_size: currentSize,
             sterilized_count: sterilizedCount,
-            monthly_sterilization_rate: monthlysterilization,
+            monthly_sterilization: monthlysterilization,
             months: months,
             sterilization_cost: sterilizationCost,
             use_monte_carlo: useMonteCarloCheckbox,
@@ -325,12 +325,12 @@ async function handleCalculate() {
         // Add Monte Carlo specific parameters if enabled
         if (useMonteCarlo) {
             console.log('Adding Monte Carlo parameters');
-            data.num_simulations = validateInput(document.getElementById('numSimulations')?.value || '500', 'Number of Simulations', 100, 1000);
+            data.monte_carlo_runs = validateInput(document.getElementById('numSimulations')?.value || '500', 'Number of Simulations', 100, 1000);
             data.variation_coefficient = validateInput(document.getElementById('variationCoefficient')?.value || '0.2', 'Variation Coefficient', 0, 1);
             console.log('Monte Carlo parameters:', { 
-                numSimulations: data.num_simulations, 
-                variationCoefficient: data.variation_coefficient,
-                useMonteCarlo: data.use_monte_carlo
+                monte_carlo_runs: data.monte_carlo_runs, 
+                variation_coefficient: data.variation_coefficient,
+                use_monte_carlo: data.use_monte_carlo
             });
         }
 
@@ -786,7 +786,7 @@ async function runParameterTests() {
         // Base configuration for Hawaiʻi
         const baseConfig = {
             months: 24,
-            currentSize: 50,
+            current_size: 50,
             sterilized_count: 0,
             monthly_sterilization: 0,
             use_monte_carlo: true,
