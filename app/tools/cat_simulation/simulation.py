@@ -138,13 +138,13 @@ def simulate_population(params, current_size=100, months=12, sterilized_count=0,
             
             # Calculate current population with explicit type conversion
             current_population = int(
-                sum(int(float(count)) for count, _ in colony['young_kittens']) +
-                sum(int(float(count)) for count, _ in colony['reproductive']) +
-                sum(int(float(count)) for count, _ in colony['sterilized'])
+                sum((int(float(count)) for count, _ in colony.get('young_kittens', [])), 0) +
+                sum((int(float(count)) for count, _ in colony.get('reproductive', [])), 0) +
+                sum((int(float(count)) for count, _ in colony.get('sterilized', [])), 0)
             )
             
             # Calculate total sterilized population for tracking
-            current_sterilized = sum(int(float(count)) for count, _ in colony['sterilized'])
+            current_sterilized = sum((int(float(count)) for count, _ in colony.get('sterilized', [])), 0)
             monthly_sterilized.append(current_sterilized)
             
             # Calculate environmental factors

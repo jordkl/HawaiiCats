@@ -99,36 +99,23 @@ def initialize_colony_with_ages(total_cats, sterilized, params):
                             age = np.random.randint(72, 96)
                             colony['reproductive'].append([senior, age])
         
-        # Distribute sterilized cats if any
+        # Handle sterilized cats
         if sterilized > 0:
-            # For sterilized cats, assume a small percentage are kittens (10%)
-            sterilized_kitten_count = max(0, int(sterilized * 0.1))
-            sterilized_adult_count = sterilized - sterilized_kitten_count
-            
-            logger.debug(f"Distributing {sterilized} sterilized cats: {sterilized_kitten_count} kittens, {sterilized_adult_count} adults")
-            
-            # Distribute sterilized kittens if any
-            if sterilized_kitten_count > 0:
-                if sterilized_kitten_count <= 3:
-                    for _ in range(sterilized_kitten_count):
-                        age = np.random.randint(0, maturity_months)
-                        colony['sterilized_kittens'].append([1, age])
-                else:
-                    ages = np.random.triangular(0, maturity_months/2, maturity_months, sterilized_kitten_count)
-                    ages = np.clip(ages, 0, maturity_months - 1).astype(int)
-                    age_counts = np.bincount(ages, minlength=maturity_months)
-                    for age, count in enumerate(age_counts):
-                        if count > 0:
-                            colony['sterilized_kittens'].append([int(count), int(age)])
-            
-            # Add sterilized adults with similar age distribution
-            if sterilized_adult_count > 0:
-                young_adults = max(1, int(sterilized_adult_count * 0.4))
-                middle_aged = max(1, int(sterilized_adult_count * 0.3))
-                mature = max(1, int(sterilized_adult_count * 0.2))
-                senior = sterilized_adult_count - young_adults - middle_aged - mature
+            # Similar age distribution for sterilized cats
+            if sterilized <= 3:
+                # For very small numbers, distribute evenly
+                age_ranges = [(maturity_months, 24), (24, 48), (48, 72)]
+                for i in range(sterilized):
+                    min_age, max_age = age_ranges[i % len(age_ranges)]
+                    age = np.random.randint(min_age, max_age)
+                    colony['sterilized'].append([1, age])
+            else:
+                # Use similar distribution as reproductive cats
+                young_adults = max(1, int(sterilized * 0.4))
+                middle_aged = max(1, int(sterilized * 0.3))
+                mature = max(1, int(sterilized * 0.2))
+                senior = max(0, sterilized - young_adults - middle_aged - mature)
                 
-                # Add each age group separately
                 if young_adults > 0:
                     age = np.random.randint(maturity_months, 24)
                     colony['sterilized'].append([young_adults, age])
@@ -142,19 +129,15 @@ def initialize_colony_with_ages(total_cats, sterilized, params):
                     age = np.random.randint(72, 96)
                     colony['sterilized'].append([senior, age])
         
-        # Calculate initial pregnancies (reduced probability)
-        female_ratio = float(params.get('female_ratio', 0.5))
-        reproductive_count = sum(int(count) for count, _ in colony['reproductive'])
-        reproductive_females = int(reproductive_count * female_ratio)
-        
-        if reproductive_females > 0:
-            initial_pregnant = int(reproductive_females * 0.1)
-            logger.debug(f"Initial pregnancies: {initial_pregnant} out of {reproductive_females} females")
-        else:
-            initial_pregnant = 0
-            logger.debug("No initial pregnancies (no reproductive females)")
+        # Calculate initial pregnancies (20% of reproductive females)
+        initial_pregnant = 0
+        if colony['reproductive']:
+            reproductive_females = sum(count for count, _ in colony['reproductive']) * params.get('female_ratio', 0.5)
+            initial_pregnant = int(reproductive_females * 0.2)
             
-        logger.debug(f"Final colony structure: {colony}")
+        logger.debug(f"Initialized colony structure: {colony}")
+        logger.debug(f"Initial pregnant females: {initial_pregnant}")
+        
         return colony, initial_pregnant
         
     except Exception as e:
