@@ -2,6 +2,12 @@
 
 {% block title %}CatMap iOS App{% endblock %}
 
+{% block head %}
+{{ super() }}
+<!-- Add reCAPTCHA script -->
+<script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
+{% endblock %}
+
 {% block content %}
 <!-- HubSpot Form Modal -->
 <div id="beta-modal" class="fixed inset-0 z-50 overflow-y-auto hidden">
@@ -58,7 +64,7 @@
 
                             <div class="mt-5">
                                 <button type="submit"
-                                    class="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                    class="w-full inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                     Join Beta
                                 </button>
                             </div>
@@ -159,7 +165,8 @@
 
             console.log('Submitting form with data:', data);
             
-            const response = await fetch('/api/submit-beta', {
+            // Use relative URL instead of absolute URL
+            const response = await fetch('api/submit-beta', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -199,8 +206,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hawaii Cats Mobile App</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Add reCAPTCHA script in head -->
-    <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
 </head>
 
 <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -222,12 +227,12 @@
                         </p>
                         <div class="mt-5 sm:mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
                             <div class="rounded-md shadow w-full sm:w-auto">
-                                <button onclick="document.getElementById('beta-modal').classList.remove('hidden')" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <button onclick="document.getElementById('beta-modal').classList.remove('hidden')" class="w-full inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                     Join Beta
                                 </button>
                             </div>
                             <div class="rounded-md shadow w-full sm:w-auto">
-                                <a href="#features" class="w-full inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-hawaii-blue bg-white hover:bg-gray-50 dark:hover:bg-gray-700 md:py-4 md:text-lg md:px-10">
+                                <a href="#features" class="w-full inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-hawaii-blue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-hawaii-blue">
                                     View Features
                                 </a>
                             </div>
@@ -462,7 +467,7 @@
             </h2>
             <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
                 <div class="inline-flex rounded-md shadow">
-                    <button onclick="document.getElementById('beta-modal').classList.remove('hidden')" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button onclick="document.getElementById('beta-modal').classList.remove('hidden')" class="w-full inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         Join Beta
                     </button>
                 </div>
