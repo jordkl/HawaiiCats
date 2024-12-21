@@ -19,7 +19,7 @@
         <div class="inline-block transform overflow-hidden rounded-lg bg-gray-800 px-4 pt-5 pb-4 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6 sm:align-middle">
             <!-- Close button -->
             <div class="absolute right-0 top-0 hidden pr-4 pt-4 sm:block">
-                <button type="button" onclick="closeBetaForm()" class="rounded-md bg-gray-800 text-gray-400 hover:text-gray-500 focus:outline-none">
+                <button type="button" onclick="closeBetaForm()" class="rounded-md bg-gray-800 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     <span class="sr-only">Close</span>
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -391,9 +391,6 @@
                 <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white">
                     Features Coming Soon
                 </h2>
-                <p class="mt-4 max-w-2xl text-xl text-gray-500 dark:text-gray-300 lg:mx-auto">
-                    Be among the first to try these exciting new features
-                </p>
             </div>
 
             <div class="mt-10">
@@ -479,6 +476,23 @@
 <script charset="utf-8" type="text/javascript" src="//js.hsforms.net/forms/embed/v2.js"></script>
 <style>
     /* HubSpot Form Styles */
+    @media (max-width: 767px) {
+        .hs-form-iframe {
+            width: 90vw !important;
+            height: 90vh !important;
+            max-height: none !important;
+            margin: 5vh auto !important;
+        }
+        
+        /* Ensure the form container takes up most of the space */
+        .hs-form {
+            width: 100% !important;
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 1rem !important;
+        }
+    }
+
     .hs-form-field > label,
     .hs-form-field > label span:not(.hs-form-required),
     .hs-form label,
@@ -492,11 +506,11 @@
     #label-email-33b22fd2-0f07-4284-9f85-d4f51bada423 span:not(.hs-form-required),
     #label-firstname-33b22fd2-0f07-4284-9f85-d4f51bada423 span,
     #label-lastname-33b22fd2-0f07-4284-9f85-d4f51bada423 span {
-        color: #F3F4F6 !important; /* Light gray, almost white */
+        color: #F3F4F6 !important;
         opacity: 1 !important;
         visibility: visible !important;
         display: inline !important;
-        text-shadow: 0 0 1px rgba(255,255,255,0.5) !important; /* Slight glow effect */
+        text-shadow: 0 0 1px rgba(255,255,255,0.5) !important;
         font-weight: 500 !important;
         font-size: 0.95rem !important;
     }
@@ -529,5 +543,4 @@
         background-color: #1D4ED8 !important;
     }
 </style>
-
 {% endblock %}

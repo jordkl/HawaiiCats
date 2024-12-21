@@ -22,6 +22,7 @@ let sightingIcon = L.icon({
     popupAnchor: [1, -34],
     shadowSize: [41, 41]
 });
+let currentView = 'colonies'; // Initialize currentView
 
 // Debounce function to limit API calls
 function debounce(func, wait) {
@@ -187,7 +188,7 @@ function setupAddColonyButton() {
             };
             
             try {
-                const response = await fetch('http://127.0.0.1:5000/api/colonies', {
+                const response = await fetch('/api/colonies', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -268,7 +269,7 @@ function exitAddColonyMode() {
 // Load colonies data
 async function loadColonies() {
     try {
-        const response = await fetch('http://127.0.0.1:5000/api/colonies');
+        const response = await fetch('/api/colonies');
         if (!response.ok) {
             throw new Error('Failed to fetch colonies');
         }
@@ -306,7 +307,7 @@ async function loadColonies() {
 // Load sightings data
 async function loadSightings() {
     try {
-        const response = await fetch('http://127.0.0.1:5000/api/sightings');
+        const response = await fetch('/api/sightings');
         if (!response.ok) {
             throw new Error('Failed to fetch sightings');
         }
@@ -371,17 +372,25 @@ function updateVisibleItems() {
     
     const bounds = map.getBounds();
     console.log('Current map bounds:', bounds);
-    console.log('Current view:', window.currentView);
+    console.log('Current view:', currentView);
     
     // Clear existing markers
-    colonyMarkers.forEach(marker => marker.remove());
-    sightingMarkers.forEach(marker => marker.remove());
+    colonyMarkers.forEach(marker => {
+        if (marker && marker.remove) {
+            marker.remove();
+        }
+    });
+    sightingMarkers.forEach(marker => {
+        if (marker && marker.remove) {
+            marker.remove();
+        }
+    });
     colonyMarkers = [];
     sightingMarkers = [];
     
     try {
         // Filter and show items based on current view
-        if (window.currentView === 'colonies' && cachedColonies && cachedColonies.length > 0) {
+        if ((currentView === 'colonies' || !currentView) && cachedColonies && cachedColonies.length > 0) {
             // Filter colonies within current bounds
             const visibleColonies = cachedColonies.filter(colony => 
                 bounds.contains([colony.latitude, colony.longitude])
@@ -418,7 +427,7 @@ function updateVisibleItems() {
                 });
             }
 
-        } else if (window.currentView === 'sightings' && cachedSightings && cachedSightings.length > 0) {
+        } else if (currentView === 'sightings' && cachedSightings && cachedSightings.length > 0) {
             // Filter sightings within current bounds
             const visibleSightings = cachedSightings.filter(sighting => 
                 bounds.contains([sighting.latitude, sighting.longitude])
@@ -572,6 +581,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Initialize the map using our dark theme
         map = initializeMap('map', [21.3099, -157.8581], 11);
+        
+        // Set up tab switching
+        const tabs = document.querySelectorAll('[data-view]');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update current view
+                currentView = tab.dataset.view;
+                
+                // Hide all content
+                document.querySelectorAll('.content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                
+                // Show selected content
+                const selectedContent = document.querySelector(`[data-view="${currentView}"]`);
+                if (selectedContent) {
+                    selectedContent.classList.remove('hidden');
+                }
+                
+                // Update visible items
+                updateVisibleItems();
+            });
+        });
         
         // Set up map click handler for colony placement
         map.on('click', function(e) {
