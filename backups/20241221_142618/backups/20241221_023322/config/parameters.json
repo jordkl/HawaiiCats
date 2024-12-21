@@ -1,0 +1,39 @@
+{
+    "breeding": {
+        "breeding_rate": 0.85,
+        "kittens_per_litter": 2.8,
+        "litters_per_year": 2.0,
+        "kitten_survival_rate": 0.65,
+        "female_ratio": 0.5,
+        "adult_survival_rate": 0.85,
+        "kitten_maturity_months": 5,
+        "seasonal_breeding_amplitude": 0.2,
+        "peak_breeding_month": 3
+    },
+    "environmental": {
+        "base_food_capacity": 0.8,
+        "food_scaling_factor": 0.7,
+        "water_availability": 0.8,
+        "shelter_quality": 0.6,
+        "territory_size": 500,
+        "density_impact_threshold": 0.5,
+        "territory_scaling_factor": 0.3,
+        "cats_per_acre": 2.5
+    },
+    "risks": {
+        "urban_risk": 0.15,
+        "disease_risk": 0.1,
+        "natural_risk": 0.1,
+        "male_aggression_factor": 0.2,
+        "density_mortality_factor": 0.25,
+        "territory_competition_factor": 0.2
+    },
+    "human_factors": {
+        "caretaker_support": 0.6,
+        "feeding_consistency": 0.7,
+        "monthly_abandonment": 0
+    },
+    "costs": {
+        "sterilization_cost": 50
+    }
+}

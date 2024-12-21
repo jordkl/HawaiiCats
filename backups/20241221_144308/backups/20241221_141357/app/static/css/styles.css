@@ -1,0 +1,273 @@
+#map {
+    height: 600px;
+    width: 100%;
+    border-radius: 0.5rem;
+}
+
+/* Cursor styles */
+.leaflet-crosshair {
+    cursor: crosshair !important;
+}
+
+.leaflet-grab {
+    cursor: grab;
+}
+
+.crosshair-cursor {
+    cursor: crosshair !important;
+}
+
+.colony-popup {
+    max-width: 300px;
+}
+
+.sightings-container {
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+
+.sightings-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.sightings-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sightings-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sightings-list::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+}
+
+/* Map mode control styles */
+.map-mode-control {
+    background: white;
+    padding: 5px;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+}
+
+.map-mode-button {
+    display: block;
+    margin: 2px 0;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: white;
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+    font-size: 12px;
+}
+
+.map-mode-button:hover {
+    background: #f4f4f4;
+}
+
+.map-mode-button.active {
+    background: #4a90e2;
+    color: white;
+    border-color: #357abd;
+}
+
+/* Map Styles */
+.colony-marker, .sighting-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    width: 24px !important;
+    height: 24px !important;
+    transition: transform 0.2s ease;
+}
+
+.colony-marker:hover, .sighting-marker:hover {
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+.colony-marker.selected, .sighting-marker.selected {
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.5));
+}
+
+.crosshair {
+    cursor: crosshair !important;
+}
+
+/* Map Controls */
+.leaflet-control-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: white;
+    border-bottom: 1px solid #ccc;
+    text-decoration: none;
+    color: #666;
+}
+
+.leaflet-control-button:hover {
+    background: #f4f4f4;
+}
+
+.leaflet-control-button:first-child {
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+}
+
+.leaflet-control-button:last-child {
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
+    border-bottom: none;
+}
+
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+}
+
+.close-modal {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    cursor: pointer;
+    font-size: 24px;
+}
+
+/* Notification styles */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 4px;
+    color: white;
+    font-weight: 500;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease-in-out;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.notification.success {
+    background-color: #48bb78;
+}
+
+.notification.error {
+    background-color: #f56565;
+}
+
+/* Notification Styles */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    z-index: 1000;
+    display: none;
+}
+
+.notification.success {
+    background-color: #10B981;
+}
+
+.notification.error {
+    background-color: #EF4444;
+}
+
+.notification.info {
+    background-color: #3B82F6;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #D1D5DB;
+    border-radius: 0.375rem;
+    background-color: white;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: #3B82F6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2563EB;
+}
+
+.btn-secondary {
+    background-color: white;
+    border: 1px solid #D1D5DB;
+    color: #374151;
+}
+
+.btn-secondary:hover {
+    background-color: #F3F4F6;
+}

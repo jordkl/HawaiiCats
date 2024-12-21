@@ -1,0 +1,712 @@
+{% extends "base.html" %}
+
+{% block title %}Cat Colony Population Estimator{% endblock %}
+
+{% block head %}
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/calculator.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Floating Calculate Button */
+        .floating-calculate {
+            position: fixed;
+            right: 2rem;
+            bottom: 50%;
+            transform: translateY(50%);
+            background-color: var(--accent-primary);
+            color: var(--text-primary);
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            font-weight: 600;
+            transition: all 0.2s;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .floating-calculate:hover {
+            background-color: var(--accent-secondary);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+            transform: translateY(50%) scale(1.05);
+        }
+
+        .floating-calculate:active {
+            transform: translateY(50%) scale(0.95);
+        }
+
+        .floating-calculate svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        /* Dashboard Layout */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 1.5rem;
+            min-height: calc(100vh - 64px);
+            background-color: var(--background-primary);
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .dashboard-container.advanced-mode {
+            grid-template-columns: 300px 1fr;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            background-color: var(--background-secondary);
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+        }
+
+        .sidebar {
+            background-color: var(--background-secondary);
+            padding: 1.5rem;
+            border-right: 1px solid var(--border-color);
+            height: calc(100vh - 96px);
+            overflow-y: auto;
+            position: sticky;
+            top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            border-radius: 0.75rem;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Scrollbar styling */
+        .sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: var(--background-tertiary);
+            border-radius: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--text-muted);
+            border-radius: 4px;
+        }
+
+        /* Form elements */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: var(--background-tertiary);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--accent-secondary);
+        }
+
+        /* Modal styling */
+        .modal {
+            background-color: var(--background-secondary);
+            color: var(--text-primary);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-footer {
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Chart customization */
+        #populationChart {
+            background-color: var(--background-secondary);
+        }
+
+        /* Loading indicator */
+        .loading-indicator {
+            background-color: var(--background-secondary);
+            color: var(--text-primary);
+        }
+
+        /* Alert and notification styles */
+        .alert {
+            background-color: var(--background-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .alert-info {
+            background-color: rgba(45, 132, 251, 0.1);
+            border-color: var(--accent-primary);
+        }
+
+        .alert-warning {
+            background-color: rgba(217, 130, 43, 0.1);
+            border-color: var(--warning);
+        }
+
+        .alert-error {
+            background-color: rgba(245, 73, 139, 0.1);
+            border-color: var(--danger);
+        }
+
+        /* Toggle Switch Styling */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--background-tertiary);
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-muted);
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--accent-primary);
+        }
+
+        input:focus + .toggle-slider {
+            box-shadow: 0 0 1px var(--accent-primary);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .toggle-label {
+            margin-left: 0.5rem;
+            cursor: pointer;
+        }
+
+        /* Preset Buttons */
+        .preset-button {
+            padding: 0.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            background-color: var(--background-secondary);
+            color: var(--text-muted);
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .preset-button:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .preset-button.active {
+            background-color: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+
+        .preset-button:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(var(--accent-primary), 0.2);
+        }
+
+        /* Monte Carlo Loading Indicator */
+        .monte-carlo-loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .monte-carlo-loading.active {
+            display: flex;
+        }
+
+        .loading-content {
+            background-color: var(--background-secondary);
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .loading-spinner {
+            border: 4px solid var(--background-tertiary);
+            border-top: 4px solid var(--accent-primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Advanced Parameters Grid */
+        .advanced-parameters-grid {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            padding: 1.5rem;
+            background-color: var(--background-secondary);
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-top: 1.5rem;
+        }
+
+        .advanced-parameters-grid.show {
+            display: grid;
+        }
+
+        .parameter-group {
+            padding: 1rem;
+            background-color: var(--background-tertiary);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .dashboard-card {
+            background-color: var(--background-secondary);
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .stat-card {
+            background-color: var(--background-secondary);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            outline: none;
+            transition: border-color 0.15s ease-in-out;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(var(--accent-primary), 0.1);
+        }
+
+        .parameter-label {
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .parameter-value {
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .parameter-description {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .primary-button {
+            background-color: var(--accent-primary);
+            color: var(--text-primary);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .primary-button:hover {
+            background-color: var(--accent-secondary);
+        }
+
+        .secondary-button {
+            background-color: var(--background-tertiary);
+            color: var(--text-muted);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .secondary-button:hover {
+            background-color: var(--background-secondary);
+        }
+
+        /* Custom button colors */
+        .orange-button {
+            background-color: var(--warning);
+            color: var(--text-primary);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .orange-button:hover {
+            background-color: var(--warning-hover);
+        }
+
+        .blue-button {
+            background-color: var(--accent-primary);
+            color: var(--text-primary);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .blue-button:hover {
+            background-color: var(--accent-secondary);
+        }
+
+        .red-button {
+            background-color: var(--danger);
+            color: var(--text-primary);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .red-button:hover {
+            background-color: var(--danger-hover);
+        }
+
+        .green-button {
+            background-color: var(--success);
+            color: var(--text-primary);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .green-button:hover {
+            background-color: var(--success-hover);
+        }
+
+        #advancedSection {
+            max-height: 0;
+            overflow: hidden;
+            transition: opacity 0.5s ease-out, max-height 0.5s ease-out;
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        #advancedSection.active {
+            max-height: none;
+            opacity: 1;
+            visibility: visible;
+            margin-top: 2rem;
+            transition: opacity 0.5s ease-in, max-height 0.5s ease-in;
+        }
+        
+        #advancedSection.active > * {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: var(--accent-primary);
+        }
+        
+        .toggle-checkbox {
+            transition: transform 0.3s ease;
+        }
+        
+        .toggle-checkbox:checked {
+            transform: translateX(100%);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-success {
+            background-color: var(--success);
+            color: var(--text-primary);
+            border: 1px solid var(--success);
+        }
+        
+        .alert-error {
+            background-color: var(--danger);
+            color: var(--text-primary);
+            border: 1px solid var(--danger);
+        }
+        
+        .highlight {
+            animation: pulse 2s;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container" id="dashboardContainer">
+    <!-- Monte Carlo Loading Indicator -->
+    <div id="monteCarloLoading" class="monte-carlo-loading">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h3 class="text-lg font-semibold mb-2">Running Monte Carlo Analysis</h3>
+            <p class="text-gray-600">Please wait while we run multiple simulations to analyze population scenarios...</p>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-content">
+            <h2 class="text-2xl font-bold text-primary mb-6">Parameters</h2>
+            
+            <!-- Advanced Mode Toggle -->
+            <div class="flex items-center space-x-2 mb-6">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="advancedMode">
+                    <span class="toggle-slider"></span>
+                </label>
+                <label for="advancedMode" class="toggle-label text-primary">Advanced Mode</label>
+            </div>
+
+            <!-- Basic Parameters Component -->
+            {% include 'components/parameters.html' %}
+            
+            <!-- Advanced Parameters -->
+            <div id="advancedSection" class="mt-8 space-y-6">
+                <h3 class="text-lg font-medium text-primary">Advanced Parameters</h3>
+                
+                {% include 'components/population_dynamics.html' %}
+                {% include 'components/seasonal_factors.html' %}
+                {% include 'components/environmental_factors.html' %}
+                {% include 'components/resource_factors.html' %}
+                {% include 'components/colony_density.html' %}
+                {% include 'components/habitat_quality.html' %}
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <!-- Log Controls -->
+            <div class="pt-6">
+                <h3 class="text-lg font-medium text-primary mb-4">Feedback</h3>
+                <div class="flex flex-col space-y-3">
+                    <button id="flagScenarioBtn" class="orange-button w-full" onclick="flagScenario()">
+                        Flag Scenario
+                    </button>
+                    {% if show_download_button %}
+                    <button id="downloadLogsBtn" class="blue-button w-full">
+                        Download Results
+                    </button>
+                    {% endif %}
+                    {% if show_clear_results_button %}
+                    <button id="clearLogsBtn" class="red-button w-full">
+                        Clear Results
+                    </button>
+                    {% endif %}
+                    {% if show_test_parameters_button %}
+                    <button id="testParametersBtn" class="green-button w-full">
+                        Test Parameters
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Results Component -->
+        {% include 'components/results.html' %}
+    </div>
+</div>
+
+<!-- Floating Calculate Button -->
+<button onclick="handleCalculate()" class="floating-calculate">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10H9m3-5h3m-6 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    Calculate
+</button>
+
+<!-- Flag Scenario Modal -->
+<div id="flagScenarioModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4">
+        <h2 class="text-2xl font-bold mb-4">Flag Scenario</h2>
+        
+        <div class="bg-blue-50 border border-blue-200 rounded p-4 mb-6">
+            <p class="text-blue-800">
+                <span class="font-semibold">Note:</span> All current parameters and results will be automatically saved with your report.
+            </p>
+        </div>
+
+        <div class="mb-6">
+            <h3 class="text-lg font-medium mb-3">Category</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="radio" name="category" value="population-high" class="mr-3">
+                    Population Higher Than Expected
+                </label>
+                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="radio" name="category" value="population-low" class="mr-3">
+                    Population Lower Than Expected
+                </label>
+                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="radio" name="category" value="population-accurate" class="mr-3">
+                    Population Accurate (Interesting Case)
+                </label>
+                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="radio" name="category" value="parameter-issue" class="mr-3">
+                    Parameter Not Working as Expected
+                </label>
+                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="radio" name="category" value="bug" class="mr-3">
+                    Bug Report
+                </label>
+                <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="radio" name="category" value="other" class="mr-3">
+                    Other
+                </label>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-lg font-medium mb-2">Additional Notes</label>
+            <textarea id="flagScenarioNotes" rows="4" class="w-full border rounded-lg p-3" placeholder="Please provide any additional details or observations..."></textarea>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-lg font-medium mb-2">Email (Optional)</label>
+            <div class="text-sm text-gray-600 mb-2">Provide your email if you would like to be contacted about this report.</div>
+            <input type="email" id="flagScenarioEmail" class="w-full border rounded-lg p-3" placeholder="your.email@example.com">
+        </div>
+
+        <div class="flex justify-end space-x-3">
+            <button onclick="closeFlagScenarioModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-50">
+                Cancel
+            </button>
+            <button onclick="submitFlagScenario()" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                Submit Report
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize all input event listeners
+        initializeInputListeners();
+        
+        // Set up event listeners for buttons
+        const testBtn = document.getElementById('testParametersBtn');
+        if (testBtn) {
+            testBtn.addEventListener('click', runParameterTests);
+        }
+
+        // Set up flag scenario button
+        const flagBtn = document.getElementById('flagScenarioBtn');
+        if (flagBtn) {
+            flagBtn.addEventListener('click', flagScenario);
+        }
+    });
+</script>
+{% endblock %}

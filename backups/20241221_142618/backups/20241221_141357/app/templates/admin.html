@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Hawaii Cats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        window.FIREBASE_API_KEY = "{{ config.FIREBASE_API_KEY }}";
+        window.FIREBASE_PROJECT_ID = "{{ config.FIREBASE_PROJECT_ID }}";
+        window.FIREBASE_AUTH_DOMAIN = "{{ config.FIREBASE_AUTH_DOMAIN }}";
+        window.FIREBASE_STORAGE_BUCKET = "{{ config.FIREBASE_STORAGE_BUCKET }}";
+        window.FIREBASE_MESSAGING_SENDER_ID = "{{ config.FIREBASE_MESSAGING_SENDER_ID }}";
+    </script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-semibold">Admin Dashboard</span>
+                </div>
+                <div class="flex items-center">
+                    <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <div class="border-4 border-dashed border-gray-200 rounded-lg h-96 p-4">
+                <h2 class="text-2xl font-bold mb-4">Welcome to the Admin Dashboard</h2>
+                <p>This is a protected page that only authenticated users can access.</p>
+                <!-- Add your admin content here -->
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { logOut, initAuthStateObserver } from '/static/js/auth.js';
+
+        // Handle logout
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            const result = await logOut();
+            if (result.success) {
+                window.location.href = '/login';
+            }
+        });
+
+        // Initialize auth state observer
+        initAuthStateObserver((user) => {
+            if (!user) {
+                window.location.href = '/login';
+            }
+        });
+    </script>
+</body>
+</html>

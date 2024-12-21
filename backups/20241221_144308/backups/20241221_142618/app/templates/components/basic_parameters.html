@@ -1,0 +1,57 @@
+<!-- Basic Parameters -->
+<div class="space-y-4">
+    <!-- Current Colony Size -->
+    <div>
+        <div class="flex justify-between">
+            <label for="currentSize" class="parameter-label">Current Colony Size</label>
+            <span id="currentSizeValue" class="parameter-value">20</span>
+        </div>
+        <input type="range" id="currentSize" min="1" max="100" value="20"
+               oninput="document.getElementById('currentSizeValue').textContent=this.value">
+        <p class="parameter-description">Total number of cats in the colony</p>
+    </div>
+
+    <!-- Currently Sterilized -->
+    <div>
+        <div class="flex justify-between">
+            <label for="sterilizedCount" class="parameter-label">Currently Sterilized</label>
+            <span id="sterilizedCountValue" class="parameter-value">5</span>
+        </div>
+        <input type="range" id="sterilizedCount" min="0" max="20" value="5"
+               oninput="document.getElementById('sterilizedCountValue').textContent=this.value">
+        <p class="parameter-description">Number of cats already sterilized</p>
+    </div>
+
+    <!-- Monthly Sterilization -->
+    <div>
+        <div class="flex justify-between">
+            <label for="monthlysterilization" class="parameter-label">Monthly Sterilization</label>
+            <span id="monthlysterilizationValue" class="parameter-value">2</span>
+        </div>
+        <input type="range" id="monthlysterilization" min="0" max="10" value="2"
+               oninput="document.getElementById('monthlysterilizationValue').textContent=this.value">
+        <p class="parameter-description">Number of cats to sterilize per month</p>
+    </div>
+
+    <!-- Sterilization Cost -->
+    <div>
+        <div class="flex justify-between">
+            <label for="sterilizationCost" class="parameter-label">Sterilization Cost ($)</label>
+            <span id="sterilizationCostValue" class="parameter-value">50</span>
+        </div>
+        <input type="range" id="sterilizationCost" min="0" max="200" value="50" step="5"
+               oninput="document.getElementById('sterilizationCostValue').textContent=this.value">
+        <p class="parameter-description">Cost per sterilization procedure</p>
+    </div>
+
+    <!-- Simulation Months -->
+    <div>
+        <div class="flex justify-between">
+            <label for="months" class="parameter-label">Simulation Months</label>
+            <span id="monthsValue" class="parameter-value">24</span>
+        </div>
+        <input type="range" id="months" min="6" max="60" value="24" step="6"
+               oninput="document.getElementById('monthsValue').textContent=this.value">
+        <p class="parameter-description">Number of months to simulate</p>
+    </div>
+</div>

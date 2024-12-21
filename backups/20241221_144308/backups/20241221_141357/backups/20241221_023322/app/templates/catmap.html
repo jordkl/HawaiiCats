@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}Cat Map{% endblock %}
+
+{% block head %}
+<!-- Disclaimer Section -->
+<div class="mt-8 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
+    <p class="text-sm text-gray-600 dark:text-gray-300">
+        <strong class="dark:text-white">Test Deployment Notice:</strong> This is a test deployment to evaluate iOS app synchronization with the web interface. 
+        Sightings displayed on this map should not be considered reliable and may be edited or removed at any time. 
+        The official CatMap with complete colony sightings will launch on July 1, 2025.
+    </p>
+</div>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ url_for('static', filename='js/map-theme.js') }}"></script>
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+            border-radius: 0.5rem;
+        }
+        .colony-popup {
+            max-width: 300px;
+        }
+        .sightings-container {
+            height: 600px; /* Match map height */
+            display: flex;
+            flex-direction: column;
+        }
+        .sightings-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+        }
+        .sightings-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sightings-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .sightings-list::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.5);
+            border-radius: 3px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="md:col-span-2">
+        <div id="map" class="shadow-lg"></div>
+    </div>
+    <div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sightings-container transition-colors duration-200">
+            <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">10 Most Recent Sightings</h2>
+            <div id="connectionStatus" class="text-sm mb-4 text-gray-600 dark:text-gray-400">
+                Checking API connection...
+            </div>
+            <div id="sightingsList" class="space-y-4 sightings-list">
+                <!-- Sightings will be populated here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize the map using our theme helper
+    const map = initializeMap('map');
+    
+    // Store markers
+    let markers = new Map();
+
+    // Function to format timestamp
+    function formatDate(timestamp) {
+        if (!timestamp) return 'Unknown';
+        
+        try {
+            // Handle Firebase Timestamp object
+            if (timestamp.toDate) {
+                const date = timestamp.toDate();
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            }
+            
+            // Handle ISO string timestamp
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return 'Unknown';
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Unknown';
+        }
+    }
+
+    // Function to format cat count information
+    function formatCatCount(data) {
+        if (data.bestCount) {
+            return `${data.bestCount} cats`;
+        } else if (data.minCount && data.maxCount) {
+            return `${data.minCount}-${data.maxCount} cats`;
+        } else if (data.minCount) {
+            return `At least ${data.minCount} cats`;
+        } else if (data.maxCount) {
+            return `Up to ${data.maxCount} cats`;
+        }
+        return 'Cats present';
+    }
+
+    // Function to format location information
+    function formatLocation(locationType) {
+        return locationType || 'Location not specified';
+    }
+
+    // Function to create popup content
+    function createPopupContent(sighting) {
+        // Helper function to safely get count with fallback
+        const getCount = (count) => count || 'Unknown';
+        
+        // Get details from either top-level or nested details object
+        const details = sighting.details || {};
+        const data = {
+            bestCount: sighting.bestCount || details.bestCount,
+            minCount: sighting.minCount || details.minCount,
+            maxCount: sighting.maxCount || details.maxCount,
+            locationType: sighting.locationType || details.locationType,
+            movementLevel: sighting.movementLevel || details.movementLevel,
+            timeSpent: sighting.timeSpent || details.timeSpent,
+            isFeeding: sighting.isFeeding || details.isFeeding,
+            notes: sighting.notes || details.notes
+        };
+
+        // Create details list with only available information
+        const detailsList = [];
+        
+        // Always add a cat count entry, even if just "Cats present"
+        detailsList.push(formatCatCount(data));
+        
+        // Add location if available
+        if (data.locationType) {
+            detailsList.push(`At ${formatLocation(data.locationType)}`);
+        }
+        
+        // Add movement information if available
+        if (data.movementLevel) {
+            detailsList.push(`Movement: ${data.movementLevel}`);
+        }
+        
+        // Add time spent if available
+        if (data.timeSpent) {
+            detailsList.push(`Time spent: ${data.timeSpent}`);
+        }
+        
+        // Add feeding status if true
+        if (data.isFeeding) {
+            detailsList.push('Feeding observed');
+        }
+
+        return `
+            <div class="colony-popup">
+                <h3 class="font-medium text-lg dark:text-white">${sighting.colonyName || 'Unnamed Colony'}</h3>
+                <div class="mt-2">
+                    <ul class="list-disc pl-5">
+                        ${detailsList.map(detail => `<li>${detail}</li>`).join('')}
+                    </ul>
+                </div>
+                ${data.notes ? `<div class="mt-2"><strong class="dark:text-white">Notes:</strong><br>${data.notes}</div>` : ''}
+                <div class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    Reported by: ${sighting.userName || 'Anonymous'}
+                    <br>
+                    Time: ${formatDate(sighting.timestamp)}
+                </div>
+            </div>
+        `;
+    }
+
+    // Function to add marker to map
+    function addMarkerToMap(sighting) {
+        if (!sighting.coordinate) return;
+        
+        const marker = L.marker([sighting.coordinate.latitude, sighting.coordinate.longitude])
+            .bindPopup(createPopupContent(sighting))
+            .addTo(map);
+        
+        markers.set(sighting.id, marker);
+        return marker;
+    }
+
+    // Function to update sightings list
+    function updateSightingsList(sighting) {
+        const list = document.getElementById('sightingsList');
+        const details = sighting.details || {};
+        const data = {
+            bestCount: sighting.bestCount || details.bestCount,
+            minCount: sighting.minCount || details.minCount,
+            maxCount: sighting.maxCount || details.maxCount,
+            locationType: sighting.locationType || details.locationType
+        };
+        
+        const div = document.createElement('div');
+        div.className = 'bg-gray-50 dark:bg-gray-700 rounded-lg p-4 transition-colors duration-200';
+        div.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm text-gray-900 dark:text-white">
+                        ${formatCatCount(data)}
+                        ${data.locationType ? `at ${formatLocation(data.locationType)}` : ''}
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        ${formatDate(sighting.timestamp)}
+                    </p>
+                </div>
+                <button onclick="focusMarker('${sighting.id}')" 
+                        class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-500 text-sm">
+                    View
+                </button>
+            </div>
+        `;
+        list.insertBefore(div, list.firstChild);
+    }
+
+    // Function to focus on a marker
+    function focusMarker(sightingId) {
+        const marker = markers.get(sightingId);
+        if (marker) {
+            map.setView(marker.getLatLng(), 15);
+            marker.openPopup();
+        }
+    }
+
+    // Load and display sightings
+    async function loadSightings() {
+        try {
+            console.log('Fetching sightings from local API...');
+            const response = await fetch(`${window.location.protocol}//${window.location.host}/sightings`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const sightings = await response.json();
+            console.log('Received sightings:', sightings);
+            
+            // Clear existing markers and list
+            clearMarkersAndList();
+            
+            // Display sightings
+            displaySightings(sightings);
+            
+            // Update connection status
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.textContent = 'Connected to API';
+            statusDiv.className = 'text-sm text-green-600 dark:text-green-400 mb-4';
+            
+        } catch (error) {
+            console.error('Error loading sightings:', error);
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.textContent = 'Error connecting to API';
+            statusDiv.className = 'text-sm text-red-600 dark:text-red-400 mb-4';
+        }
+    }
+
+    // Function to manually trigger a sync with Firebase
+    async function syncWithFirebase() {
+        const statusDiv = document.getElementById('connectionStatus');
+        
+        try {
+            statusDiv.innerHTML = '<span class="text-blue-600 dark:text-blue-400">Syncing with Firebase...</span>';
+            
+            const response = await fetch('/sightings/force_sync', {
+                method: 'POST'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            // Reload sightings after sync
+            await loadSightings();
+            
+        } catch (error) {
+            console.error('Error syncing with Firebase:', error);
+            statusDiv.innerHTML = `<span class="text-red-600 dark:text-red-400">✗ Error syncing: ${error.message}</span>`;
+        }
+    }
+
+    // Add sync button to the UI
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusDiv = document.getElementById('connectionStatus');
+        const syncButton = document.createElement('button');
+        syncButton.className = 'ml-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-500';
+        syncButton.innerHTML = '🔄 Sync';
+        syncButton.onclick = syncWithFirebase;
+        statusDiv.parentNode.insertBefore(syncButton, statusDiv.nextSibling);
+    });
+
+    // Function to clear markers and sightings list
+    function clearMarkersAndList() {
+        // Clear existing markers
+        markers.forEach(marker => marker.remove());
+        markers.clear();
+
+        // Clear sightings list
+        const sightingsList = document.getElementById('sightingsList');
+        sightingsList.innerHTML = '';
+    }
+
+    // Function to display sightings
+    function displaySightings(sightings) {
+        // Sort sightings by timestamp in descending order (most recent first)
+        sightings.sort((a, b) => b.timestamp - a.timestamp);
+        
+        // Take only the 10 most recent sightings
+        const recentSightings = sightings.slice(0, 10);
+        
+        // Clear existing markers and list
+        clearMarkersAndList();
+        
+        // Add all markers to the map
+        sightings.forEach(sighting => {
+            if (sighting.coordinate) {
+                addMarkerToMap(sighting);
+            }
+        });
+        
+        // Update the list with only recent sightings
+        recentSightings.forEach(sighting => {
+            if (sighting.coordinate) {
+                updateSightingsList(sighting);
+            }
+        });
+    }
+
+    // Load sightings when the page loads
+    loadSightings();
+    
+</script>
+{% endblock %}

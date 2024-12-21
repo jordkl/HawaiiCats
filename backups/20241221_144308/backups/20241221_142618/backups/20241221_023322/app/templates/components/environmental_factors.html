@@ -1,0 +1,37 @@
+<!-- Environmental Factors -->
+<div class="space-y-4">
+    <h4 class="text-base font-medium text-hawaii-blue">Environmental Factors</h4>
+
+    <!-- Urban Risk -->
+    <div>
+        <div class="flex justify-between">
+            <label for="urbanRisk" class="parameter-label">Urban Risk</label>
+            <span id="urbanRiskValue" class="parameter-value">0.1</span>
+        </div>
+        <input type="range" id="urbanRisk" min="0" max="0.5" value="0.1" step="0.05"
+               oninput="document.getElementById('urbanRiskValue').textContent=this.value">
+        <p class="parameter-description">Risk from urban hazards (traffic, etc.)</p>
+    </div>
+
+    <!-- Disease Risk -->
+    <div>
+        <div class="flex justify-between">
+            <label for="diseaseRisk" class="parameter-label">Disease Risk</label>
+            <span id="diseaseRiskValue" class="parameter-value">0.05</span>
+        </div>
+        <input type="range" id="diseaseRisk" min="0" max="0.5" value="0.05" step="0.05"
+               oninput="document.getElementById('diseaseRiskValue').textContent=this.value">
+        <p class="parameter-description">Risk of disease outbreaks</p>
+    </div>
+
+    <!-- Natural Risk -->
+    <div>
+        <div class="flex justify-between">
+            <label for="naturalRisk" class="parameter-label">Natural Risk</label>
+            <span id="naturalRiskValue" class="parameter-value">0.05</span>
+        </div>
+        <input type="range" id="naturalRisk" min="0" max="0.5" value="0.05" step="0.05"
+               oninput="document.getElementById('naturalRiskValue').textContent=this.value">
+        <p class="parameter-description">Risk from natural predators and weather</p>
+    </div>
+</div>

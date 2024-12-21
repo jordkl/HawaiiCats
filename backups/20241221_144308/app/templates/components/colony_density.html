@@ -1,0 +1,26 @@
+<!-- Colony Density -->
+<div class="space-y-4">
+    <h4 class="text-base font-medium text-hawaii-blue">Colony Density</h4>
+
+    <!-- Territory Size -->
+    <div>
+        <div class="flex justify-between">
+            <label for="territorySize" class="parameter-label">Territory Size (sq m)</label>
+            <span id="territorySizeValue" class="parameter-value">1000</span>
+        </div>
+        <input type="range" id="territorySize" min="100" max="5000" value="1000" step="100"
+               oninput="document.getElementById('territorySizeValue').textContent=this.value">
+        <p class="parameter-description">Size of the colony's territory in square meters</p>
+    </div>
+
+    <!-- Density Impact Threshold -->
+    <div>
+        <div class="flex justify-between">
+            <label for="densityImpactThreshold" class="parameter-label">Density Impact Threshold</label>
+            <span id="densityImpactThresholdValue" class="parameter-value">0.8</span>
+        </div>
+        <input type="range" id="densityImpactThreshold" min="0.2" max="1" value="0.8" step="0.1"
+               oninput="document.getElementById('densityImpactThresholdValue').textContent=this.value">
+        <p class="parameter-description">Population density at which negative effects begin</p>
+    </div>
+</div>

@@ -349,65 +349,114 @@ async function handleCalculate() {
 
         console.log('Sending data to server:', JSON.stringify(data, null, 2));
 
-        const response = await fetch(`${baseUrl}/calculate_population`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-            timeout: 30000  // 30 second timeout
-        });
-
-        if (!response.ok) {
-            let errorMessage = `Server error (${response.status})`;
-            try {
-                const errorData = await response.text();
-                if (errorData.startsWith('{')) {
-                    const jsonError = JSON.parse(errorData);
-                    errorMessage = jsonError.error || errorMessage;
-                } else if (errorData.includes('<')) {
-                    errorMessage = `Server error (${response.status}). Please try again with fewer simulations or a shorter time period.`;
-                }
-            } catch (e) {
-                console.error('Error parsing error response:', e);
-            }
-            throw new Error(errorMessage);
-        }
-
-        let result;
         try {
-            const responseText = await response.text();
-            console.log('Raw response:', responseText);
-            result = JSON.parse(responseText);
-        } catch (e) {
-            console.error('Error parsing response:', e);
-            throw new Error('Invalid response from server');
-        }
+            console.log('Making fetch request to:', `${baseUrl}/calculate_population`);
+            const response = await fetch(`${baseUrl}/calculate_population`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+                timeout: 30000  // 30 second timeout
+            });
+            console.log('Received response status:', response.status);
 
-        if (!result) {
-            throw new Error('Empty response from server');
-        }
+            if (!response.ok) {
+                let errorMessage = `Server error (${response.status})`;
+                try {
+                    const errorData = await response.text();
+                    console.log('Error response data:', errorData);
+                    if (errorData.startsWith('{')) {
+                        const jsonError = JSON.parse(errorData);
+                        errorMessage = jsonError.error || errorMessage;
+                    } else if (errorData.includes('<')) {
+                        errorMessage = `Server error (${response.status}). Please try again with fewer simulations or a shorter time period.`;
+                    }
+                    console.error('Detailed error:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        errorData: errorData
+                    });
+                } catch (e) {
+                    console.error('Error parsing error response:', e);
+                }
+                throw new Error(errorMessage);
+            }
 
-        console.log('Received result from server:', JSON.stringify(result, null, 2));
-        
-        // Ensure we have the correct data structure
-        if (useMonteCarlo) {
-            if (!result.result || !result.result.confidenceInterval || !result.result.standardDeviation) {
-                console.warn('Monte Carlo simulation was requested but data is missing:', result);
-                throw new Error('Monte Carlo simulation failed. Please try again with fewer simulations.');
+            let result;
+            try {
+                const responseText = await response.text();
+                console.log('Raw response:', responseText);
+                result = JSON.parse(responseText);
+            } catch (e) {
+                console.error('Error parsing response:', {
+                    error: e,
+                    stack: e.stack
+                });
+                throw new Error('Invalid response from server');
+            }
+
+            if (!result) {
+                console.error('Empty result received from server');
+                throw new Error('Empty response from server');
+            }
+
+            console.log('Received result from server:', JSON.stringify(result, null, 2));
+            
+            // Ensure we have the correct data structure
+            if (useMonteCarlo) {
+                if (!result.result || !result.result.confidenceInterval || !result.result.standardDeviation) {
+                    console.warn('Monte Carlo simulation was requested but data is missing:', result);
+                    throw new Error('Monte Carlo simulation failed. Please try again with fewer simulations.');
+                }
+                
+                // Validate the Monte Carlo data structure
+                const monteCarloResult = result.result;
+                if (!monteCarloResult.finalPopulation || !monteCarloResult.monthlyPopulations || 
+                    !monteCarloResult.monthlySterilized || !monteCarloResult.monthlyKittens) {
+                    console.warn('Monte Carlo data is incomplete:', monteCarloResult);
+                    throw new Error('Monte Carlo simulation returned incomplete data. Please try again.');
+                }
+            }
+
+            await displayResults(result.result);
+            
+        } catch (error) {
+            console.error('Error:', error);
+            // Show error in UI with more specific guidance
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4';
+            errorDiv.innerHTML = `
+                <strong class="font-bold">Error:</strong>
+                <span class="block sm:inline">${error.message}</span>
+                ${error.message.includes('server') ? 
+                    '<p class="mt-2 text-sm">Please check your internet connection and try again. If the problem persists, try reducing the simulation parameters.</p>' 
+                    : ''}
+            `;
+            
+            // Insert error message at the top of the main content
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) {
+                mainContent.insertBefore(errorDiv, mainContent.firstChild);
+                // Remove error message after 8 seconds
+                setTimeout(() => errorDiv.remove(), 8000);
+            } else {
+                alert(error.message);
+            }
+        } finally {
+            // Re-enable calculate button and hide loading indicator
+            const calculateButton = document.getElementById('calculateButton');
+            if (calculateButton) {
+                calculateButton.disabled = false;
+                calculateButton.textContent = 'Calculate';
             }
             
-            // Validate the Monte Carlo data structure
-            const monteCarloResult = result.result;
-            if (!monteCarloResult.finalPopulation || !monteCarloResult.monthlyPopulations || 
-                !monteCarloResult.monthlySterilized || !monteCarloResult.monthlyKittens) {
-                console.warn('Monte Carlo data is incomplete:', monteCarloResult);
-                throw new Error('Monte Carlo simulation returned incomplete data. Please try again.');
+            // Hide Monte Carlo loading indicator
+            const monteCarloLoading = document.getElementById('monteCarloLoading');
+            if (monteCarloLoading) {
+                monteCarloLoading.classList.remove('active');
             }
         }
-
-        await displayResults(result.result);
-        
     } catch (error) {
         console.error('Error:', error);
         // Show error in UI with more specific guidance
@@ -429,19 +478,6 @@ async function handleCalculate() {
             setTimeout(() => errorDiv.remove(), 8000);
         } else {
             alert(error.message);
-        }
-    } finally {
-        // Re-enable calculate button and hide loading indicator
-        const calculateButton = document.getElementById('calculateButton');
-        if (calculateButton) {
-            calculateButton.disabled = false;
-            calculateButton.textContent = 'Calculate';
-        }
-        
-        // Hide Monte Carlo loading indicator
-        const monteCarloLoading = document.getElementById('monteCarloLoading');
-        if (monteCarloLoading) {
-            monteCarloLoading.classList.remove('active');
         }
     }
 }
@@ -549,7 +585,7 @@ async function plotPopulationGraph(data) {
             window.populationChart = null;
         }
 
-        // Generate months array for x-axis
+        // Generate months array for x-axis based on actual data length
         const months = Array.from({length: resultData.monthlyPopulations.length}, (_, i) => i);
 
         // Create datasets array starting with the main population line
