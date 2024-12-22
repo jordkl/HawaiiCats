@@ -6,40 +6,17 @@
     <div>
         <label class="parameter-label mb-2 block">Colony Environment</label>
         <div class="grid grid-cols-2 gap-2 mb-2">
-            <button type="button" class="preset-button" data-preset="residential">Residential Area</button>
+            <button type="button" class="preset-button active" data-preset="residential">Residential Area</button>
             <button type="button" class="preset-button" data-preset="street">Street/Alley</button>
             <button type="button" class="preset-button" data-preset="park">Public Park</button>
             <button type="button" class="preset-button" data-preset="industrial">Industrial Area</button>
             <button type="button" class="preset-button" data-preset="parking">Parking Lot</button>
             <button type="button" class="preset-button" data-preset="forest">Forest/Nature</button>
             <button type="button" class="preset-button" data-preset="beach">Beach Area</button>
-            <button type="button" class="preset-button" data-preset="custom">Custom</button>
         </div>
         <div id="presetInfo" class="mt-2 text-sm text-gray-600"></div>
     </div>
 
-    <!-- Territory Size -->
-    <div>
-        <label class="parameter-label" for="territorySize">Territory Size</label>
-        <input type="range" id="territorySize" min="100" max="100000" value="1000" class="slider">
-        <div class="flex justify-between">
-            <input type="number" id="territorySizeCustom" min="100" max="100000" value="1000" 
-                   class="w-24 p-1 border rounded text-right">
-            <span class="parameter-description">square meters</span>
-        </div>
-    </div>
-
-    <!-- Density Threshold -->
-    <div>
-        <label class="parameter-label" for="densityThreshold">Environment Density</label>
-        <input type="range" id="densityThreshold" min="0.2" max="5.0" step="0.1" value="1.2" class="slider">
-        <div class="flex justify-between">
-            <input type="number" id="densityThresholdCustom" min="0.2" max="5.0" step="0.1" value="1.2" 
-                   class="w-24 p-1 border rounded text-right">
-            <span class="parameter-description">cats per 100m²</span>
-        </div>
-    </div>
-    
     <!-- Initial Colony Size -->
     <div>
         <label class="parameter-label" for="initialColonySize">Initial Colony Size</label>
@@ -86,40 +63,6 @@
         <div class="flex justify-between">
             <span class="parameter-value" id="simulationLengthValue">12</span>
             <span class="parameter-description">months</span>
-        </div>
-    </div>
-
-    <!-- Monte Carlo Toggle -->
-    <div class="flex items-center space-x-2 mb-4">
-        <label class="toggle-switch">
-            <input type="checkbox" id="useMonteCarlo">
-            <span class="toggle-slider"></span>
-        </label>
-        <label for="useMonteCarlo" class="toggle-label parameter-label">Use Monte Carlo Simulation</label>
-    </div>
-
-    <!-- Monte Carlo Parameters -->
-    <div class="space-y-4" id="monteCarloParams" style="display: none;">
-        <h4 class="text-base font-medium text-gray-700">Monte Carlo Parameters</h4>
-        
-        <!-- Number of Simulations -->
-        <div>
-            <label class="parameter-label" for="numberOfSimulations">Number of Simulations</label>
-            <input type="range" id="numberOfSimulations" min="100" max="1000" value="500" step="100" class="slider">
-            <div class="flex justify-between">
-                <span class="parameter-value" id="numberOfSimulationsValue">500</span>
-                <span class="parameter-description">simulations</span>
-            </div>
-        </div>
-
-        <!-- Variation Coefficient -->
-        <div>
-            <label class="parameter-label" for="variationCoefficient">Variation Coefficient</label>
-            <input type="range" id="variationCoefficient" min="0" max="1" value="0.2" step="0.05" class="slider">
-            <div class="flex justify-between">
-                <span class="parameter-value" id="variationCoefficientValue">0.2</span>
-                <span class="parameter-description">coefficient</span>
-            </div>
         </div>
     </div>
 </div>

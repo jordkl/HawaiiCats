@@ -1,788 +1,499 @@
-"""Main simulation logic for cat colony population growth."""
-
+"""Main simulation module for cat population dynamics."""
 import numpy as np
 import logging
 import traceback
-import time
 import json
+import math
 from datetime import datetime
-from .utils.logging_utils import (
-    log_debug,
-    log_simulation_start,
-    log_simulation_end,
-    log_simulation_error
+import os
+import sys
+from pathlib import Path
+from typing import Dict
+
+# Add utils directory to path
+sys.path.append(str(Path(__file__).parent))
+
+from utils.logging_utils import (
+    setupLogging,
+    logDebug,
+    logSimulationStart,
+    logSimulationEnd,
+    logSimulationError
 )
-from .utils.simulation_utils import (
-    calculate_seasonal_factor,
-    calculate_carrying_capacity,
-    calculate_density_impact,
-    calculate_resource_availability,
-    calculate_monthly_mortality
+from utils.simulation_utils import (
+    calculateSeasonalFactor,
+    calculateResourceAvailability,
+    calculateCarryingCapacity,
+    validateParams
 )
-from .constants import DEFAULT_PARAMS, MIN_BREEDING_AGE, MAX_BREEDING_AGE, GESTATION_MONTHS, TERRITORY_SIZE_RANGES, DENSITY_THRESHOLD_RANGES
+
+from constants import DEFAULT_PARAMS, MIN_BREEDING_AGE, MAX_BREEDING_AGE, GESTATION_MONTHS, TERRITORY_SIZE_RANGES, DENSITY_THRESHOLD_RANGES
 
 logger = logging.getLogger('debug')
 
-def simulate_population(params, current_size=100, months=12, sterilized_count=0, monthly_sterilization=0, use_monte_carlo=False, monte_carlo_runs=50):
+def runSimulationWorker(params: Dict, currentSize: int, months: int, 
+                         sterilizedCount: int, monthlySterilization: int, monthlyAbandonment: int) -> Dict:
+    """Worker function to run a single simulation."""
+    try:
+        return simulatePopulation(
+            params=params,
+            currentSize=currentSize,
+            months=months,
+            sterilizedCount=sterilizedCount,
+            monthlySterilization=monthlySterilization,
+            monthlyAbandonment=monthlyAbandonment,
+            useMonteCarlo=False
+        )
+    except Exception as e:
+        error_msg = f"Simulation failed with error: {str(e)}"
+        logSimulationError("worker", error_msg)
+        return None
+
+def simulatePopulation(params, currentSize, months=12, sterilizedCount=0, monthlySterilization=0, monthlyAbandonment=0):
     """
-    Calculate population growth with enhanced environmental factors.
+    Simulate cat population dynamics over time.
     
     Args:
-        params (dict): Dictionary of simulation parameters
-        current_size (int): Current population size
+        params (dict): Simulation parameters
+        currentSize (int): Initial population size
         months (int): Number of months to simulate
-        sterilized_count (int): Initial number of sterilized cats
-        monthly_sterilization (int): Number of cats sterilized per month
-        use_monte_carlo (bool): Whether to run Monte Carlo simulation
-        monte_carlo_runs (int): Number of Monte Carlo runs if use_monte_carlo is True
+        sterilizedCount (int): Initial number of sterilized cats
+        monthlySterilization (float): Monthly sterilization rate
+        monthlyAbandonment (int): Number of cats abandoned per month
         
     Returns:
-        dict: Simulation results including population over time and other metrics
+        dict: Simulation results including final population and monthly data
     """
-    start_time = time.time()
-    simulation_id = datetime.now().strftime('%Y%m%d_%H%M%S')
     
     try:
-        log_debug('INFO', f'Starting simulation {simulation_id} with parameters: current_size={current_size}, months={months}, sterilized={sterilized_count}, monthly_sterilization={monthly_sterilization}')
-        log_debug('INFO', f'Advanced parameters: {json.dumps(params, indent=2)}')
+        # Log input parameters
+        logDebug('DEBUG', f"Input parameters: currentSize={currentSize}, months={months}, sterilizedCount={sterilizedCount}, monthlySterilization={monthlySterilization}, monthlyAbandonment={monthlyAbandonment}")
+        logDebug('DEBUG', f"Advanced parameters: {json.dumps(params, indent=2)}")
         
+        # Parameter validation
         if not isinstance(params, dict):
-            error_msg = "Invalid input parameters: params must be a dictionary"
-            log_simulation_error(simulation_id, error_msg)
+            error_msg = f"Invalid params type: {type(params)}. Expected dict."
+            logSimulationError("validation", error_msg)
             raise ValueError(error_msg)
             
-        # Convert all numeric inputs to appropriate types and validate
+        # Convert and validate numeric inputs
         try:
-            current_size = int(float(current_size))
-            months = int(float(months))
-            sterilized_count = int(float(sterilized_count))
-            monthly_sterilization = float(monthly_sterilization)
+            # Log parameter types before conversion
+            logDebug('DEBUG', f"Parameter types before conversion: currentSize={type(currentSize)}, months={type(months)}, sterilizedCount={type(sterilizedCount)}, monthlySterilization={type(monthlySterilization)}, monthlyAbandonment={type(monthlyAbandonment)}")
             
-            log_debug('INFO', f'Converted parameters: current_size={current_size}, months={months}, sterilized={sterilized_count}, monthly_sterilization={monthly_sterilization}')
+            # Convert main parameters
+            currentSize = int(float(str(currentSize).strip()))
+            months = int(float(str(months).strip()))
+            sterilizedCount = int(float(str(sterilizedCount).strip()))
+            monthlySterilization = float(str(monthlySterilization).strip())
+            monthlyAbandonment = int(float(str(monthlyAbandonment).strip() or '0'))
             
-            if current_size < 1:
+            # Log parameter values after conversion
+            logDebug('DEBUG', f"Parameter values after conversion: currentSize={currentSize}, months={months}, sterilizedCount={sterilizedCount}, monthlySterilization={monthlySterilization}, monthlyAbandonment={monthlyAbandonment}")
+            
+            # Validate parameter ranges
+            if currentSize < 1:
                 raise ValueError("Current size must be at least 1")
             if months < 1:
                 raise ValueError("Months must be at least 1")
-            if sterilized_count < 0:
+            if sterilizedCount < 0:
                 raise ValueError("Sterilized count cannot be negative")
-            if sterilized_count > current_size:
+            if sterilizedCount > currentSize:
                 raise ValueError("Sterilized count cannot exceed current size")
-            if monthly_sterilization < 0:
+            if monthlySterilization < 0:
                 raise ValueError("Monthly sterilization rate cannot be negative")
                 
         except (ValueError, TypeError) as e:
             error_msg = f"Parameter validation error: {str(e)}"
-            log_simulation_error(simulation_id, error_msg)
+            logSimulationError("validation", error_msg)
             raise ValueError(error_msg)
+
+        # Initialize tracking variables
+        totalDeaths = 0
+        diseaseDeaths = 0
+        urbanDeaths = 0
+        naturalDeaths = 0
+        kittenDeaths = 0
+        adultDeaths = 0
+        totalBirths = 0
+        monthlyData = []  # Track monthly statistics
+
+        # Initial population
+        sterilized = sterilizedCount
+        unsterilized = currentSize - sterilizedCount
+
+        # Calculate initial resource factor and carrying capacity
+        resource_factor = calculateResourceAvailability(
+            float(params.get('baseFoodCapacity', '0.8')),
+            float(params.get('waterAvailability', '0.8')),
+            float(params.get('shelterQuality', '0.7')),
+            float(params.get('caretakerSupport', '0.5')),
+            float(params.get('feedingConsistency', '0.7'))
+        )
         
-        try:
-            log_simulation_start(simulation_id, current_size)
-            
-            # Initialize tracking arrays
-            monthly_populations = []
-            monthly_sterilized = []
-            monthly_reproductive = []
-            monthly_kittens = []
-            monthly_costs = []
-            monthly_densities = []
-            monthly_deaths_kittens = []
-            monthly_deaths_adults = []
-            monthly_deaths_natural = []
-            monthly_deaths_urban = []
-            monthly_deaths_disease = []
-            monthly_deaths_other = []
-            
-            # Initialize other tracking variables
-            unmet_sterilizations = 0  # Track unmet sterilizations
-            
-            # Add initial values to monthly tracking
-            total_population = current_size  # Initialize total population
-            monthly_populations.append(total_population)
-            monthly_sterilized.append(sterilized_count)
-            monthly_reproductive.append(total_population - sterilized_count)
-            monthly_kittens.append(0)  # No kittens at start
-            monthly_deaths_kittens.append(0)
-            monthly_deaths_adults.append(0)
-            monthly_deaths_natural.append(0)
-            monthly_deaths_urban.append(0)
-            monthly_deaths_disease.append(0)
-            monthly_deaths_other.append(0)
-            monthly_costs.append(0)
-            monthly_densities.append(total_population / calculate_carrying_capacity(params))
-            
-            # Initialize colony structure with age distribution
-            from .models import initialize_colony_with_ages
-            colony, initial_pregnant = initialize_colony_with_ages(current_size, sterilized_count, params)
-            
-            # Add sterilized_kittens list to colony structure
-            colony['sterilized_kittens'] = []
-            
-            # Track total costs and deaths
-            total_cost = 0.0
-            cumulative_deaths = {
-                'total': 0,
-                'kittens': 0,
-                'adults': 0,
-                'by_cause': {
-                    'natural': 0,
-                    'urban': 0,
-                    'disease': 0
-                }
-            }
+        carrying_capacity = calculateCarryingCapacity(
+            float(params.get('territorySize', '1000')),
+            float(params.get('densityThreshold', '1.2')),
+            resource_factor
+        )
+        
+        # Record initial state
+        monthlyData.append({
+            'month': 0,
+            'total': sterilized + unsterilized,
+            'sterilized': sterilized,
+            'unsterilized': unsterilized,
+            'births': 0,
+            'natural_deaths': 0,
+            'disease_deaths': 0,
+            'urban_deaths': 0,
+            'kitten_deaths': 0,
+            'adult_deaths': 0,
+            'density_impact': (sterilized + unsterilized) / carrying_capacity if carrying_capacity > 0 else 1.0,
+            'resource_factor': resource_factor,
+            'carrying_capacity': carrying_capacity
+        })
 
-            # Initialize pregnancy tracking
-            pregnant_females = [initial_pregnant] if initial_pregnant > 0 else []
-            
-            # Simulate each month
-            for current_month in range(months):
-                month_cost = 0.0
-                month_deaths = {
-                    'kittens': 0,
-                    'adults': 0,
-                    'causes': {'natural': 0, 'urban': 0, 'disease': 0}
-                }
-                
-                # Calculate current population with explicit type conversion
-                current_population = int(
-                    sum((int(float(count)) for count, _ in colony.get('young_kittens', [])), 0) +
-                    sum((int(float(count)) for count, _ in colony.get('reproductive', [])), 0) +
-                    sum((int(float(count)) for count, _ in colony.get('sterilized', [])), 0)
-                )
-                
-                # Calculate total sterilized population for tracking
-                current_sterilized = sum((int(float(count)) for count, _ in colony.get('sterilized', [])), 0)
-                monthly_sterilized.append(current_sterilized)
-                
-                # Calculate environmental factors
-                from .utils.simulation_utils import (
-                    calculate_seasonal_factor,
-                    calculate_density_impact,
-                    calculate_resource_availability
-                )
-                
-                # Calculate carrying capacity for this environment
-                carrying_capacity = calculate_carrying_capacity(params)
-                
+        for month in range(months):
+            try:
                 # Calculate seasonal factor
-                seasonal_factor = calculate_seasonal_factor(
-                    current_month % 12,
-                    float(params['seasonal_breeding_amplitude']),
-                    int(params['peak_breeding_month'])
+                seasonal_factor = calculateSeasonalFactor(
+                    month,
+                    float(params.get('peakBreedingMonth', '4')),
+                    float(params.get('seasonalBreedingAmplitude', '0.8'))
+                )
+
+                # Calculate resource factor
+                resource_factor = calculateResourceAvailability(
+                    float(params.get('baseFoodCapacity', '0.8')),
+                    float(params.get('waterAvailability', '0.8')),
+                    float(params.get('shelterQuality', '0.7')),
+                    float(params.get('caretakerSupport', '0.5')),
+                    float(params.get('feedingConsistency', '0.7'))
+                )
+
+                # Calculate carrying capacity
+                carrying_capacity = calculateCarryingCapacity(
+                    float(params.get('territorySize', '1000')),
+                    float(params.get('densityThreshold', '1.2')),
+                    resource_factor
                 )
                 
-                # Calculate density and resource effects
-                density_effect = calculate_density_impact(current_population, params)
-                resource_availability = calculate_resource_availability(current_population, params)
+                # Make density impact more gradual for well-supported colonies
+                raw_density = (sterilized + unsterilized) / carrying_capacity
+                # Start density effects at 100% of capacity and make them stronger
+                density_impact = max(0.0, min(1.0, raw_density - 1.0))
+
+                # Log calculations
+                logDebug('DEBUG', f"Month {month+1}:")
+                logDebug('DEBUG', f"  Seasonal factor: {seasonal_factor}")
+                logDebug('DEBUG', f"  Resource factor: {resource_factor}")
+                logDebug('DEBUG', f"  Carrying capacity: {carrying_capacity}")
+                logDebug('DEBUG', f"  Raw density: {raw_density}")
+                logDebug('DEBUG', f"  Density impact: {density_impact}")
+
+                # Calculate base breeding rate with stronger territory effects
+                base_breeding_rate = float(params.get('baseBreedingRate', '0.8'))
+                litters_per_year = float(params.get('littersPerYear', '2.0'))
+                kittens_per_litter = float(params.get('kittensPerLitter', '4.0'))
+
+                # Calculate resource factor with stronger territory size impact
+                territory_size = float(params.get('territorySize', '1000'))
+                density_threshold = float(params.get('densityThreshold', '0.8'))
                 
-                # Combined environmental factor
-                environment_factor = (
-                    0.4 * density_effect +      # Density has major impact
-                    0.4 * resource_availability + # Resources have major impact
-                    0.2 * seasonal_factor        # Season has minor impact
-                )
+                # Scale territory capacity based on size more aggressively
+                territory_capacity = max(50, int(territory_size * density_threshold * 0.15))  # 1 cat per ~6.67 units
+                current_total = sterilized + unsterilized
+                current_density = current_total / territory_capacity if territory_capacity > 0 else float('inf')
                 
-                # Track density for monitoring
-                monthly_densities.append(current_population / calculate_carrying_capacity(params))
+                # Calculate density impact with stronger effect
+                density_impact = max(0, min(1, (current_density - 1.0) * 1.5))  # Starts at 100% capacity, stronger slope
+
+                # Calculate resource support with stronger territory dependence
+                food_capacity = float(params.get('baseFoodCapacity', '0.7'))
+                water_availability = float(params.get('waterAvailability', '0.7'))
+                shelter_quality = float(params.get('shelterQuality', '0.7'))
                 
-                # Calculate mortality rates with stronger risk impacts
-                from .utils.simulation_utils import calculate_monthly_mortality
-                deaths = calculate_monthly_mortality(params, colony, environment_factor, current_month)
+                # Scale resource factors based on territory size
+                territory_scale = min(1.0, territory_size / 1000.0)  # Normalize to reference size
+                resource_factor = (
+                    food_capacity * territory_scale +
+                    water_availability * territory_scale +
+                    shelter_quality * territory_scale
+                ) / 3.0
+
+                logDebug('DEBUG', f"  Territory capacity: {territory_capacity}")
+                logDebug('DEBUG', f"  Current density: {current_density}")
+                logDebug('DEBUG', f"  Density impact: {density_impact}")
+
+                # Calculate mortality based on environmental conditions with stronger random variation
+                base_mortality = (1 - float(params.get('adult_survival_rate', '0.92'))) / 12.0
+                kitten_mortality = (1 - float(params.get('kitten_survival_rate', '0.85'))) / 12.0
                 
-                log_debug('DEBUG', f'Month {current_month} deaths calculation:')
-                log_debug('DEBUG', f'  Environment factor: {environment_factor:.3f}')
-                log_debug('DEBUG', f'  Density effect: {density_effect:.3f}')
-                log_debug('DEBUG', f'  Resource availability: {resource_availability:.3f}')
-                log_debug('DEBUG', f'  Seasonal factor: {seasonal_factor:.3f}')
+                # Add moderate random variation to mortality rates (±30%)
+                base_mortality = max(0.005, min(0.15, base_mortality * np.random.uniform(0.7, 1.3)))  # Minimum 0.5% monthly
+                kitten_mortality = max(0.008, min(0.2, kitten_mortality * np.random.uniform(0.7, 1.3)))  # Minimum 0.8% monthly
                 
-                # Process kitten deaths first
-                remaining_kitten_deaths = deaths['kittens']
-                new_young_kittens = []
-                monthly_deaths_kittens.append(0)  # Initialize for this month
-                monthly_deaths_adults.append(0)   # Initialize for this month
+                # Calculate environmental impact factors with moderate random variation
+                disease_impact = max(0.002, float(params.get('disease_transmission_rate', '0.08')) / 12.0 * np.random.uniform(0.7, 1.3))
+                urban_impact = max(0.002, float(params.get('urbanization_impact', '0.15')) / 12.0 * np.random.uniform(0.7, 1.3))
+                environmental_impact = max(0.002, float(params.get('environmental_stress', '0.1')) / 12.0 * np.random.uniform(0.7, 1.3))
+
+                # Calculate total mortality rate combining all factors with minimum
+                total_mortality_rate = max(0.01, min(0.2, base_mortality + disease_impact + urban_impact))  # At least 1% monthly
                 
-                for count, age in colony['young_kittens']:
-                    count = int(float(count))
-                    if count > 0 and remaining_kitten_deaths > 0:
-                        # Calculate deaths for this age group
-                        group_deaths = min(count, remaining_kitten_deaths)
-                        remaining_kitten_deaths -= group_deaths
-                        count -= group_deaths
-                        
-                        # Update monthly tracking
-                        if len(monthly_deaths_kittens) > current_month:
-                            monthly_deaths_kittens[current_month] += group_deaths
-                        else:
-                            monthly_deaths_kittens.append(group_deaths)
+                # Apply mortality equally to sterilized and unsterilized cats
+                # For small populations, use probability-based approach
+                def calculate_deaths(population, rate):
+                    if population <= 0:
+                        return 0
+                    # Convert population to integer for range
+                    pop = int(population)
+                    # For each cat, check if it dies based on mortality rate
+                    deaths = sum(1 for _ in range(pop) if np.random.random() < rate)
+                    return deaths
+
+                mortality_sterilized = calculate_deaths(sterilized, total_mortality_rate)
+                mortality_unsterilized = calculate_deaths(unsterilized, total_mortality_rate)
+
+                # Ensure we don't kill more cats than we have
+                mortality_sterilized = min(mortality_sterilized, int(sterilized))
+                mortality_unsterilized = min(mortality_unsterilized, int(unsterilized))
+
+                # Additional mortality when over capacity, scaled by resource support
+                if density_impact > 0:
+                    # Stronger density mortality
+                    density_mortality_rate = min(0.2, 0.1 * density_impact * (1 - resource_factor))  # Cap at 20% monthly
+                    density_mortality = int((sterilized + unsterilized) * density_mortality_rate * np.random.uniform(0.8, 1.2))
+                    mortality_sterilized += int(density_mortality * (sterilized / (sterilized + unsterilized)))
+                    mortality_unsterilized += int(density_mortality * (unsterilized / (sterilized + unsterilized)))
+
+                # Track deaths by type (approximate distribution)
+                mortality_total = mortality_sterilized + mortality_unsterilized
                 
-                colony['young_kittens'] = new_young_kittens
-                
-                # Process adult deaths proportionally between reproductive and sterilized
-                remaining_adult_deaths = deaths['adults']
-                if remaining_adult_deaths > 0:
-                    total_adults = (
-                        sum(int(float(count)) for count, _ in colony['reproductive']) +
-                        sum(int(float(count)) for count, _ in colony['sterilized'])
-                    )
-                    
-                    if total_adults > 0:
-                        # Process reproductive adults
-                        new_reproductive = []
-                        reproductive_total = sum(int(float(count)) for count, _ in colony['reproductive'])
-                        if reproductive_total > 0:
-                            reproductive_deaths = int(remaining_adult_deaths * (reproductive_total / total_adults))
-                            remaining_deaths = reproductive_deaths
-                            
-                            for count, age in colony['reproductive']:
-                                count = int(float(count))
-                                if count > 0 and remaining_deaths > 0:
-                                    group_deaths = min(count, remaining_deaths)
-                                    remaining_deaths -= group_deaths
-                                    count -= group_deaths
-                                    if len(monthly_deaths_adults) > current_month:
-                                        monthly_deaths_adults[current_month] += group_deaths
-                                    else:
-                                        monthly_deaths_adults.append(group_deaths)
-                            
-                            colony['reproductive'] = new_reproductive
-                        
-                        # Process sterilized adults
-                        new_sterilized = []
-                        sterilized_total = sum(int(float(count)) for count, _ in colony['sterilized'])
-                        if sterilized_total > 0:
-                            sterilized_deaths = remaining_adult_deaths - (reproductive_deaths if 'reproductive_deaths' in locals() else 0)
-                            remaining_deaths = sterilized_deaths
-                            
-                            for count, age in colony['sterilized']:
-                                count = int(float(count))
-                                if count > 0 and remaining_deaths > 0:
-                                    group_deaths = min(count, remaining_deaths)
-                                    remaining_deaths -= group_deaths
-                                    count -= group_deaths
-                                    if len(monthly_deaths_adults) > current_month:
-                                        monthly_deaths_adults[current_month] += group_deaths
-                                    else:
-                                        monthly_deaths_adults.append(group_deaths)
-                            
-                            colony['sterilized'] = new_sterilized
-            
-                # Process deaths by cause
-                for cause, count in deaths.get('causes', {}).items():
-                    if cause == 'natural':
-                        if len(monthly_deaths_natural) > current_month:
-                            monthly_deaths_natural[current_month] = count
-                        else:
-                            monthly_deaths_natural.append(count)
-                    elif cause == 'urban':
-                        if len(monthly_deaths_urban) > current_month:
-                            monthly_deaths_urban[current_month] = count
-                        else:
-                            monthly_deaths_urban.append(count)
-                    elif cause == 'disease':
-                        if len(monthly_deaths_disease) > current_month:
-                            monthly_deaths_disease[current_month] = count
-                        else:
-                            monthly_deaths_disease.append(count)
-                    else:
-                        if len(monthly_deaths_other) > current_month:
-                            monthly_deaths_other[current_month] = count
-                        else:
-                            monthly_deaths_other.append(count)
-            
-                # Update cumulative death counts
-                cumulative_deaths['total'] += deaths.get('kittens', 0) + deaths.get('adults', 0)
-                cumulative_deaths['kittens'] += deaths.get('kittens', 0)
-                cumulative_deaths['adults'] += deaths.get('adults', 0)
-                cumulative_deaths['by_cause']['natural'] += deaths.get('causes', {}).get('natural', 0)
-                cumulative_deaths['by_cause']['urban'] += deaths.get('causes', {}).get('urban', 0)
-                cumulative_deaths['by_cause']['disease'] += deaths.get('causes', {}).get('disease', 0)
-            
-                # Log death statistics
-                log_debug('DEBUG', f'Month {current_month} deaths:')
-                log_debug('DEBUG', f'  Kittens: {monthly_deaths_kittens[-1]}')
-                log_debug('DEBUG', f'  Adults: {monthly_deaths_adults[-1]}')
-            
-                # Process monthly abandonment additions
-                monthly_abandonment = float(params.get('monthly_abandonment', 0))
-                if monthly_abandonment > 0:
-                    # Calculate number of abandoned cats this month
-                    abandoned_cats = int(round(monthly_abandonment))
-                    if abandoned_cats > 0:
-                        # Assume abandoned cats are mostly adults, with some kittens
-                        adult_ratio = 0.7  # 70% adults, 30% kittens
-                        abandoned_adults = int(round(abandoned_cats * adult_ratio))
-                        abandoned_kittens = abandoned_cats - abandoned_adults
-                        
-                        # Add abandoned adults to reproductive population
-                        if abandoned_adults > 0:
-                            colony['reproductive'].append([abandoned_adults, 12])  # Assume average age of 12 months
-                            log_debug('DEBUG', f'Month {current_month}: Added {abandoned_adults} abandoned adults')
-                        
-                        # Add abandoned kittens
-                        if abandoned_kittens > 0:
-                            colony['young_kittens'].append([abandoned_kittens, 2])  # Assume average age of 2 months
-                            log_debug('DEBUG', f'Month {current_month}: Added {abandoned_kittens} abandoned kittens')
-            
-                # Process sterilization with both adults and kittens
-                if monthly_sterilization > 0 or unmet_sterilizations > 0:
-                    # Add any unmet sterilizations from previous month
-                    total_sterilizations = monthly_sterilization + unmet_sterilizations
-                    
-                    # Calculate total cats eligible for sterilization
-                    total_reproductive = sum(int(float(count)) for count, _ in colony['reproductive'])
-                    total_kittens = sum(int(float(count)) for count, age in colony['young_kittens'] if int(float(age)) >= MIN_BREEDING_AGE)
-                    total_eligible = total_reproductive + total_kittens
-                    
-                    log_debug('DEBUG', f'Month {current_month} sterilization stats:')
-                    log_debug('DEBUG', f'  Target sterilizations: {total_sterilizations} (monthly: {monthly_sterilization}, carried over: {unmet_sterilizations})')
-                    log_debug('DEBUG', f'  Eligible cats: {total_eligible} (reproductive: {total_reproductive}, kittens: {total_kittens})')
-                    
-                    # Track how many sterilizations we couldn't perform
-                    unmet_sterilizations = max(0, total_sterilizations - total_eligible)
-                    if unmet_sterilizations > 0:
-                        log_debug('DEBUG', f'  Could not perform {unmet_sterilizations} sterilizations due to lack of eligible cats')
-                    
-                    if total_eligible > 0:
-                        # Distribute sterilizations proportionally between adults and kittens
-                        adult_ratio = total_reproductive / total_eligible
-                        kitten_ratio = total_kittens / total_eligible
-                        
-                        # Calculate actual sterilizations (limited by eligible cats)
-                        actual_sterilizations = min(total_sterilizations, total_eligible)
-                        adult_sterilizations = int(round(actual_sterilizations * adult_ratio))
-                        kitten_sterilizations = actual_sterilizations - adult_sterilizations
-                        
-                        log_debug('DEBUG', f'  Performing {actual_sterilizations} sterilizations:')
-                        log_debug('DEBUG', f'    Adults: {adult_sterilizations} ({adult_ratio:.1%} of eligible)')
-                        log_debug('DEBUG', f'    Kittens: {kitten_sterilizations} ({kitten_ratio:.1%} of eligible)')
-                        
-                        # Process adult sterilizations
-                        if adult_sterilizations > 0 and total_reproductive > 0:
-                            remaining_reproductive = []
-                            cats_to_sterilize = adult_sterilizations
-                            
-                            for count, age in colony['reproductive']:
-                                count = int(float(count))
-                                if cats_to_sterilize > 0:
-                                    if count <= cats_to_sterilize:
-                                        # Sterilize entire group
-                                        colony['sterilized'].append([count, age])
-                                        cats_to_sterilize -= count
-                                    else:
-                                        # Split group
-                                        colony['sterilized'].append([cats_to_sterilize, age])
-                                        remaining_reproductive.append([count - cats_to_sterilize, age])
-                                        cats_to_sterilize = 0
-                                else:
-                                    remaining_reproductive.append([count, age])
-                            
-                            colony['reproductive'] = remaining_reproductive
-                        
-                        # Process kitten sterilizations
-                        if kitten_sterilizations > 0 and total_kittens > 0:
-                            remaining_kittens = []
-                            cats_to_sterilize = kitten_sterilizations
-                            
-                            for count, age in colony['young_kittens']:
-                                count = int(float(count))
-                                age = int(float(age))
-                                
-                                if age >= MIN_BREEDING_AGE:
-                                    if cats_to_sterilize > 0:
-                                        if count <= cats_to_sterilize:
-                                            # Sterilize entire group and move to sterilized
-                                            colony['sterilized'].append([count, age])
-                                            cats_to_sterilize -= count
-                                        else:
-                                            # Split group
-                                            colony['sterilized'].append([cats_to_sterilize, age])
-                                            remaining_kittens.append([count - cats_to_sterilize, age])
-                                            cats_to_sterilize = 0
-                                    else:
-                                        remaining_kittens.append([count, age])
-                                else:
-                                    # Too young to sterilize
-                                    remaining_kittens.append([count, age])
-                            
-                            colony['young_kittens'] = remaining_kittens
-            
-            # Process kitten maturity
-            new_unsterilized_kittens = []
-            new_sterilized_kittens = []
-            matured_count = 0
-            maturity_age = int(params.get('maturity_age', 6))
-            
-            # Process unsterilized kittens
-            for count, age in colony['young_kittens']:
-                count = int(float(count))
-                age = int(float(age))
-                
-                if count <= 0:
-                    continue
-                
-                # Age check for maturity
-                if age >= maturity_age:
-                    # When kittens mature, add them to reproductive group
-                    colony['reproductive'].append([count, maturity_age])
-                    matured_count += count
-                    log_debug('DEBUG', f'Month {current_month}: {count} unsterilized kittens matured at age {maturity_age} months')
+                # Calculate cause of death ratios
+                if mortality_total > 0:
+                    natural_ratio = base_mortality / total_mortality_rate
+                    disease_ratio = disease_impact / total_mortality_rate
+                    urban_ratio = urban_impact / total_mortality_rate
                 else:
-                    # Keep track of surviving kittens that are still too young
-                    new_unsterilized_kittens.append([count, age + 1])
-                    log_debug('DEBUG', f'Month {current_month}: {count} unsterilized kittens aged to {age + 1} months')
-            
-            colony['young_kittens'] = new_unsterilized_kittens
-            
-            # Process sterilized kittens
-            new_sterilized_kittens = []
-            
-            if 'sterilized_kittens' in colony:
-                for count, age in colony['sterilized_kittens']:
-                    count = int(float(count))
-                    age = int(float(age))
-                    
-                    if count <= 0:
-                        continue
-                    
-                    # Age check for maturity
-                    if age >= maturity_age:
-                        # When sterilized kittens mature, add them to sterilized group
-                        colony['sterilized'].append([count, maturity_age])
-                        matured_count += count
-                        log_debug('DEBUG', f'Month {current_month}: {count} sterilized kittens matured at age {maturity_age} months')
-                    else:
-                        # Keep track of surviving kittens that are still too young
-                        new_sterilized_kittens.append([count, age + 1])
-                        log_debug('DEBUG', f'Month {current_month}: {count} sterilized kittens aged to {age + 1} months')
-            
-            colony['sterilized_kittens'] = new_sterilized_kittens
-            
-            if matured_count > 0:
-                log_debug('DEBUG', f'Month {current_month}: {matured_count} kittens matured')
-            
-            # Process breeding with age constraints and pregnancy limits
-            if colony['reproductive']:
-                # Calculate breeding rate based on litters per year
-                # Cats can have 2-3 litters per year, with 2 month gestation
-                gestation_months = GESTATION_MONTHS
+                    natural_ratio = disease_ratio = urban_ratio = 0
+
+                # Distribute deaths by cause
+                natural_deaths_sterilized = int(mortality_sterilized * natural_ratio)
+                natural_deaths_unsterilized = int(mortality_unsterilized * natural_ratio)
+                disease_deaths_sterilized = int(mortality_sterilized * disease_ratio)
+                disease_deaths_unsterilized = int(mortality_unsterilized * disease_ratio)
+                urban_deaths_sterilized = mortality_sterilized - natural_deaths_sterilized - disease_deaths_sterilized
+                urban_deaths_unsterilized = mortality_unsterilized - natural_deaths_unsterilized - disease_deaths_unsterilized
+
+                # Calculate total deaths for this month (mortality already includes disease and urban deaths)
+                total_deaths_this_month = mortality_sterilized + mortality_unsterilized
+
+                # Update running totals for death types
+                diseaseDeaths += disease_deaths_sterilized + disease_deaths_unsterilized
+                urbanDeaths += urban_deaths_sterilized + urban_deaths_unsterilized
+                naturalDeaths += natural_deaths_sterilized + natural_deaths_unsterilized
+                totalDeaths += total_deaths_this_month  # Add to running total
+
+                # Calculate age-based mortality distribution
+                kitten_ratio = 0.3  # 30% of population are kittens
+                kitten_population = int((sterilized + unsterilized) * kitten_ratio)
+                adult_population = (sterilized + unsterilized) - kitten_population
                 
-                # Base monthly breeding chance from yearly litters
-                litters_per_year = float(params['litters_per_year'])
-                monthly_breeding_chance = min(0.95, litters_per_year / (12 - GESTATION_MONTHS))
+                # Kittens have higher mortality
+                kitten_mortality_rate = min(0.95, kitten_mortality * 1.5)  # Cap at 95%
+                adult_mortality_rate = total_mortality_rate
                 
-                # Only count females of breeding age
-                breeding_females = sum(
-                    int(float(count)) * float(params['female_ratio'])
-                    for count, age in colony['reproductive']
-                    if MIN_BREEDING_AGE <= float(age) <= MAX_BREEDING_AGE
+                # Calculate expected deaths by age
+                expected_kitten_deaths = int(kitten_population * kitten_mortality_rate)
+                expected_adult_deaths = int(adult_population * adult_mortality_rate)
+                
+                # Distribute total deaths proportionally between kittens and adults
+                total_expected = expected_kitten_deaths + expected_adult_deaths
+                if total_expected > 0:
+                    kitten_deaths_this_month = int(total_deaths_this_month * (expected_kitten_deaths / total_expected))
+                    adult_deaths_this_month = total_deaths_this_month - kitten_deaths_this_month
+                else:
+                    kitten_deaths_this_month = 0
+                    adult_deaths_this_month = total_deaths_this_month
+                
+                # Update running totals
+                kittenDeaths += kitten_deaths_this_month
+                adultDeaths += adult_deaths_this_month
+                totalDeaths += total_deaths_this_month
+                
+                # Update population counts
+                sterilized = max(0, sterilized - mortality_sterilized)
+                unsterilized = max(0, unsterilized - mortality_unsterilized)
+                
+                # Calculate monthly breeding probability with stronger seasonal effects
+                monthly_breeding_prob = (litters_per_year / 12.0) * base_breeding_rate
+                
+                # Calculate seasonal factor with stronger spring effect
+                seasonal_factor = calculateSeasonalFactor(
+                    month,
+                    float(params.get('peakBreedingMonth', '4')),  # April peak
+                    float(params.get('seasonalBreedingAmplitude', '0.9'))  # Increased amplitude
                 )
                 
-                log_debug('DEBUG', f'Month {current_month}: Base breeding chance: {monthly_breeding_chance:.3f}')
-                log_debug('DEBUG', f'Month {current_month}: {breeding_females:.1f} breeding-age females available')
+                # Apply environmental factors with stronger seasonal influence
+                breeding_rate = monthly_breeding_prob * (
+                    seasonal_factor * 0.9 + 0.1  # Seasonal factor affects 90% of breeding rate
+                ) * (
+                    resource_factor * 0.7 + 0.3  # Resource factor affects 70% of breeding rate
+                ) * (
+                    1 - density_impact * 0.95  # Density impact reduces breeding by up to 95%
+                )
                 
-                # Calculate available females (not currently pregnant)
-                current_pregnancies = float(sum(pregnant_females))
-                available_females = max(0, breeding_females - current_pregnancies)
+                # Add moderate random variation (±20%)
+                breeding_rate = max(0, min(1, breeding_rate * np.random.uniform(0.8, 1.2)))
                 
-                if available_females > 0:
-                    # Calculate breeding success with more resilient rates
-                    from .utils.simulation_utils import calculate_breeding_success
-                    breeding_success = calculate_breeding_success(params, colony, environment_factor, current_month % 12)
-                    
-                    # Enhanced breeding chance calculation - more sensitive to parameters
-                    base_chance = monthly_breeding_chance * breeding_success
-                    
-                    # Small colony bonus - gentler scaling
-                    if breeding_females < 5:
-                        base_chance = min(0.95, base_chance * 1.5)  # 50% bonus for very small colonies
-                    elif breeding_females < 10:
-                        base_chance = min(0.95, base_chance * 1.25)  # 25% bonus for small colonies
-                        
-                    # Minimum breeding chance scales with parameters
-                    min_chance = 0.1 * (1.0 + float(params.get('breeding_rate', 0.85)))
-                    pregnancy_chance = max(min_chance, base_chance)
-                    
-                    # Calculate new pregnancies with enhanced success
-                    new_pregnant = np.random.binomial(int(available_females), pregnancy_chance)
-                    
-                    # Small chance of pregnancy in good conditions
-                    if new_pregnant == 0 and available_females >= 1:
-                        if breeding_success > 0.6 or breeding_females < 5:  # Stricter conditions
-                            if np.random.random() < pregnancy_chance:  # No bonus multiplier
-                                new_pregnant = 1
-                    if new_pregnant > 0:
-                        log_debug('DEBUG', f'Month {current_month}: {new_pregnant} new females became pregnant (chance: {pregnancy_chance:.2f})')
-                        pregnant_females.append(new_pregnant)
-            
-            # Process births from previous pregnancies
-            if pregnant_females and len(pregnant_females) >= GESTATION_MONTHS:
-                births = pregnant_females.pop(0)  # Get the oldest pregnancy group
-                if births > 0:
-                    # Calculate base number of kittens
-                    base_litter_size = float(params['kittens_per_litter'])
-                    
-                    # Seasonal effect on litter size - more pronounced
-                    season_bonus = 1.0
-                    if current_month % 12 in [2, 3, 4, 8, 9, 10]:  # Peak months
-                        season_bonus = 1.3
-                    elif current_month % 12 in [5, 6, 7]:  # Moderate months
-                        season_bonus = 1.15
-                    
-                    # Resource quality affects litter size (more impact)
-                    resource_bonus = 0.7 + (0.6 * environment_factor)  # Wider range from 0.7 to 1.3
-                    
-                    # Calculate final litter size
-                    adjusted_litter_size = base_litter_size * season_bonus * resource_bonus
-                    
-                    # Dynamic litter size bounds based on base size
-                    min_litter = max(1, round(base_litter_size * 0.6))  # Can be smaller in poor conditions
-                    max_litter = min(8, round(base_litter_size * 1.4))  # Can be larger in good conditions
-                    adjusted_litter_size = max(min_litter, min(max_litter, adjusted_litter_size))
-                    
-                    # Add small random variation
-                    variation = np.random.normal(0, 0.15)  # Slightly more variation (15%)
-                    final_litter_size = max(min_litter, min(max_litter, adjusted_litter_size * (1 + variation)))
-                    
-                    # Calculate total kittens born
-                    kittens = int(round(float(births) * final_litter_size))
-                    
-                    log_debug('DEBUG', f'Month {current_month} births: {births} females giving birth to {kittens} kittens (avg {final_litter_size:.1f} per litter)')
-                    if kittens > 0:
-                        colony['young_kittens'].append([kittens, 0])
-                        log_debug('DEBUG', f'Added {kittens} new kittens to colony')
-            
-            # Age all cats by one month
-            for category in ['reproductive', 'sterilized']:
-                colony[category] = [[count, age + 1] for count, age in colony[category]]
-            
-            # Recalculate current population after all monthly changes
-            reproductive_count = sum(int(float(count)) for count, _ in colony['reproductive'])
-            sterilized_count = sum(int(float(count)) for count, _ in colony['sterilized'])
-            unsterilized_kitten_count = sum(int(float(count)) for count, _ in colony['young_kittens'])
-            sterilized_kitten_count = sum(int(float(count)) for count, _ in colony['sterilized_kittens'])
-            
-            current_population = reproductive_count + sterilized_count + unsterilized_kitten_count + sterilized_kitten_count
-            
-            # Update monthly tracking arrays
-            if len(monthly_populations) > current_month:
-                monthly_populations[current_month] = current_population
-            else:
-                monthly_populations.append(current_population)
+                # Calculate births
+                births_this_month = int(unsterilized * breeding_rate * kittens_per_litter)
+                births_this_month = max(0, births_this_month)  # Ensure non-negative
                 
-            if len(monthly_reproductive) > current_month:
-                monthly_reproductive[current_month] = reproductive_count
-            else:
-                monthly_reproductive.append(reproductive_count)
+                totalBirths += births_this_month
+                unsterilized += births_this_month
                 
-            if len(monthly_kittens) > current_month:
-                monthly_kittens[current_month] = unsterilized_kitten_count + sterilized_kitten_count
-            else:
-                monthly_kittens.append(unsterilized_kitten_count + sterilized_kitten_count)
+                # Handle monthly sterilizations
+                new_sterilizations = min(monthlySterilization, unsterilized)
+                sterilized += new_sterilizations
+                unsterilized -= new_sterilizations
                 
-            if len(monthly_costs) > current_month:
-                monthly_costs[current_month] = month_cost
-            else:
-                monthly_costs.append(month_cost)
+                # Handle monthly abandonments
+                unsterilized += monthlyAbandonment
                 
-            if len(monthly_densities) > current_month:
-                monthly_densities[current_month] = current_population / calculate_carrying_capacity(params)
-            else:
-                monthly_densities.append(current_population / calculate_carrying_capacity(params))
-            
-            log_debug('DEBUG', f'Month {current_month} population breakdown:')
-            log_debug('DEBUG', f'  Young kittens: {sum(count for count, _ in colony["young_kittens"])}')
-            log_debug('DEBUG', f'  Reproductive: {sum(count for count, _ in colony["reproductive"])}')
-            log_debug('DEBUG', f'  Sterilized: {sum(count for count, _ in colony["sterilized"])}')
-            log_debug('DEBUG', f'  Total population: {current_population}')
-            log_debug('DEBUG', f'  Deaths this month:')
-            log_debug('DEBUG', f'    Kittens: {month_deaths.get("kittens", 0)}')
-            log_debug('DEBUG', f'    Adults: {month_deaths.get("adults", 0)}')
-            log_debug('DEBUG', f'    Natural: {month_deaths.get("causes", {}).get("natural", 0)}')
-            log_debug('DEBUG', f'    Urban: {month_deaths.get("causes", {}).get("urban", 0)}')
-            log_debug('DEBUG', f'    Disease: {month_deaths.get("causes", {}).get("disease", 0)}')
-            
-            # Calculate density relative to territory
-            density = current_population / params['territory_size'] if params['territory_size'] > 0 else float('inf')
-            
-            # Calculate duration and log completion
-            duration = time.time() - start_time
-            log_simulation_end(simulation_id, duration, monthly_populations[-1])
-            
-            # Prepare results with death statistics
-            final_population = monthly_populations[-1]
-            results = {
-                'final_population': final_population,
-                'final_sterilized': monthly_sterilized[-1],
-                'final_reproductive': monthly_reproductive[-1],
-                'final_kittens': monthly_kittens[-1],
-                'total_cost': total_cost,
-                'total_sterilizations': monthly_sterilization * months,
-                'population_growth': final_population - current_size,
-                'total_deaths': sum(monthly_deaths_kittens) + sum(monthly_deaths_adults),  # Calculate from monthly data
-                'kitten_deaths': sum(monthly_deaths_kittens),
-                'adult_deaths': sum(monthly_deaths_adults),
-                'natural_deaths': sum(monthly_deaths_natural),
-                'urban_deaths': sum(monthly_deaths_urban),
-                'disease_deaths': sum(monthly_deaths_disease),
-                'monthly_populations': monthly_populations,
-                'monthly_sterilized': monthly_sterilized,
-                'monthly_reproductive': monthly_reproductive,
-                'monthly_kittens': monthly_kittens,
-                'monthly_deaths_kittens': monthly_deaths_kittens,
-                'monthly_deaths_adults': monthly_deaths_adults,
-                'monthly_deaths_natural': monthly_deaths_natural,
-                'monthly_deaths_urban': monthly_deaths_urban,
-                'monthly_deaths_disease': monthly_deaths_disease,
-                'monthly_deaths_other': monthly_deaths_other,
-                'monthly_costs': monthly_costs,
-                'average_density': sum(monthly_densities) / len(monthly_densities),
-                'max_density': max(monthly_densities),
-                'months_over_threshold': sum(1 for d in monthly_densities if d > params['density_impact_threshold'])
-            }
+                # Store monthly data
+                monthlyData.append({
+                    'month': month + 1,
+                    'total': sterilized + unsterilized,
+                    'sterilized': sterilized,
+                    'unsterilized': unsterilized,
+                    'births': births_this_month,
+                    'natural_deaths': mortality_sterilized + mortality_unsterilized,
+                    'disease_deaths': disease_deaths_sterilized + disease_deaths_unsterilized,
+                    'urban_deaths': urban_deaths_sterilized + urban_deaths_unsterilized,
+                    'kitten_deaths': kitten_deaths_this_month,
+                    'adult_deaths': adult_deaths_this_month,
+                    'density_impact': density_impact,
+                    'resource_factor': resource_factor,
+                    'carrying_capacity': carrying_capacity
+                })
 
-            # Create calculation parameters dictionary
-            calculation_params = {
-                'initialColonySize': current_size,
-                'alreadySterilized': sterilized_count,
-                'monthlySterilizationRate': monthly_sterilization,
-                'simulationLength': months,
-                **params  # Include all simulation parameters
-            }
-
-            # Only log if not running in test mode
-            if not params.get('test_mode', False):
-                from .utils.logging_utils import log_calculation_result
-                log_calculation_result(calculation_params, results)
-
-            if use_monte_carlo:
-                # Initialize arrays for Monte Carlo results
-                all_results = []
-                for run in range(monte_carlo_runs):
-                    run_result = simulate_population(
-                        params=params,
-                        current_size=current_size,
-                        months=months,
-                        sterilized_count=sterilized_count,
-                        monthly_sterilization=monthly_sterilization,
-                        use_monte_carlo=False
-                    )
-                    if run_result is not None:
-                        all_results.append(run_result)
-
-                if not all_results:
-                    log_simulation_error(simulation_id, "All Monte Carlo simulations failed")
-                    return None
-
-                # Calculate averages and standard deviations
-                monte_carlo_summary = {}
-
-                # Process numeric fields
-                numeric_fields = [
-                    'final_population', 'final_sterilized', 'final_reproductive',
-                    'final_kittens', 'total_cost', 'total_deaths', 'kitten_deaths',
-                    'adult_deaths', 'natural_deaths', 'urban_deaths', 'disease_deaths'
-                ]
-                
-                for field in numeric_fields:
-                    values = [float(r[field]) for r in all_results if field in r]
-                    if values:
-                        monte_carlo_summary[field] = {
-                            'mean': np.mean(values),
-                            'std': np.std(values),
-                            'min': np.min(values),
-                            'max': np.max(values)
-                        }
-
-                # Process monthly arrays
-                monthly_fields = [
-                    'monthly_populations', 'monthly_sterilized', 'monthly_reproductive',
-                    'monthly_kittens', 'monthly_deaths_kittens', 'monthly_deaths_adults',
-                    'monthly_deaths_natural', 'monthly_deaths_urban', 'monthly_deaths_disease'
-                ]
-
-                for field in monthly_fields:
-                    if field in all_results[0]:
-                        arrays = [r[field] for r in all_results]
-                        if arrays:
-                            arr = np.array(arrays)
-                            monte_carlo_summary[field] = {
-                                'mean': np.mean(arr, axis=0).tolist(),
-                                'std': np.std(arr, axis=0).tolist(),
-                                'min': np.min(arr, axis=0).tolist(),
-                                'max': np.max(arr, axis=0).tolist()
-                            }
-
-                # Use median simulation for base result
-                median_idx = len(all_results) // 2
-                result = all_results[median_idx]
-                result['monte_carlo_summary'] = monte_carlo_summary
-                result['monte_carlo_runs'] = monte_carlo_runs
-                
-                return result
-
-            return results
-
-        except Exception as e:
-            log_simulation_error(simulation_id, f"Fatal error: {str(e)}")
-            logger.error(f"Error in simulate_population: {str(e)}")
-            logger.error(traceback.format_exc())
-            raise
-
+            except Exception as e:
+                error_msg = f"Error in month {month}: {str(e)}"
+                logSimulationError("monthly_calc", error_msg)
+                raise
+        
+        # Return final results
+        return {
+            'finalPopulation': sterilized + unsterilized,
+            'sterilized': sterilized,
+            'unsterilized': unsterilized,
+            'totalDeaths': totalDeaths,
+            'diseaseDeaths': diseaseDeaths,
+            'urbanDeaths': urbanDeaths,
+            'naturalDeaths': naturalDeaths,
+            'kittenDeaths': kittenDeaths,
+            'adultDeaths': adultDeaths,
+            'totalBirths': totalBirths,
+            'monthlyData': monthlyData  # Changed from monthlyPopulations to monthlyData
+        }
+        
     except Exception as e:
-        log_simulation_error(simulation_id, f"Fatal error: {str(e)}")
-        logger.error(f"Error in simulate_population: {str(e)}")
-        logger.error(traceback.format_exc())
+        error_msg = f"Simulation error: {str(e)}\n{traceback.format_exc()}"
+        logSimulationError("unknown", error_msg)
         raise
 
-def run_parameter_tests():
+def calculateCarryingCapacity(territory_size, density_threshold, resource_factor):
+    """Calculate carrying capacity based on territory size and resource availability"""
+    try:
+        # Cubic scaling with territory size for more dramatic effect
+        base_capacity = np.power(territory_size / 1000, 3) * density_threshold * 0.1
+        # Quadratic resource multiplier for stronger impact
+        resource_multiplier = np.power(resource_factor, 2) * 5  # 5x multiplier
+        capacity = base_capacity * resource_multiplier
+        return max(10, capacity)  # Minimum capacity of 10
+    except Exception as e:
+        error_msg = f"Error calculating carrying capacity: {str(e)}"
+        logSimulationError("capacity_calc", error_msg)
+        raise ValueError(error_msg)
+
+def calculateResourceAvailability(food_capacity, water_availability, shelter_quality, caretaker_support, feeding_consistency):
+    """Calculate overall resource availability"""
+    try:
+        # Cubic scaling for all factors
+        food_factor = np.power(food_capacity, 3)
+        water_factor = np.power(water_availability, 3)
+        shelter_factor = np.power(shelter_quality, 3)
+        support_factor = np.power(caretaker_support, 3)
+        consistency_factor = np.power(feeding_consistency, 3)
+        
+        # Calculate weighted average with extreme emphasis on food/water
+        resource_factor = (
+            food_factor * 0.45 +
+            water_factor * 0.45 +
+            shelter_factor * 0.06 +
+            support_factor * 0.02 +
+            consistency_factor * 0.02
+        )
+        
+        return max(0.1, min(1.0, resource_factor))
+    except Exception as e:
+        error_msg = f"Error calculating resource availability: {str(e)}"
+        logSimulationError("resource_calc", error_msg)
+        raise ValueError(error_msg)
+
+def runParameterTests():
     """Run a series of parameter tests to validate model behavior."""
-    base_params = {
-        "breeding_rate": 0.98,
-        "kittens_per_litter": 5,
-        "litters_per_year": 3.5,
-        "kitten_survival_rate": 0.85,
-        "female_ratio": 0.5,
-        "adult_survival_rate": 0.95,
-        "seasonal_breeding_amplitude": 0.1,
-        "peak_breeding_month": 4,
-        "territory_size": 1000,
-        "density_impact_threshold": 1.5,
-        "base_resources": 0.95,
-        "resource_variability": 0.1,
-        "urban_environment": 0.7,
-        "urban_risk": 0.03,
-        "disease_risk": 0.03,
-        "natural_risk": 0.02,
-        "carrying_capacity": 1500,
-        "base_breeding_success": 0.95,
-        "age_breeding_factor": 0.06,
-        "stress_impact": 0.12,
-        "early_breeding_age": 5,
-        "peak_breeding_age": 36,
-        "kitten_maturity_months": 5  # Age at which kittens become adults
+    baseParams = {
+        "breedingRate": 0.98,
+        "kittensPerLitter": 5,
+        "littersPerYear": 3.5,
+        "kittenSurvivalRate": 0.85,
+        "femaleRatio": 0.5,
+        "adultSurvivalRate": 0.95,
+        "seasonalBreedingAmplitude": 0.1,
+        "peakBreedingMonth": 4,
+        "territorySize": 1000,
+        "densityImpactThreshold": 1.5,
+        "baseResources": 0.95,
+        "resourceVariability": 0.1,
+        "urbanEnvironment": 0.7,
+        "urbanRisk": 0.03,
+        "diseaseRisk": 0.03,
+        "naturalRisk": 0.02,
+        "carryingCapacity": 1500,
+        "baseBreedingSuccess": 0.95,
+        "ageBreedingFactor": 0.06,
+        "stressImpact": 0.12,
+        "earlyBreedingAge": 5,
+        "peakBreedingAge": 36,
+        "kittenMaturityMonths": 5  # Age at which kittens become adults
     }
 
-    test_scenarios = [
+    testScenarios = [
         # Baseline test
         {
             "name": "Baseline Hawaii",
-            "params": base_params.copy(),
-            "initial_colony": 50,
+            "params": baseParams.copy(),
+            "initialColony": 50,
             "months": 24
         },
         
         # Breeding rate tests
         {
             "name": "Low Breeding Rate",
-            "params": {**base_params, "breeding_rate": 0.70},
-            "initial_colony": 50,
+            "params": {**baseParams, "breedingRate": 0.70},
+            "initialColony": 50,
             "months": 24,
             "expected": "slower_growth"
         },
         {
             "name": "High Breeding Rate",
-            "params": {**base_params, "breeding_rate": 1.0},
-            "initial_colony": 50,
+            "params": {**baseParams, "breedingRate": 1.0},
+            "initialColony": 50,
             "months": 24,
             "expected": "faster_growth"
         },
@@ -790,15 +501,15 @@ def run_parameter_tests():
         # Litter size tests
         {
             "name": "Small Litters",
-            "params": {**base_params, "kittens_per_litter": 3},
-            "initial_colony": 50,
+            "params": {**baseParams, "kittensPerLitter": 3},
+            "initialColony": 50,
             "months": 24,
             "expected": "smaller_population"
         },
         {
             "name": "Large Litters",
-            "params": {**base_params, "kittens_per_litter": 6},
-            "initial_colony": 50,
+            "params": {**baseParams, "kittensPerLitter": 6},
+            "initialColony": 50,
             "months": 24,
             "expected": "larger_population"
         },
@@ -806,15 +517,15 @@ def run_parameter_tests():
         # Litters per year tests
         {
             "name": "Few Litters Per Year",
-            "params": {**base_params, "litters_per_year": 2.0},
-            "initial_colony": 50,
+            "params": {**baseParams, "littersPerYear": 2.0},
+            "initialColony": 50,
             "months": 24,
             "expected": "slower_growth"
         },
         {
             "name": "Many Litters Per Year",
-            "params": {**base_params, "litters_per_year": 4.0},
-            "initial_colony": 50,
+            "params": {**baseParams, "littersPerYear": 4.0},
+            "initialColony": 50,
             "months": 24,
             "expected": "faster_growth"
         },
@@ -822,15 +533,15 @@ def run_parameter_tests():
         # Survival rate tests
         {
             "name": "Low Kitten Survival",
-            "params": {**base_params, "kitten_survival_rate": 0.6},
-            "initial_colony": 50,
+            "params": {**baseParams, "kittenSurvivalRate": 0.6},
+            "initialColony": 50,
             "months": 24,
             "expected": "high_kitten_mortality"
         },
         {
             "name": "Low Adult Survival",
-            "params": {**base_params, "adult_survival_rate": 0.7},
-            "initial_colony": 50,
+            "params": {**baseParams, "adultSurvivalRate": 0.7},
+            "initialColony": 50,
             "months": 24,
             "expected": "high_adult_mortality"
         },
@@ -838,15 +549,15 @@ def run_parameter_tests():
         # Resource tests
         {
             "name": "Resource Scarcity",
-            "params": {**base_params, "base_resources": 0.5, "resource_variability": 0.3},
-            "initial_colony": 50,
+            "params": {**baseParams, "baseResources": 0.5, "resourceVariability": 0.3},
+            "initialColony": 50,
             "months": 24,
             "expected": "resource_limited_growth"
         },
         {
             "name": "Abundant Resources",
-            "params": {**base_params, "base_resources": 1.0, "resource_variability": 0.05},
-            "initial_colony": 50,
+            "params": {**baseParams, "baseResources": 1.0, "resourceVariability": 0.05},
+            "initialColony": 50,
             "months": 24,
             "expected": "resource_unlimited_growth"
         },
@@ -854,15 +565,15 @@ def run_parameter_tests():
         # Urban environment tests
         {
             "name": "Rural Environment",
-            "params": {**base_params, "urban_environment": 0.2, "urban_risk": 0.05},
-            "initial_colony": 50,
+            "params": {**baseParams, "urbanEnvironment": 0.2, "urbanRisk": 0.05},
+            "initialColony": 50,
             "months": 24,
             "expected": "lower_density_tolerance"
         },
         {
             "name": "Urban Environment",
-            "params": {**base_params, "urban_environment": 0.9, "urban_risk": 0.02},
-            "initial_colony": 50,
+            "params": {**baseParams, "urbanEnvironment": 0.9, "urbanRisk": 0.02},
+            "initialColony": 50,
             "months": 24,
             "expected": "higher_density_tolerance"
         },
@@ -870,15 +581,15 @@ def run_parameter_tests():
         # Age-related breeding tests
         {
             "name": "Late Breeding Age",
-            "params": {**base_params, "early_breeding_age": 8, "peak_breeding_age": 30},
-            "initial_colony": 50,
+            "params": {**baseParams, "earlyBreedingAge": 8, "peakBreedingAge": 30},
+            "initialColony": 50,
             "months": 24,
             "expected": "delayed_growth"
         },
         {
             "name": "Early Breeding Age",
-            "params": {**base_params, "early_breeding_age": 4, "peak_breeding_age": 40},
-            "initial_colony": 50,
+            "params": {**baseParams, "earlyBreedingAge": 4, "peakBreedingAge": 40},
+            "initialColony": 50,
             "months": 24,
             "expected": "accelerated_growth"
         },
@@ -886,15 +597,15 @@ def run_parameter_tests():
         # Density impact tests
         {
             "name": "High Density Sensitivity",
-            "params": {**base_params, "density_impact_threshold": 1.0, "carrying_capacity": 1000},
-            "initial_colony": 50,
+            "params": {**baseParams, "densityImpactThreshold": 1.0, "carryingCapacity": 1000},
+            "initialColony": 50,
             "months": 24,
             "expected": "strong_density_effects"
         },
         {
             "name": "Low Density Sensitivity",
-            "params": {**base_params, "density_impact_threshold": 2.0, "carrying_capacity": 2000},
-            "initial_colony": 50,
+            "params": {**baseParams, "densityImpactThreshold": 2.0, "carryingCapacity": 2000},
+            "initialColony": 50,
             "months": 24,
             "expected": "weak_density_effects"
         },
@@ -902,15 +613,15 @@ def run_parameter_tests():
         # Seasonal effects tests
         {
             "name": "Strong Seasonality",
-            "params": {**base_params, "seasonal_breeding_amplitude": 0.3},
-            "initial_colony": 50,
+            "params": {**baseParams, "seasonalBreedingAmplitude": 0.3},
+            "initialColony": 50,
             "months": 24,
             "expected": "seasonal_variation"
         },
         {
             "name": "No Seasonality",
-            "params": {**base_params, "seasonal_breeding_amplitude": 0.0},
-            "initial_colony": 50,
+            "params": {**baseParams, "seasonalBreedingAmplitude": 0.0},
+            "initialColony": 50,
             "months": 24,
             "expected": "constant_breeding"
         },
@@ -918,32 +629,32 @@ def run_parameter_tests():
         # Disease risk tests
         {
             "name": "High Disease Risk",
-            "params": {**base_params, "disease_risk": 0.15, "density_impact_threshold": 1.2},
-            "initial_colony": 50,
+            "params": {**baseParams, "diseaseRisk": 0.15, "densityImpactThreshold": 1.2},
+            "initialColony": 50,
             "months": 24,
             "expected": "disease_limited"
         },
         {
             "name": "No Disease Risk",
-            "params": {**base_params, "disease_risk": 0.0},
-            "initial_colony": 50,
+            "params": {**baseParams, "diseaseRisk": 0.0},
+            "initialColony": 50,
             "months": 24,
             "expected": "no_disease_deaths"
         }
     ]
     
     results = []
-    for scenario in test_scenarios:
+    for scenario in testScenarios:
         try:
-            result = simulate_population(
+            result = simulatePopulation(
                 scenario["params"],
-                scenario["initial_colony"],
+                scenario["initialColony"],
                 scenario["months"]
             )
             
             if result:
                 # Calculate growth metrics
-                population_series = result["monthly_populations"]
+                population_series = result["monthlyData"]
                 max_population = max(population_series)
                 final_population = population_series[-1]
                 
@@ -955,35 +666,35 @@ def run_parameter_tests():
                                  for i in range(max(0, len(population_series)-7), len(population_series)-1)]) / 6
                 
                 # Calculate mortality metrics
-                kitten_mortality_rate = result["kitten_deaths"] / max(1, result["total_deaths"]) if result["total_deaths"] > 0 else 0
-                disease_mortality_rate = result["disease_deaths"] / max(1, result["total_deaths"]) if result["total_deaths"] > 0 else 0
+                kitten_mortality_rate = result["kittenDeaths"] / max(1, result["totalDeaths"]) if result["totalDeaths"] > 0 else 0
+                disease_mortality_rate = result["diseaseDeaths"] / max(1, result["totalDeaths"]) if result["totalDeaths"] > 0 else 0
                 
                 results.append({
                     "scenario": scenario["name"],
-                    "expected_behavior": scenario.get("expected", "not_specified"),
-                    "initial_population": scenario["initial_colony"],
-                    "final_population": final_population,
-                    "max_population": max_population,
-                    "early_growth_rate": early_growth,
-                    "late_growth_rate": late_growth,
-                    "total_deaths": result["total_deaths"],
-                    "kitten_mortality_rate": kitten_mortality_rate,
-                    "disease_mortality_rate": disease_mortality_rate,
-                    "months_simulated": scenario["months"]
+                    "expectedBehavior": scenario.get("expected", "not_specified"),
+                    "initialPopulation": scenario["initialColony"],
+                    "finalPopulation": final_population,
+                    "maxPopulation": max_population,
+                    "earlyGrowthRate": early_growth,
+                    "lateGrowthRate": late_growth,
+                    "totalDeaths": result["totalDeaths"],
+                    "kittenMortalityRate": kitten_mortality_rate,
+                    "diseaseMortalityRate": disease_mortality_rate,
+                    "monthsSimulated": scenario["months"]
                 })
                 
                 # Log detailed analysis
-                logger.info(f"\nScenario: {scenario['name']}")
-                logger.info(f"Expected behavior: {scenario.get('expected', 'not_specified')}")
-                logger.info(f"Final population: {final_population}")
-                logger.info(f"Early growth rate: {early_growth:.3f}")
-                logger.info(f"Late growth rate: {late_growth:.3f}")
-                logger.info(f"Kitten mortality rate: {kitten_mortality_rate:.3f}")
-                logger.info(f"Disease mortality rate: {disease_mortality_rate:.3f}")
+                logDebug('INFO', f"\nScenario: {scenario['name']}")
+                logDebug('INFO', f"Expected behavior: {scenario.get('expected', 'not_specified')}")
+                logDebug('INFO', f"Final population: {final_population}")
+                logDebug('INFO', f"Early growth rate: {early_growth:.3f}")
+                logDebug('INFO', f"Late growth rate: {late_growth:.3f}")
+                logDebug('INFO', f"Kitten mortality rate: {kitten_mortality_rate:.3f}")
+                logDebug('INFO', f"Disease mortality rate: {disease_mortality_rate:.3f}")
             
         except Exception as e:
-            logger.error(f"Error in scenario {scenario['name']}: {str(e)}")
-            logger.error(traceback.format_exc())
+            logDebug('ERROR', f"Error in scenario {scenario['name']}: {str(e)}")
+            logDebug('ERROR', traceback.format_exc())
             continue
     
     return results

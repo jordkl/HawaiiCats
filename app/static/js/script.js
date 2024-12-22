@@ -43,17 +43,41 @@ function collectScenarioData() {
     // Helper function to get value with default
     const getValueWithDefault = (id, defaultValue) => {
         const element = document.getElementById(id);
-        return element?.value || defaultValue;
+        const value = element?.value;
+        // Return the actual value if it exists and is not empty
+        if (value !== undefined && value !== '') {
+            return value;
+        }
+        // For basic parameters, try to get from simulation results
+        if (window.simulationResults) {
+            // Map frontend IDs to backend parameter names
+            const paramMap = {
+                'currentSize': 'initialColonySize',
+                'sterilizedCount': 'alreadySterilized',
+                'monthlysterilization': 'monthlySterilizationRate',
+                'months': 'simulationLength'
+            };
+            const backendParam = paramMap[id];
+            if (backendParam && window.simulationResults[backendParam] !== undefined) {
+                const simValue = window.simulationResults[backendParam];
+                if (simValue !== undefined && simValue !== '') {
+                    return simValue.toString();
+                }
+            }
+        }
+        // Fall back to default value
+        return defaultValue;
     };
 
     // Basic parameters
     const inputs = {
-        // Basic Parameters
-        currentSize: getValueWithDefault('currentSize', ''),
-        sterilizedCount: getValueWithDefault('sterilizedCount', ''),
-        monthlysterilization: getValueWithDefault('monthlysterilization', ''),
-        sterilizationCost: getValueWithDefault('sterilizationCost', ''),
-        months: getValueWithDefault('months', ''),
+        // Basic Parameters - using frontend IDs but getting values from backend params
+        currentSize: getValueWithDefault('currentSize', '10'),
+        sterilizedCount: getValueWithDefault('sterilizedCount', '0'),
+        monthlysterilization: getValueWithDefault('monthlysterilization', '1'),
+        monthlyAbandonment: getValueWithDefault('monthlyAbandonment', '0'),
+        sterilizationCost: getValueWithDefault('sterilizationCost', '50'),
+        months: getValueWithDefault('months', '12'),
         
         // Mortality Risk Factors
         urbanRisk: getValueWithDefault('urbanRisk', '0.1'),
@@ -100,22 +124,6 @@ function collectScenarioData() {
         adultDeaths: document.getElementById('adultDeaths')?.innerText || '',
         mortalityRate: document.getElementById('mortalityRate')?.innerText || '',
         
-        // Monte Carlo Statistics (if available)
-        monteCarloStats: {
-            finalPopulation: {
-                lower: document.getElementById('finalPopulation_lower')?.innerText || '',
-                upper: document.getElementById('finalPopulation_upper')?.innerText || ''
-            },
-            populationChange: {
-                lower: document.getElementById('populationChange_lower')?.innerText || '',
-                upper: document.getElementById('populationChange_upper')?.innerText || ''
-            },
-            sterilizationRate: {
-                lower: document.getElementById('sterilizationRate_lower')?.innerText || '',
-                upper: document.getElementById('sterilizationRate_upper')?.innerText || ''
-            }
-        },
-
         // Graph Data
         graphData: (window.populationGraph && window.populationGraph.data) ? {
             labels: window.populationGraph.data.labels || [],
@@ -123,7 +131,28 @@ function collectScenarioData() {
                 label: dataset.label || '',
                 data: dataset.data || []
             })) || []
-        } : null
+        } : null,
+        
+        // Additional Statistics from simulation results
+        monthlyData: window.simulationResults?.result?.monthlyData || [],
+        monthlyTotals: window.simulationResults?.result?.monthlyData?.map(m => m.total) || [],
+        monthlySterilized: window.simulationResults?.result?.monthlyData?.map(m => m.sterilized) || [],
+        monthlyUnsterilized: window.simulationResults?.result?.monthlyData?.map(m => m.unsterilized) || [],
+        monthlyDeaths: window.simulationResults?.result?.monthlyData?.map(m => 
+            m.natural_deaths + m.disease_deaths + m.urban_deaths) || [],
+        monthlyBirths: window.simulationResults?.result?.monthlyData?.map(m => m.births) || [],
+        naturalDeaths: parseInt(window.simulationResults?.result?.naturalDeaths || 
+                              window.simulationResults?.naturalDeaths || 0),
+        diseaseDeaths: parseInt(window.simulationResults?.result?.diseaseDeaths || 
+                              window.simulationResults?.diseaseDeaths || 0),
+        urbanDeaths: parseInt(window.simulationResults?.result?.urbanDeaths || 
+                            window.simulationResults?.urbanDeaths || 0),
+        densityDeaths: parseInt(window.simulationResults?.result?.densityDeaths || 
+                              window.simulationResults?.densityDeaths || 0),
+        sterilizedPopulation: window.simulationResults?.result?.sterilizedPopulation || 
+                             window.simulationResults?.sterilizedPopulation || [],
+        unsterilizedPopulation: window.simulationResults?.result?.unsterilizedPopulation || 
+                               window.simulationResults?.unsterilizedPopulation || []
     };
 
     return {
@@ -208,7 +237,7 @@ function submitFlagScenario() {
     const baseUrl = isLocalhost ? `http://${window.location.host}` : 'https://hawaiicats.org';
 
     // Send the data to the server
-    fetch(`${baseUrl}/flag_scenario`, {
+    fetch(`${baseUrl}/flagScenario`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

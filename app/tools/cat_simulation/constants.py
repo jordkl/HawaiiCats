@@ -1,50 +1,58 @@
 """Constants for cat colony simulation."""
 
 DEFAULT_PARAMS = {
-    "breeding_rate": 0.85,
-    "kittens_per_litter": 4,
-    "litters_per_year": 2.5,
-    "kitten_survival_rate": 0.8,
-    "female_ratio": 0.5,
-    "adult_survival_rate": 0.92,
-    "kitten_maturity_months": 5,
-    "seasonal_breeding_amplitude": 0.15,
-    "peak_breeding_month": 3,
-    "base_food_capacity": 0.95,
-    "food_scaling_factor": 0.9,
-    "water_availability": 0.95,
-    "shelter_quality": 0.85,
-    "urban_risk": 0.08,
-    "disease_risk": 0.04,
-    "natural_risk": 0.04,
-    "caretaker_support": 1.0,
-    "feeding_consistency": 0.95,
-    "sterilization_cost": 50.0,
-    "monthly_abandonment": 0,  
-    "abandoned_sterilized_ratio": 0.2,
-    "territory_size": 1000,
-    "density_impact_threshold": 1.3
+    # Population dynamics
+    'breeding_rate': 0.85,
+    'kittens_per_litter': 4,
+    'litters_per_year': 2.5,
+    'female_ratio': 0.5,
+    'kitten_survival_rate': 0.7,
+    'adult_survival_rate': 0.85,
+    'kitten_maturity_months': 5,
+    
+    # Seasonal factors
+    'peak_breeding_month': 4,
+    'seasonality_strength': 0.3,
+    
+    # Environmental factors
+    'territory_size': 1000,
+    'base_food_capacity': 0.9,
+    'food_scaling_factor': 0.8,
+    'environmental_stress': 0.15,
+    
+    # Resource factors
+    'resource_competition': 0.2,
+    'resource_scarcity_impact': 0.25,
+    
+    # Colony density
+    'density_impact_threshold': 1.2,
+    'density_stress_rate': 0.15,
+    'max_density_impact': 0.5,
+    
+    # Habitat quality
+    'base_habitat_quality': 0.8,
+    'urbanization_impact': 0.2,
+    'disease_transmission_rate': 0.1,
+    
+    # Monthly abandonment rate
+    'monthly_abandonment': 2.0,
 }
 
-# Biological constants based on cat physiology
-MIN_BREEDING_AGE = 5    
-MAX_BREEDING_AGE = 84   
-GESTATION_MONTHS = 2    
+# Biological constants
+MIN_BREEDING_AGE = 5  # months
+MAX_BREEDING_AGE = 84  # months (7 years)
+GESTATION_MONTHS = 2  # months
 
-# Territory size in square meters
+# Territory size ranges (sq meters)
 TERRITORY_SIZE_RANGES = {
-    'min': 100,    
-    'max': 100000, 
-    'default': 1000,
-    'description': 'Territory size in square meters. Examples: 100 (small parking lot), 500 (restaurant back area), ' +
-                  '1000 (small park), 5000 (large park), 20000 (small forest), 100000 (large forest/nature reserve)'
+    'urban': (100, 500),
+    'suburban': (500, 2000),
+    'rural': (2000, 5000)
 }
 
-# Density impact threshold (cats per 100 square meters)
+# Density threshold ranges (cats per sq meter)
 DENSITY_THRESHOLD_RANGES = {
-    'min': 0.2,    
-    'max': 5.0,    
-    'default': 1.2,
-    'description': 'Cats per 100 square meters where density effects begin. Examples: 0.2 (rural/forest), ' +
-                  '1.0 (suburban), 2.0 (urban), 5.0 (dense urban with abundant resources)'
+    'urban': (0.05, 0.2),
+    'suburban': (0.02, 0.1),
+    'rural': (0.01, 0.05)
 }

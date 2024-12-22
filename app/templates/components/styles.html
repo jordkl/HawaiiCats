@@ -33,6 +33,28 @@
         display: block !important;
     }
 
+    .preset-button {
+        padding: 0.5rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+        background-color: white;
+        color: #374151;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .preset-button:hover {
+        background-color: #f3f4f6;
+        border-color: #d1d5db;
+    }
+
+    .preset-button.active {
+        background-color: #2563eb;
+        color: white;
+        border-color: #2563eb;
+    }
+
     #advancedSection {
         max-height: 0;
         overflow: hidden;

@@ -1,5 +1,5 @@
 from app import create_app
-from app.tools.cat_simulation.utils.logging_utils import setup_logging
+from app.tools.cat_simulation.utils.logging_utils import setupLogging
 from app.tools.sightings.store import init_store
 from app.auth import init_firebase
 import logging
@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import os
 
 # Initialize logging
-setup_logging()
+setupLogging()
 
 # Initialize the sightings store
 init_store()

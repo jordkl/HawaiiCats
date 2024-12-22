@@ -5,6 +5,9 @@ from datetime import datetime
 
 def setup_test_logging():
     """Set up logging configuration specifically for tests."""
+    # Configure root logger to suppress debug messages
+    logging.getLogger().setLevel(logging.WARNING)
+    
     # Create a console handler for test output
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
@@ -14,6 +17,10 @@ def setup_test_logging():
     test_logger = logging.getLogger('test')
     test_logger.setLevel(logging.INFO)
     test_logger.addHandler(console_handler)
+    
+    # Configure debug logger to be less verbose
+    debug_logger = logging.getLogger('debug')
+    debug_logger.setLevel(logging.WARNING)  # Only show warnings and errors
     
     return test_logger
 

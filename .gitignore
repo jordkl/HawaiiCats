@@ -53,3 +53,4 @@ logs/debug.log
 data/sightings.json
 data/last_sync.txt
 logs/calculations.csv
+/app/tools/cat_simulation/test_results

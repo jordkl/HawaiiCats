@@ -1,11 +1,17 @@
-# HawaiiCats Population Simulator
+# Hawaii Cats Population Simulator
 
-A web-based simulation tool for modeling and analyzing cat population dynamics in Hawaii. This project provides a sophisticated Monte Carlo simulation framework to help understand and predict feral cat population trends under various conditions and intervention strategies.
+A web-based simulation tool for modeling and analyzing cat population dynamics in Hawaii. This project provides a sophisticated simulation framework to help understand and predict feral cat population trends under various conditions and intervention strategies.
 
 ## Features
 
+- Advanced population dynamics modeling
+- Seasonal breeding patterns
+- Environmental impact factors
+- Resource availability modeling
+- Colony density effects
+- Detailed population statistics and graphs
+- Data export capabilities
 - Interactive web interface for running cat population simulations
-- Monte Carlo simulation capabilities for statistical analysis
 - Parameter testing and sensitivity analysis
 - Scenario flagging for notable simulation cases
 - Detailed logging and data export functionality

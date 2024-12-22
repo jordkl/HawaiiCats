@@ -1,25 +1,21 @@
 """Cat population simulation package."""
 
-from .simulation import simulate_population
-from .constants import DEFAULT_PARAMS
-from .utils.simulation_utils import (
-    calculate_seasonal_factor,
-    calculate_density_impact,
-    calculate_resource_impact,
-    calculate_resource_availability,
-    calculate_monthly_mortality,
-    calculate_resource_limit,
-    calculate_breeding_success
-)
+import os
+import sys
+from pathlib import Path
+
+# Add the current directory to the path
+sys.path.append(str(Path(__file__).parent))
+
+from simulation import simulatePopulation
+from constants import DEFAULT_PARAMS, MIN_BREEDING_AGE, MAX_BREEDING_AGE, GESTATION_MONTHS, TERRITORY_SIZE_RANGES, DENSITY_THRESHOLD_RANGES
 
 __all__ = [
-    'simulate_population',
+    'simulatePopulation',
     'DEFAULT_PARAMS',
-    'calculate_seasonal_factor',
-    'calculate_density_impact',
-    'calculate_resource_impact',
-    'calculate_resource_availability',
-    'calculate_monthly_mortality',
-    'calculate_resource_limit',
-    'calculate_breeding_success'
+    'MIN_BREEDING_AGE',
+    'MAX_BREEDING_AGE',
+    'GESTATION_MONTHS',
+    'TERRITORY_SIZE_RANGES',
+    'DENSITY_THRESHOLD_RANGES'
 ]

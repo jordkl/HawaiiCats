@@ -1,26 +1,40 @@
 <!-- Colony Density -->
 <div class="space-y-4">
     <h4 class="text-base font-medium text-hawaii-blue">Colony Density</h4>
-
+    
     <!-- Territory Size -->
     <div>
         <div class="flex justify-between">
-            <label for="colonyTerritorySize" class="parameter-label">Territory Size (sq m)</label>
-            <span id="colonyTerritorySizeValue" class="parameter-value">1000</span>
+            <label for="territorySize" class="parameter-label">Territory Size</label>
+            <span id="territorySizeValue" class="parameter-value">1000</span>
         </div>
-        <input type="range" id="colonyTerritorySize" min="100" max="5000" value="1000" step="100"
-               oninput="document.getElementById('colonyTerritorySizeValue').textContent=this.value">
-        <p class="parameter-description">Size of the colony's territory in square meters</p>
+        <input type="range" id="territorySize" min="100" max="100000" value="1000" class="slider"
+               oninput="document.getElementById('territorySizeValue').textContent=this.value;
+                        document.getElementById('territorySizeCustom').value=this.value;">
+        <div class="flex justify-between">
+            <input type="number" id="territorySizeCustom" min="100" max="100000" value="1000" 
+                   class="w-24 p-1 border rounded text-right"
+                   oninput="document.getElementById('territorySize').value=this.value;
+                           document.getElementById('territorySizeValue').textContent=this.value;">
+            <span class="parameter-description">square meters</span>
+        </div>
     </div>
 
-    <!-- Density Impact Threshold -->
+    <!-- Density Threshold -->
     <div>
         <div class="flex justify-between">
-            <label for="densityImpactThreshold" class="parameter-label">Density Impact Threshold</label>
-            <span id="densityImpactThresholdValue" class="parameter-value">0.8</span>
+            <label for="densityThreshold" class="parameter-label">Environment Density</label>
+            <span id="densityThresholdValue" class="parameter-value">1.2</span>
         </div>
-        <input type="range" id="densityImpactThreshold" min="0.2" max="1" value="0.8" step="0.1"
-               oninput="document.getElementById('densityImpactThresholdValue').textContent=this.value">
-        <p class="parameter-description">Population density at which negative effects begin</p>
+        <input type="range" id="densityThreshold" min="0.2" max="5.0" step="0.1" value="1.2" class="slider"
+               oninput="document.getElementById('densityThresholdValue').textContent=this.value;
+                        document.getElementById('densityThresholdCustom').value=this.value;">
+        <div class="flex justify-between">
+            <input type="number" id="densityThresholdCustom" min="0.2" max="5.0" step="0.1" value="1.2" 
+                   class="w-24 p-1 border rounded text-right"
+                   oninput="document.getElementById('densityThreshold').value=this.value;
+                           document.getElementById('densityThresholdValue').textContent=this.value;">
+            <span class="parameter-description">cats per 100m²</span>
+        </div>
     </div>
 </div>

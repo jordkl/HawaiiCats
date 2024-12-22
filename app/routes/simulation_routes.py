@@ -1,20 +1,21 @@
 from flask import Blueprint, render_template, request, jsonify, send_file, current_app
-from app.tools.cat_simulation import DEFAULT_PARAMS, simulate_population
-from app.tools.cat_simulation.monte_carlo import run_monte_carlo
-from app.tools.cat_simulation.utils.logging_utils import log_debug
+from app.tools.cat_simulation import DEFAULT_PARAMS, simulatePopulation
+from app.tools.cat_simulation.utils.logging_utils import logDebug, logSimulationError, logCalculationResult
 import csv
 import io
 from datetime import datetime
 import os
 import traceback
 import json
-
-bp = Blueprint('simulation', __name__)
+import logging
 
 # Set up logging
+logger = logging.getLogger(__name__)
 LOGS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'logs')
 os.makedirs(LOGS_DIR, exist_ok=True)
 CALC_FILE = os.path.join(LOGS_DIR, 'calculations.csv')
+
+bp = Blueprint('simulation', __name__)
 
 @bp.route('/')
 def home():
@@ -31,261 +32,163 @@ def calculator():
                          show_clear_results_button=show_clear,
                          show_test_parameters_button=show_test)
 
-@bp.route("/calculate_population", methods=['POST', 'OPTIONS'])
-def calculate_population():
-    if request.method == 'OPTIONS':
-        response = bp.make_default_options_response()
-        response.headers['Access-Control-Allow-Methods'] = 'POST'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        return response
-
+@bp.route("/calculatePopulation", methods=['POST'])
+def calculatePopulation():
     try:
-        data = request.get_json(force=True)
-        log_debug('INFO', f'Received request data: {data}')
-        
+        data = request.get_json()
         if not data:
-            return jsonify({'error': 'No data received'}), 400
+            return jsonify({'error': 'No data provided'}), 400
 
-        # Parse input parameters
-        current_size = int(float(data.get('initialColonySize', 10)))
-        sterilized_count = int(float(data.get('alreadySterilized', 0)))
-        monthly_sterilization = float(data.get('monthlySterilizationRate', 0))
-        months = int(data.get('simulationLength', 12))
-        sterilization_cost = float(data.get('sterilizationCost', 50))
-        use_monte_carlo = bool(data.get('useMonteCarlo', False))
-        
-        log_debug('INFO', f'Parsed parameters: initialColonySize={current_size}, alreadySterilized={sterilized_count}, monthlySterilizationRate={monthly_sterilization}, simulationLength={months}, sterilizationCost={sterilization_cost}, useMonteCarlo={use_monte_carlo}')
-        
-        # Validate input
-        if current_size < 1:
-            return jsonify({'error': 'Current size must be at least 1'}), 400
-        
-        if sterilized_count > current_size:
-            return jsonify({'error': 'Sterilized count cannot exceed current size'}), 400
-        
-        if sterilized_count < 0:
-            return jsonify({'error': 'Sterilized count cannot be negative'}), 400
-        
-        if monthly_sterilization < 0:
-            return jsonify({'error': 'Monthly sterilization cannot be negative'}), 400
-        
-        if months < 1 or months > 120:
-            return jsonify({'error': 'Months must be between 1 and 120'}), 400
-        
-        if sterilization_cost > 1000:
-            return jsonify({'error': 'Sterilization cost cannot exceed $1000'}), 400
+        # Log received data with types
+        logDebug('DEBUG', f"Received data types: {json.dumps({k: str(type(v)) for k, v in data.items()}, indent=2)}")
+        logDebug('DEBUG', f"Received data values: {json.dumps(data, indent=2)}")
 
-        # Initialize params with defaults
-        params = DEFAULT_PARAMS.copy()
-
-        # Update with any custom params from the request
-        custom_params = data.get('params', {})
-        if isinstance(custom_params, dict):
-            # Convert all custom params to float
-            for key, value in custom_params.items():
-                try:
-                    custom_params[key] = float(value)
-                except (TypeError, ValueError):
-                    return jsonify({'error': f'Invalid value for parameter {key}'}), 400
-            params.update(custom_params)
-
-        # Add or update top-level parameters with type conversion
+        # Extract basic parameters
         try:
-            top_level_params = {
-                'territorySize': float(data.get('territorySize', 1000)),
-                'densityImpactThreshold': float(data.get('densityImpactThreshold', 1.2)),
-                'baseFoodCapacity': float(data.get('baseFoodCapacity', 0.9)),
-                'foodScalingFactor': float(data.get('foodScalingFactor', 0.8)),
-                'monthlyAbandonment': float(data.get('monthlyAbandonment', 2.0))
-            }
-            params.update(top_level_params)
-        except (TypeError, ValueError) as e:
-            return jsonify({'error': f'Invalid value for top-level parameter: {str(e)}'}), 400
+            # Get raw values first
+            raw_current_size = data.get('initialColonySize', '100')
+            raw_months = data.get('simulationLength', '12')
+            raw_sterilized = data.get('alreadySterilized', '0')
+            raw_monthly = data.get('monthlySterilizationRate', '0')
+            raw_abandonment = data.get('monthlyAbandonment', '0')
+            
+            # Log raw values and their types
+            logDebug('DEBUG', f"Raw values: current_size=({type(raw_current_size)}) {raw_current_size}, "
+                              f"months=({type(raw_months)}) {raw_months}, "
+                              f"sterilized=({type(raw_sterilized)}) {raw_sterilized}, "
+                              f"monthly=({type(raw_monthly)}) {raw_monthly}, "
+                              f"abandonment=({type(raw_abandonment)}) {raw_abandonment}")
+            
+            # Convert to strings, handling lists if necessary
+            current_size = str(raw_current_size[0] if isinstance(raw_current_size, list) else raw_current_size).strip()
+            months = str(raw_months[0] if isinstance(raw_months, list) else raw_months).strip()
+            sterilized_count = str(raw_sterilized[0] if isinstance(raw_sterilized, list) else raw_sterilized).strip()
+            monthly_sterilization = str(raw_monthly[0] if isinstance(raw_monthly, list) else raw_monthly).strip()
+            monthly_abandonment = str(raw_abandonment[0] if isinstance(raw_abandonment, list) else raw_abandonment).strip()
 
-        # Ensure all params are float
-        for key in params:
-            if not isinstance(params[key], (int, float)):
-                try:
-                    params[key] = float(params[key])
-                except (TypeError, ValueError):
-                    return jsonify({'error': f'Invalid value for parameter {key}'}), 400
+            # Log extracted and converted parameters
+            logDebug('DEBUG', f"Converted parameters: current_size={current_size}, months={months}, "
+                              f"sterilized_count={sterilized_count}, monthly_sterilization={monthly_sterilization}, "
+                              f"monthly_abandonment={monthly_abandonment}")
 
-        # Monte Carlo parameters with type conversion
-        if use_monte_carlo:
-            try:
-                log_debug('INFO', 'Setting up Monte Carlo simulation')
-                monte_carlo_runs = int(data.get('monteCarloRuns', 500))
-                variation_coefficient = min(float(data.get('variationCoefficient', 0.1)), 0.5)  # Cap at 0.5
-                
-                # Validate Monte Carlo parameters
-                if monte_carlo_runs < 1:
-                    return jsonify({'error': 'Number of simulations must be at least 1'}), 400
-                if variation_coefficient <= 0:
-                    return jsonify({'error': 'Variation coefficient must be positive'}), 400
-                
-                log_debug('INFO', f'Monte Carlo parameters: sims={monte_carlo_runs}, var_coef={variation_coefficient}')
-                
-                # Add Monte Carlo specific parameters to params
-                params.update({
-                    'numSimulations': monte_carlo_runs,
-                    'variationCoefficient': variation_coefficient,
-                    'kittenMaturityMonths': float(params.get('kittenMaturityMonths', 5)),
-                    'peakBreedingMonth': int(params.get('peakBreedingMonth', 4)),
-                    'densityImpactThreshold': float(params.get('densityImpactThreshold', 1.2)),
-                    'baseBreedingSuccess': float(params.get('baseBreedingSuccess', 0.95)),
-                    'ageBreedingFactor': float(params.get('ageBreedingFactor', 0.06)),
-                    'stressImpact': float(params.get('stressImpact', 0.12))
-                })
-            except (TypeError, ValueError) as e:
-                return jsonify({'error': f'Invalid Monte Carlo parameters: {str(e)}'}), 400
+        except Exception as e:
+            error_msg = f"Error extracting basic parameters: {str(e)}\nTraceback: {traceback.format_exc()}"
+            logSimulationError('parameter_extraction', error_msg)
+            return jsonify({'error': error_msg}), 400
 
+        # Get advanced parameters and convert to snake_case
+        params = data.get('params', {})
+        snake_case_params = {}
+        
+        # Parameter mapping with default values
+        param_mapping = {
+            'territorySize': ('territory_size', '1000'),
+            'densityImpactThreshold': ('density_impact_threshold', '1.2'),
+            'breedingRate': ('breeding_rate', '0.85'),
+            'kittensPerLitter': ('kittens_per_litter', '4'),
+            'littersPerYear': ('litters_per_year', '2.5'),
+            'kittenSurvivalRate': ('kitten_survival_rate', '0.7'),
+            'adultSurvivalRate': ('adult_survival_rate', '0.85'),
+            'femaleRatio': ('female_ratio', '0.5'),
+            'kittenMaturityMonths': ('kitten_maturity_months', '5'),
+            'peakBreedingMonth': ('peak_breeding_month', '4'),
+            'seasonalityStrength': ('seasonality_strength', '0.3'),
+            'baseFoodCapacity': ('base_food_capacity', '0.9'),
+            'foodScalingFactor': ('food_scaling_factor', '0.8'),
+            'environmentalStress': ('environmental_stress', '0.15'),
+            'resourceCompetition': ('resource_competition', '0.2'),
+            'resourceScarcityImpact': ('resource_scarcity_impact', '0.25'),
+            'densityStressRate': ('density_stress_rate', '0.15'),
+            'maxDensityImpact': ('max_density_impact', '0.5'),
+            'baseHabitatQuality': ('base_habitat_quality', '0.8'),
+            'urbanizationImpact': ('urbanization_impact', '0.2'),
+            'diseaseTransmissionRate': ('disease_transmission_rate', '0.1'),
+            'monthlyAbandonment': ('monthly_abandonment', '2.0')
+        }
+        
+        # Process each parameter
+        for camel_case, (snake_case, default) in param_mapping.items():
+            raw_value = params.get(camel_case, default)
+            # Handle list values
+            if isinstance(raw_value, list):
+                raw_value = raw_value[0] if raw_value else default
+            snake_case_params[snake_case] = str(raw_value).strip()
+
+        # Log converted parameters
+        logDebug('DEBUG', f"Converted advanced parameters: {json.dumps(snake_case_params, indent=2)}")
+
+        # Run simulation
         try:
-            if use_monte_carlo:
-                log_debug('INFO', 'Running Monte Carlo simulation')
-                try:
-                    result = run_monte_carlo(
-                        params=params,
-                        current_size=current_size,
-                        months=months,
-                        sterilized_count=sterilized_count,
-                        monthly_sterilization=monthly_sterilization,
-                        num_simulations=monte_carlo_runs
-                    )
-                except Exception as e:
-                    log_debug('ERROR', f'Monte Carlo simulation error: {str(e)}')
-                    return jsonify({'error': str(e)}), 500
-            else:
-                log_debug('INFO', 'Running regular simulation')
-                try:
-                    result = simulate_population(
-                        params=params,
-                        current_size=current_size,
-                        months=months,
-                        sterilized_count=sterilized_count,
-                        monthly_sterilization=monthly_sterilization,
-                        use_monte_carlo=use_monte_carlo
-                    )
-                except Exception as e:
-                    log_debug('ERROR', f'Simulation error: {str(e)}')
-                    return jsonify({'error': str(e)}), 500
+            result = simulatePopulation(
+                params=snake_case_params,
+                currentSize=current_size,
+                months=months,
+                sterilizedCount=sterilized_count,
+                monthlySterilization=monthly_sterilization,
+                monthlyAbandonment=monthly_abandonment
+            )
 
-            # Calculate costs
-            total_sterilizations = result['total_sterilizations']
-            total_cost = total_sterilizations * sterilization_cost
-
-            # Prepare data for logging
-            log_data = {
-                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'initialColonySize': current_size,
-                'alreadySterilized': sterilized_count,
-                'monthlySterilizationRate': monthly_sterilization,
-                'simulationLength': months,
-                'sterilizationCost': sterilization_cost,
-                'useMonteCarlo': use_monte_carlo,
-                'finalPopulation': result['final_population'],
-                'finalSterilized': result['final_sterilized'],
-                'totalSterilizations': total_sterilizations,
-                'totalCost': total_cost,
-                'populationGrowth': result['population_growth'],
-                'monthlyPopulations': ','.join(map(str, result['monthly_populations'])),
-                'monthlySterilized': ','.join(map(str, result['monthly_sterilized'])),
-                'params': json.dumps(params)
-            }
-
-            # Add Monte Carlo specific results if applicable
-            if use_monte_carlo:
-                log_data.update({
-                    'numSimulations': params['numSimulations'],
-                    'variationCoefficient': params['variationCoefficient'],
-                    'confidenceIntervalLower': result.get('confidence_interval_lower', ''),
-                    'confidenceIntervalUpper': result.get('confidence_interval_upper', ''),
-                    'standardDeviation': result.get('standard_deviation', '')
-                })
+            if result is None:
+                raise ValueError("Simulation failed to produce results")
 
             # Log the calculation
-            try:
-                log_debug('INFO', f"Writing calculation data to log file: {CALC_FILE}")
-                log_debug('INFO', f"Current working directory: {os.getcwd()}")
-                log_debug('INFO', f"Log entry: {log_data}")
-                
-                # Create logs directory if it doesn't exist
-                os.makedirs(os.path.dirname(CALC_FILE), exist_ok=True)
+            logCalculationResult(snake_case_params, result)
 
-                # Check if file exists and write header if it doesn't
-                file_exists = os.path.isfile(CALC_FILE)
-                with open(CALC_FILE, 'a', newline='') as f:
-                    writer = csv.DictWriter(f, fieldnames=log_data.keys())
-                    if not file_exists:
-                        writer.writeheader()
-                    writer.writerow(log_data)
-                
-                log_debug('INFO', "Successfully wrote calculation data to log file")
-            except Exception as e:
-                log_debug('ERROR', f"Error writing to log file: {str(e)}")
-                log_debug('ERROR', traceback.format_exc())
-                # Continue execution even if logging fails
-                pass
+            # Extract monthly data
+            monthly_data = result['monthlyData']
+            totalPopulation = [month['total'] for month in monthly_data]
+            sterilizedPopulation = [month['sterilized'] for month in monthly_data]
+            unsterilizedPopulation = [month['unsterilized'] for month in monthly_data]
 
-            # Prepare response
+            # Calculate population change
+            initial_population = monthly_data[0]['total'] if monthly_data else 0
+            final_population = monthly_data[-1]['total'] if monthly_data else 0
+            population_change = final_population - initial_population
+
+            # Prepare response data
             response_data = {
                 'success': True,
                 'result': {
-                    'finalPopulation': result['final_population'],
-                    'finalSterilized': result['final_sterilized'],
-                    'totalSterilizations': total_sterilizations,
-                    'totalCost': total_cost,
-                    'populationGrowth': result['population_growth'],
-                    'monthlyPopulations': result['monthly_populations'],
-                    'monthlySterilized': result['monthly_sterilized'],
-                    'monthlyKittens': result['monthly_kittens'],
-                    'monthlyReproductive': result['monthly_reproductive'],
-                    'totalDeaths': result['total_deaths'],
-                    'kittenDeaths': result['kitten_deaths'],
-                    'adultDeaths': result['adult_deaths'],
-                    'naturalDeaths': result['natural_deaths'],
-                    'urbanDeaths': result['urban_deaths'],
-                    'diseaseDeaths': result['disease_deaths'],
-                    'monthlyDeathsKittens': result['monthly_deaths_kittens'],
-                    'monthlyDeathsAdults': result['monthly_deaths_adults'],
-                    'monthlyDeathsNatural': result['monthly_deaths_natural'],
-                    'monthlyDeathsUrban': result['monthly_deaths_urban'],
-                    'monthlyDeathsDisease': result['monthly_deaths_disease'],
-                    'monthlyDeathsOther': result['monthly_deaths_other']
-                }
+                    'finalPopulation': result['finalPopulation'],
+                    'populationChange': population_change,
+                    'sterilizationRate': result.get('sterilizationRate', 0),
+                    'totalCost': result.get('totalCost', 0),
+                    'totalDeaths': result.get('totalDeaths', 0),
+                    'kittenDeaths': result.get('kittenDeaths', 0),
+                    'adultDeaths': result.get('adultDeaths', 0),
+                    'mortalityRate': result.get('mortalityRate', 0),
+                    'naturalDeaths': result.get('naturalDeaths', 0),
+                    'urbanDeaths': result.get('urbanDeaths', 0),
+                    'diseaseDeaths': result.get('diseaseDeaths', 0),
+                    'months': list(range(int(months) + 1)),
+                    'totalPopulation': totalPopulation,
+                    'sterilizedPopulation': sterilizedPopulation,
+                    'unsterilizedPopulation': unsterilizedPopulation
+                },
+                'message': 'Calculation completed successfully'
             }
-
-            # Add Monte Carlo specific results if applicable
-            if use_monte_carlo:
-                response_data['result'].update({
-                    'confidenceInterval': [
-                        result['confidence_interval'][0],
-                        result['confidence_interval'][1]
-                    ],
-                    'standardDeviation': result['standard_deviation'],
-                    'allResults': result.get('all_results', None)
-                })
 
             return jsonify(response_data)
 
         except Exception as e:
-            log_debug('ERROR', f'Simulation error: {str(e)}')
+            logSimulationError('unknown', str(e))
             return jsonify({'error': str(e)}), 500
 
     except Exception as e:
-        log_debug('ERROR', f'Unexpected error: {str(e)}')
+        logSimulationError('unknown', str(e))
         return jsonify({'error': str(e)}), 500
 
-@bp.route('/run_parameter_tests', methods=['POST'])
-def run_parameter_tests():
+@bp.route('/runParameterTests', methods=['POST'])
+def runParameterTests():
     try:
         data = request.get_json()
-        results = run_monte_carlo(data)
+        results = runParameterTests(data)
         return jsonify(results)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@bp.route('/download_logs', methods=['GET'])
-def download_logs():
+@bp.route('/downloadLogs', methods=['GET'])
+def downloadLogs():
     """Download the calculation logs as a CSV file."""
     try:
         if not os.path.exists(CALC_FILE):
@@ -302,11 +205,11 @@ def download_logs():
         return response
         
     except Exception as e:
-        log_debug('ERROR', f"Error downloading logs: {str(e)}")
+        logger.error(f"Error downloading logs: {str(e)}")
         return jsonify({'error': 'The log download feature is currently unavailable. Please try again later.'}), 500
 
-@bp.route('/flag_scenario', methods=['POST', 'OPTIONS'])
-def flag_scenario():
+@bp.route('/flagScenario', methods=['POST', 'OPTIONS'])
+def flagScenario():
     """Save a flagged scenario to a dedicated file with timestamp."""
     if request.method == 'OPTIONS':
         response = bp.make_default_options_response()
@@ -329,6 +232,102 @@ def flag_scenario():
         # Add metadata
         data['timestamp'] = timestamp
         data['ipAddress'] = request.remote_addr
+        data['userAgent'] = request.headers.get('User-Agent', '')
+        data['environment'] = current_app.config.get('ENV', 'production')
+        data['calculatorVersion'] = data.get('version', '1.0.0')
+        
+        # Handle basic input parameters
+        if 'inputs' in data:
+            inputs = data['inputs']
+            # Map frontend parameter names to backend names
+            param_map = {
+                'currentSize': 'initialColonySize',
+                'sterilizedCount': 'alreadySterilized',
+                'monthlysterilization': 'monthlySterilizationRate',
+                'months': 'simulationLength'
+            }
+            # Convert empty strings to default values for basic parameters
+            basic_params = {
+                'currentSize': '10',
+                'sterilizedCount': '0',
+                'monthlysterilization': '1',
+                'months': '12'
+            }
+            for frontend_key, default in basic_params.items():
+                if frontend_key in inputs:
+                    if not inputs[frontend_key] or inputs[frontend_key] == '':
+                        inputs[frontend_key] = default
+                    # If we have simulation results, prefer those values
+                    backend_key = param_map.get(frontend_key)
+                    if backend_key and 'simulationResults' in data:
+                        sim_value = data['simulationResults'].get(backend_key)
+                        if sim_value is not None and str(sim_value).strip():
+                            inputs[frontend_key] = str(sim_value)
+        
+        # Ensure simulation results are properly captured
+        if 'results' in data:
+            results = data['results']
+            # Convert empty strings to None for better JSON representation
+            for key in results:
+                if isinstance(results[key], str) and not results[key]:
+                    results[key] = None
+                elif isinstance(results[key], list) and not results[key]:
+                    results[key] = []
+            
+            # Try to get simulation data from window.simulationResults if available
+            if 'simulationResults' in data:
+                sim_results = data['simulationResults']
+                if isinstance(sim_results, dict):
+                    # Population arrays from monthly data
+                    monthly_data = sim_results.get('monthlyData', [])
+                    results['monthlyData'] = [
+                        {
+                            'month': month['month'],
+                            'total': month['total'],
+                            'sterilized': month['sterilized'],
+                            'unsterilized': month['unsterilized'],
+                            'births': month['births'],
+                            'natural_deaths': month['natural_deaths'],
+                            'disease_deaths': month['disease_deaths'],
+                            'urban_deaths': month['urban_deaths'],
+                            'kitten_deaths': month['kitten_deaths'],
+                            'adult_deaths': month['adult_deaths'],
+                            'density_impact': month['density_impact'],
+                            'resource_factor': month['resource_factor'],
+                            'carrying_capacity': month['carrying_capacity']
+                        }
+                        for month in monthly_data
+                    ] if monthly_data else []
+                    
+                    # Death statistics
+                    results['naturalDeaths'] = int(sim_results.get('naturalDeaths', 0))
+                    results['diseaseDeaths'] = int(sim_results.get('diseaseDeaths', 0))
+                    results['urbanDeaths'] = int(sim_results.get('urbanDeaths', 0))
+                    results['densityDeaths'] = int(sim_results.get('densityDeaths', 0))
+            
+            # Add any missing fields with appropriate default values
+            expected_fields = {
+                'finalPopulation': None,
+                'populationChange': 0,
+                'sterilizationRate': None,
+                'totalCost': None,
+                'totalDeaths': None,
+                'kittenDeaths': None,
+                'adultDeaths': None,
+                'mortalityRate': None,
+                'monthlyData': [],
+                'monthlyDeaths': [],
+                'monthlyBirths': [],
+                'naturalDeaths': 0,
+                'diseaseDeaths': 0,
+                'urbanDeaths': 0,
+                'densityDeaths': 0,
+                'sterilizedPopulation': [],
+                'unsterilizedPopulation': []
+            }
+            for field, default_value in expected_fields.items():
+                if field not in results:
+                    results[field] = default_value
         
         # Write the data to a JSON file
         with open(filepath, 'w') as f:
@@ -341,14 +340,14 @@ def flag_scenario():
         })
 
     except Exception as e:
-        log_debug('ERROR', f'Error in flag_scenario: {str(e)}\n{traceback.format_exc()}')
+        logger.error(f'Error in flagScenario: {str(e)}\n{traceback.format_exc()}')
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
 
-@bp.route('/clear_logs', methods=['POST'])
-def clear_logs():
+@bp.route('/clearLogs', methods=['POST'])
+def clearLogs():
     try:
         if os.path.exists(CALC_FILE):
             # Keep the header row and delete the rest
@@ -363,11 +362,11 @@ def clear_logs():
             return jsonify({'success': True, 'message': 'Logs cleared successfully'})
         return jsonify({'success': False, 'message': 'No logs found to clear'})
     except Exception as e:
-        log_debug('ERROR', f"Error clearing logs: {str(e)}")
+        logger.error(f"Error clearing logs: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@bp.route("/save_calculation", methods=['POST', 'OPTIONS'])
-def save_calculation():
+@bp.route("/saveCalculation", methods=['POST', 'OPTIONS'])
+def saveCalculation():
     if request.method == 'OPTIONS':
         response = bp.make_default_options_response()
         response.headers['Access-Control-Allow-Methods'] = 'POST'
@@ -396,5 +395,5 @@ def save_calculation():
         return jsonify({'message': 'Results saved successfully'})
 
     except Exception as e:
-        log_debug('ERROR', f'Error saving calculation: {str(e)}\n{traceback.format_exc()}')
+        logger.error(f'Error saving calculation: {str(e)}\n{traceback.format_exc()}')
         return jsonify({'error': str(e)}), 500

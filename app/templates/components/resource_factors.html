@@ -6,9 +6,9 @@
     <div>
         <div class="flex justify-between">
             <label for="baseFoodCapacity" class="parameter-label">Base Food Capacity</label>
-            <span id="baseFoodCapacityValue" class="parameter-value">1.0</span>
+            <span id="baseFoodCapacityValue" class="parameter-value">0.95</span>
         </div>
-        <input type="range" id="baseFoodCapacity" min="0" max="2" value="1.0" step="0.1"
+        <input type="range" id="baseFoodCapacity" min="0" max="2" value="0.95" step="0.05"
                oninput="document.getElementById('baseFoodCapacityValue').textContent=this.value">
         <p class="parameter-description">Base food availability per cat</p>
     </div>
@@ -28,9 +28,9 @@
     <div>
         <div class="flex justify-between">
             <label for="caretakerSupport" class="parameter-label">Caretaker Support</label>
-            <span id="caretakerSupportValue" class="parameter-value">0.8</span>
+            <span id="caretakerSupportValue" class="parameter-value">1.0</span>
         </div>
-        <input type="range" id="caretakerSupport" min="0" max="1" value="0.8" step="0.1"
+        <input type="range" id="caretakerSupport" min="0" max="1" value="1.0" step="0.1"
                oninput="document.getElementById('caretakerSupportValue').textContent=this.value">
         <p class="parameter-description">Level of caretaker support and feeding</p>
     </div>

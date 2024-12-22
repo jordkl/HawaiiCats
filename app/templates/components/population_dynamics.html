@@ -21,9 +21,9 @@
         <div class="mb-4">
             <div class="flex justify-between">
                 <label for="kittenSurvivalRate" class="parameter-label">Kitten Survival Rate</label>
-                <span id="kittenSurvivalRateValue" class="parameter-value">0.5</span>
+                <span id="kittenSurvivalRateValue" class="parameter-value">0.8</span>
             </div>
-            <input type="range" id="kittenSurvivalRate" min="0.1" max="0.9" value="0.5" step="0.05"
+            <input type="range" id="kittenSurvivalRate" min="0.1" max="0.9" value="0.8" step="0.05"
                    oninput="document.getElementById('kittenSurvivalRateValue').textContent=this.value">
             <p class="parameter-description">Annual survival rate for kittens</p>
         </div>
@@ -32,9 +32,9 @@
         <div class="mb-4">
             <div class="flex justify-between">
                 <label for="adultSurvivalRate" class="parameter-label">Adult Survival Rate</label>
-                <span id="adultSurvivalRateValue" class="parameter-value">0.75</span>
+                <span id="adultSurvivalRateValue" class="parameter-value">0.92</span>
             </div>
-            <input type="range" id="adultSurvivalRate" min="0.2" max="0.95" value="0.75" step="0.05"
+            <input type="range" id="adultSurvivalRate" min="0.2" max="0.95" value="0.92" step="0.05"
                    oninput="document.getElementById('adultSurvivalRateValue').textContent=this.value">
             <p class="parameter-description">Annual survival rate for adults</p>
         </div>
@@ -45,7 +45,7 @@
         <h5 class="text-sm font-medium text-gray-700 mb-4">Breeding Parameters</h5>
         
         <!-- Breeding Rate -->
-        <div>
+        <div class="mb-4">
             <div class="flex justify-between">
                 <label for="breedingRate" class="parameter-label">Breeding Rate</label>
                 <span id="breedingRateValue" class="parameter-value">0.85</span>
@@ -56,7 +56,7 @@
         </div>
 
         <!-- Kittens Per Litter -->
-        <div>
+        <div class="mb-4">
             <div class="flex justify-between">
                 <label for="kittensPerLitter" class="parameter-label">Kittens Per Litter</label>
                 <span id="kittensPerLitterValue" class="parameter-value">4</span>
@@ -67,7 +67,7 @@
         </div>
 
         <!-- Litters Per Year -->
-        <div>
+        <div class="mb-4">
             <div class="flex justify-between">
                 <label for="littersPerYear" class="parameter-label">Litters Per Year</label>
                 <span id="littersPerYearValue" class="parameter-value">2.5</span>
@@ -75,6 +75,28 @@
             <input type="range" id="littersPerYear" min="1" max="4" value="2.5" step="0.5"
                    oninput="document.getElementById('littersPerYearValue').textContent=this.value">
             <p class="parameter-description">Average number of litters per year</p>
+        </div>
+
+        <!-- Female Ratio -->
+        <div class="mb-4">
+            <div class="flex justify-between">
+                <label for="femaleRatio" class="parameter-label">Female Ratio</label>
+                <span id="femaleRatioValue" class="parameter-value">0.5</span>
+            </div>
+            <input type="range" id="femaleRatio" min="0.3" max="0.7" value="0.5" step="0.05"
+                   oninput="document.getElementById('femaleRatioValue').textContent=this.value">
+            <p class="parameter-description">Proportion of females in the population</p>
+        </div>
+
+        <!-- Kitten Maturity -->
+        <div class="mb-4">
+            <div class="flex justify-between">
+                <label for="kittenMaturityMonths" class="parameter-label">Kitten Maturity (Months)</label>
+                <span id="kittenMaturityMonthsValue" class="parameter-value">5</span>
+            </div>
+            <input type="range" id="kittenMaturityMonths" min="4" max="8" value="5" step="1"
+                   oninput="document.getElementById('kittenMaturityMonthsValue').textContent=this.value">
+            <p class="parameter-description">Age at which kittens reach maturity</p>
         </div>
     </div>
 </div>
