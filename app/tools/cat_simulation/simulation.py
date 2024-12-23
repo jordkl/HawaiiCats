@@ -31,6 +31,35 @@ from constants import DEFAULT_PARAMS, MIN_BREEDING_AGE, MAX_BREEDING_AGE, GESTAT
 
 logger = logging.getLogger('debug')
 
+class CatPopulationSimulation:
+    """Class to simulate cat population dynamics."""
+    
+    def __init__(self, **params):
+        """Initialize simulation with parameters."""
+        self.params = DEFAULT_PARAMS.copy()
+        self.params.update(params)
+        
+    def run(self, months=12, currentSize=100, sterilizedCount=0, monthlySterilization=0, monthlyAbandonment=0):
+        """Run the simulation with given parameters."""
+        return simulatePopulation(
+            params=self.params,
+            currentSize=currentSize,
+            months=months,
+            sterilizedCount=sterilizedCount,
+            monthlySterilization=monthlySterilization,
+            monthlyAbandonment=monthlyAbandonment
+        )
+
+    def __setattr__(self, name, value):
+        """Override setattr to update params dict."""
+        if name == 'params':
+            super().__setattr__(name, value)
+        else:
+            if hasattr(self, 'params'):
+                self.params[name] = value
+            else:
+                super().__setattr__(name, value)
+
 def runSimulationWorker(params: Dict, currentSize: int, months: int, 
                          sterilizedCount: int, monthlySterilization: int, monthlyAbandonment: int) -> Dict:
     """Worker function to run a single simulation."""
@@ -384,7 +413,7 @@ def simulatePopulation(params, currentSize, months=12, sterilizedCount=0, monthl
                     monthly_food_cost = 0
                 else:
                     # Calculate food cost multiplier based on resource factors
-                    base_food_capacity = float(params.get('base_food_capacity', '0.95'))
+                    base_food_capacity = float(params.get('baseFoodCapacity', '0.95'))
                     food_scaling = float(params.get('food_scaling_factor', '0.9'))
                     feeding_consistency = float(params.get('feeding_consistency', '0.9'))
                     

@@ -16,23 +16,106 @@ from test_parameter_impacts import TestEnvironmentPresets
 
 class TestCatSimulation(TestEnvironmentPresets):
     def setUp(self):
-        """Set up test parameters."""
-        self.default_params = {
-            'territorySize': 1000,
-            'densityThreshold': 0.8,
-            'baseFoodCapacity': 0.7,
-            'waterAvailability': 0.7,
-            'shelterQuality': 0.7,
-            'adult_survival_rate': 0.92,
-            'kitten_survival_rate': 0.85,
-            'disease_transmission_rate': 0.1,
-            'urbanization_impact': 0.1,
-            'environmental_stress': 0.1
+        """Set up test fixtures before each test method."""
+        # Initialize base parameters
+        self.base_params = {
+            'baseFoodCapacity': 0.5,
+            'waterAvailability': 0.6,
+            'shelterQuality': 0.5,
+            'caretakerSupport': 0.5,
+            'feedingConsistency': 0.6,
+            'territorySize': 3500,
+            'densityThreshold': 1.5,
+            'urbanization_impact': 0.3,
+            'disease_transmission_rate': 0.2,
+            'environmental_stress': 0.3
         }
-        self.num_runs = 10  # Number of runs for statistical significance
-        self.months = 60   # Increased to 60 months to see long-term patterns
-        self.initial_size = 10  # Start with smaller population
-        self.tolerance = 0.2  # Increased tolerance for natural variation
+        
+        # Set number of iterations for tests
+        self.num_iterations = 100
+        
+        # Set initial population and simulation months
+        self.initial_population = 100
+        self.simulation_months = 12
+
+        # Initialize environment presets
+        self.environment_presets = {
+            'urban': {
+                'params': {
+                    'baseFoodCapacity': 1.0,
+                    'waterAvailability': 1.0,
+                    'shelterQuality': 0.9,
+                    'caretakerSupport': 0.9,
+                    'feedingConsistency': 1.0,
+                    'territorySize': 2000,
+                    'densityThreshold': 3.0,
+                    'urbanization_impact': 0.4,
+                    'disease_transmission_rate': 0.3,
+                    'environmental_stress': 0.4,
+                    'resourceMultiplier': 2.0,
+                    'carryingCapacityBase': 300
+                },
+                'expected': {
+                    'resource_range': (0.6, 0.9),
+                    'carrying_capacity_range': (250, 350),
+                    'mortality_types': {
+                        'urban': (0.3, 0.5),
+                        'disease': (0.2, 0.4),
+                        'natural': (0.2, 0.4)
+                    }
+                }
+            },
+            'suburban': {
+                'params': {
+                    'baseFoodCapacity': 0.8,
+                    'waterAvailability': 0.8,
+                    'shelterQuality': 0.7,
+                    'caretakerSupport': 0.7,
+                    'feedingConsistency': 0.8,
+                    'territorySize': 4000,
+                    'densityThreshold': 2.0,
+                    'urbanization_impact': 0.3,
+                    'disease_transmission_rate': 0.2,
+                    'environmental_stress': 0.3,
+                    'resourceMultiplier': 1.5,
+                    'carryingCapacityBase': 200
+                },
+                'expected': {
+                    'resource_range': (0.4, 0.7),
+                    'carrying_capacity_range': (150, 250),
+                    'mortality_types': {
+                        'urban': (0.2, 0.4),
+                        'disease': (0.15, 0.35),
+                        'natural': (0.3, 0.5)
+                    }
+                }
+            },
+            'rural': {
+                'params': {
+                    'baseFoodCapacity': 0.6,
+                    'waterAvailability': 0.6,
+                    'shelterQuality': 0.5,
+                    'caretakerSupport': 0.5,
+                    'feedingConsistency': 0.6,
+                    'territorySize': 8000,
+                    'densityThreshold': 1.0,
+                    'urbanization_impact': 0.2,
+                    'disease_transmission_rate': 0.15,
+                    'environmental_stress': 0.25,
+                    'resourceMultiplier': 1.0,
+                    'carryingCapacityBase': 100
+                },
+                'expected': {
+                    'resource_range': (0.2, 0.5),
+                    'carrying_capacity_range': (50, 150),
+                    'mortality_types': {
+                        'urban': (0.1, 0.3),
+                        'disease': (0.1, 0.3),
+                        'natural': (0.4, 0.6)
+                    }
+                }
+            }
+        }
         
         # Define parameter ranges
         self.param_ranges = {
@@ -117,8 +200,8 @@ class TestCatSimulation(TestEnvironmentPresets):
         for _ in range(runs):
             result = simulatePopulation(
                 params,
-                self.initial_size,
-                self.months
+                self.initial_population,
+                self.simulation_months
             )
             results.append(result)
         return results
@@ -173,9 +256,9 @@ class TestCatSimulation(TestEnvironmentPresets):
             'parameters': params,
             'statistics': stats,
             'test_config': {
-                'num_runs': self.num_runs,
-                'months': self.months,
-                'initial_size': self.initial_size
+                'num_runs': self.num_iterations,
+                'months': self.simulation_months,
+                'initial_size': self.initial_population
             }
         }
         
@@ -271,7 +354,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         }
         
         for scenario_name, params in scenarios.items():
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(scenario_name, params, stats)
 
@@ -283,21 +366,21 @@ class TestCatSimulation(TestEnvironmentPresets):
             # Test minimum value
             test_params = base_params.copy()
             test_params[param_name] = min_val
-            results = self.run_simulation_with_params(test_params, self.num_runs)
+            results = self.run_simulation_with_params(test_params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'{param_name}_minimum', test_params, stats)
             
             # Test maximum value
             test_params = base_params.copy()
             test_params[param_name] = max_val
-            results = self.run_simulation_with_params(test_params, self.num_runs)
+            results = self.run_simulation_with_params(test_params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'{param_name}_maximum', test_params, stats)
             
             # Test middle value
             test_params = base_params.copy()
             test_params[param_name] = (min_val + max_val) / 2
-            results = self.run_simulation_with_params(test_params, self.num_runs)
+            results = self.run_simulation_with_params(test_params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'{param_name}_middle', test_params, stats)
 
@@ -314,7 +397,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for risk in [0.0, 0.2, 0.4]:  # Increased risk levels
             params = base_params.copy()
             params['urbanization_impact'] = risk
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             
             # Verify urban risk causes deaths
@@ -326,7 +409,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for risk in [0.0, 0.2, 0.4]:  # Increased risk levels
             params = base_params.copy()
             params['disease_transmission_rate'] = risk
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             
             # Verify disease risk causes deaths
@@ -338,7 +421,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for factor in [0.0, 0.25, 0.5]:
             params = base_params.copy()
             params['density_mortality_factor'] = factor
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             
             # Verify density mortality causes deaths in dense populations
@@ -354,7 +437,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for level in [0.5, 0.75, 1.0]:
             params = base_params.copy()
             params['water_availability'] = level
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'water_availability_{level}', params, stats)
         
@@ -362,7 +445,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for quality in [0.5, 0.75, 1.0]:
             params = base_params.copy()
             params['shelter_quality'] = quality
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'shelter_quality_{quality}', params, stats)
         
@@ -370,7 +453,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for support in [0.2, 0.5, 1.0]:
             params = base_params.copy()
             params['caretaker_support'] = support
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'caretaker_support_{support}', params, stats)
         
@@ -378,7 +461,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for consistency in [0.5, 0.75, 1.0]:
             params = base_params.copy()
             params['feeding_consistency'] = consistency
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'feeding_consistency_{consistency}', params, stats)
 
@@ -390,7 +473,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for rate in [0.7, 0.8, 0.9]:
             params = base_params.copy()
             params['kitten_survival_rate'] = rate
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'kitten_survival_{rate}', params, stats)
             
@@ -403,7 +486,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for rate in [0.8, 0.9, 0.95]:
             params = base_params.copy()
             params['adult_survival_rate'] = rate
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'adult_survival_{rate}', params, stats)
             
@@ -428,7 +511,7 @@ class TestCatSimulation(TestEnvironmentPresets):
             params = base_params.copy()
             params['breeding_rate'] = rate
             params['sterilization_rate'] = 0  # No sterilization to see breeding effects
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'breeding_rate_{rate}', params, stats)
             
@@ -442,7 +525,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for kittens in [2.0, 4.0, 6.0]:
             params = base_params.copy()
             params['kittens_per_litter'] = kittens
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'kittens_per_litter_{kittens}', params, stats)
         
@@ -450,7 +533,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for litters in [1.0, 2.0, 3.0]:
             params = base_params.copy()
             params['litters_per_year'] = litters
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'litters_per_year_{litters}', params, stats)
         
@@ -458,7 +541,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for amplitude in [0.1, 0.3, 0.5]:
             params = base_params.copy()
             params['seasonal_breeding_amplitude'] = amplitude
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'seasonal_amplitude_{amplitude}', params, stats)
             
@@ -527,7 +610,7 @@ class TestCatSimulation(TestEnvironmentPresets):
                 spring_growth.append(growth)
             elif month == 11 or month <= 1:  # Dec-Feb
                 winter_growth.append(growth)
-        
+                
         # Spring should show higher average population growth
         spring_avg = sum(spring_growth) / len(spring_growth) if spring_growth else 0
         winter_avg = sum(winter_growth) / len(winter_growth) if winter_growth else 0
@@ -809,7 +892,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for risk in risk_levels:
             params = base_params.copy()
             params['urbanization_impact'] = risk  # Changed from 'urban_risk'
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'urban_risk_{risk}', params, stats)
             
@@ -906,7 +989,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for threshold in thresholds:
             params = base_params.copy()
             params['mortality_threshold'] = threshold
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'mortality_threshold_{threshold}', params, stats)
             
@@ -930,7 +1013,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for level in levels:
             params = base_params.copy()
             params['water_availability'] = level
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'water_availability_{level}', params, stats)
             
@@ -954,7 +1037,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for quality in qualities:
             params = base_params.copy()
             params['shelter_quality'] = quality
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'shelter_quality_{quality}', params, stats)
             
@@ -978,7 +1061,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for level in support_levels:
             params = base_params.copy()
             params['caretaker_support'] = level
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'caretaker_support_{level}', params, stats)
             
@@ -1002,7 +1085,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for consistency in consistencies:
             params = base_params.copy()
             params['feeding_consistency'] = consistency
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'feeding_consistency_{consistency}', params, stats)
             
@@ -1026,7 +1109,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for size in sizes:
             params = base_params.copy()
             params['territory_size'] = size
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'territory_size_{size}', params, stats)
             
@@ -1050,7 +1133,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for capacity in capacities:
             params = base_params.copy()
             params['base_food_capacity'] = capacity
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'base_food_capacity_{capacity}', params, stats)
             
@@ -1074,7 +1157,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for factor in factors:
             params = base_params.copy()
             params['food_scaling_factor'] = factor
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'food_scaling_factor_{factor}', params, stats)
             
@@ -1099,7 +1182,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for rate in rates:
             params = base_params.copy()
             params['kitten_survival_rate'] = rate
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'kitten_survival_{rate}', params, stats)
             
@@ -1123,7 +1206,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for rate in rates:
             params = base_params.copy()
             params['adult_survival_rate'] = rate
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'adult_survival_{rate}', params, stats)
             
@@ -1148,7 +1231,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for factor in factors:
             params = base_params.copy()
             params['survival_density_factor'] = factor
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'survival_density_{factor}', params, stats)
             
@@ -1174,7 +1257,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for rate in rates:
             params = base_params.copy()
             params['breeding_rate'] = rate
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'breeding_rate_{rate}', params, stats)
             
@@ -1200,7 +1283,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for size in litter_sizes:
             params = base_params.copy()
             params['kittens_per_litter'] = size
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'kittens_per_litter_{size}', params, stats)
             
@@ -1226,7 +1309,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for num_litters in litters:
             params = base_params.copy()
             params['litters_per_year'] = num_litters
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             self.log_results(f'litters_per_year_{num_litters}', params, stats)
             
@@ -1251,7 +1334,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for amplitude in amplitudes:
             params = base_params.copy()
             params['seasonal_breeding_amplitude'] = amplitude
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             monthly_stats = stats.get('monthly_stats', {})
             
@@ -1281,7 +1364,7 @@ class TestCatSimulation(TestEnvironmentPresets):
         for month in peak_months:
             params = base_params.copy()
             params['peak_breeding_month'] = month
-            results = self.run_simulation_with_params(params, self.num_runs)
+            results = self.run_simulation_with_params(params, self.num_iterations)
             stats = self.calculate_statistics(results)
             monthly_stats = stats.get('monthly_stats', {})
             
@@ -1550,7 +1633,7 @@ class TestCatSimulation(TestEnvironmentPresets):
             base_params,
             currentSize=100,
             months=12,
-            sterilizedCount=100,
+            sterilizedCount=100,  # All cats sterilized
             monthlySterilization=0
         )
 
