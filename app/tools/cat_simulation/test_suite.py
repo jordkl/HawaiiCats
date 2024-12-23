@@ -12,8 +12,9 @@ from simulation import simulatePopulation
 # Add the parent directory to the path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from cat_simulation.constants import DEFAULT_PARAMS
+from test_parameter_impacts import TestEnvironmentPresets
 
-class TestCatSimulation(unittest.TestCase):
+class TestCatSimulation(TestEnvironmentPresets):
     def setUp(self):
         """Set up test parameters."""
         self.default_params = {
@@ -1732,6 +1733,152 @@ class TestCatSimulation(unittest.TestCase):
                 month['sterilized'],
                 "Sterilized count should match total population"
             )
+
+    def test_environment_presets(self):
+        """Test that each environment preset produces expected outcomes."""
+        
+        # Test configurations for each environment
+        environment_tests = {
+            'forest': {
+                'params': {
+                    'territory': 8000,
+                    'density': 0.5,
+                    'baseFoodCapacity': 0.6,
+                    'foodScalingFactor': 0.5,
+                    'environmentalStress': 0.2,
+                    'resourceCompetition': 0.4,
+                    'resourceScarcityImpact': 0.4,
+                    'baseHabitatQuality': 0.9,
+                    'urbanizationImpact': 0.1,
+                    'diseaseTransmissionRate': 0.4,
+                    'monthlyAbandonment': 1
+                },
+                'expectations': {
+                    'mortality_distribution': {
+                        'urban_deaths': (0, 0.1),     # Very low urban deaths
+                        'disease_deaths': (0.3, 0.5),  # High disease deaths from wildlife
+                        'natural_deaths': (0.2, 0.4)   # Moderate natural deaths
+                    },
+                    'reproduction_rate': (0.7, 0.9),   # Good reproduction due to space
+                    'food_availability': (0.5, 0.7),   # Moderate natural food sources
+                    'population_density': (0.3, 0.6)   # Low density due to large territory
+                }
+            },
+            'street': {
+                'params': {
+                    'territory': 1000,
+                    'density': 1.5,
+                    'baseFoodCapacity': 0.3,
+                    'foodScalingFactor': 0.3,
+                    'environmentalStress': 0.5,
+                    'resourceCompetition': 0.6,
+                    'resourceScarcityImpact': 0.6,
+                    'baseHabitatQuality': 0.3,
+                    'urbanizationImpact': 0.8,
+                    'diseaseTransmissionRate': 0.4,
+                    'monthlyAbandonment': 4
+                },
+                'expectations': {
+                    'mortality_distribution': {
+                        'urban_deaths': (0.4, 0.6),    # High traffic deaths
+                        'disease_deaths': (0.2, 0.4),   # Moderate-high disease
+                        'natural_deaths': (0.2, 0.3)    # Moderate natural deaths
+                    },
+                    'reproduction_rate': (0.4, 0.6),    # Lower reproduction due to stress
+                    'food_availability': (0.2, 0.4),    # Poor food sources
+                    'population_density': (1.2, 1.8)    # High density in small area
+                }
+            },
+            'residential': {
+                'params': {
+                    'territory': 2000,
+                    'density': 1.2,
+                    'baseFoodCapacity': 0.8,
+                    'foodScalingFactor': 0.7,
+                    'environmentalStress': 0.2,
+                    'resourceCompetition': 0.3,
+                    'resourceScarcityImpact': 0.3,
+                    'baseHabitatQuality': 0.7,
+                    'urbanizationImpact': 0.4,
+                    'diseaseTransmissionRate': 0.15,
+                    'monthlyAbandonment': 3
+                },
+                'expectations': {
+                    'mortality_distribution': {
+                        'urban_deaths': (0.2, 0.3),    # Moderate traffic deaths
+                        'disease_deaths': (0.1, 0.2),   # Low disease due to care
+                        'natural_deaths': (0.1, 0.2)    # Low natural deaths
+                    },
+                    'reproduction_rate': (0.6, 0.8),    # Good reproduction
+                    'food_availability': (0.7, 0.9),    # Good food from residents
+                    'population_density': (1.0, 1.4)    # Moderate-high density
+                }
+            },
+            'beach': {
+                'params': {
+                    'territory': 4000,
+                    'density': 0.7,
+                    'baseFoodCapacity': 0.5,
+                    'foodScalingFactor': 0.5,
+                    'environmentalStress': 0.3,
+                    'resourceCompetition': 0.4,
+                    'resourceScarcityImpact': 0.4,
+                    'baseHabitatQuality': 0.5,
+                    'urbanizationImpact': 0.3,
+                    'diseaseTransmissionRate': 0.3,
+                    'monthlyAbandonment': 2
+                },
+                'expectations': {
+                    'mortality_distribution': {
+                        'urban_deaths': (0.1, 0.2),    # Low traffic deaths
+                        'disease_deaths': (0.2, 0.4),   # Moderate disease from exposure
+                        'natural_deaths': (0.3, 0.5)    # Higher natural deaths from elements
+                    },
+                    'reproduction_rate': (0.5, 0.7),    # Moderate reproduction
+                    'food_availability': (0.4, 0.6),    # Moderate food from tourists/fishing
+                    'population_density': (0.5, 0.8)    # Moderate density
+                }
+            }
+        }
+
+        for env_name, test_config in environment_tests.items():
+            with self.subTest(environment=env_name):
+                # Run simulation with environment parameters
+                results = simulatePopulation(test_config['params'], 20, 24)  # 20 cats, 24 months
+                
+                # Test mortality distribution
+                total_deaths = (results['urbanDeaths'] + results['diseaseDeaths'] + 
+                              results['naturalDeaths'])
+                if total_deaths > 0:
+                    urban_ratio = results['urbanDeaths'] / total_deaths
+                    disease_ratio = results['diseaseDeaths'] / total_deaths
+                    natural_ratio = results['naturalDeaths'] / total_deaths
+                    
+                    exp = test_config['expectations']['mortality_distribution']
+                    self.assertGreaterEqual(urban_ratio, exp['urban_deaths'][0])
+                    self.assertLessEqual(urban_ratio, exp['urban_deaths'][1])
+                    self.assertGreaterEqual(disease_ratio, exp['disease_deaths'][0])
+                    self.assertLessEqual(disease_ratio, exp['disease_deaths'][1])
+                    self.assertGreaterEqual(natural_ratio, exp['natural_deaths'][0])
+                    self.assertLessEqual(natural_ratio, exp['natural_deaths'][1])
+                
+                # Test reproduction rate
+                exp = test_config['expectations']['reproduction_rate']
+                reproduction_rate = results['totalBirths'] / (results['monthlyData'][0]['total'] * 24)
+                self.assertGreaterEqual(reproduction_rate, exp[0])
+                self.assertLessEqual(reproduction_rate, exp[1])
+                
+                # Test food availability
+                exp = test_config['expectations']['food_availability']
+                avg_food = mean([m.get('foodAvailability', 0) for m in results['monthlyData']])
+                self.assertGreaterEqual(avg_food, exp[0])
+                self.assertLessEqual(avg_food, exp[1])
+                
+                # Test population density
+                exp = test_config['expectations']['population_density']
+                final_density = results['monthlyData'][-1]['total'] / test_config['params']['territory']
+                self.assertGreaterEqual(final_density, exp[0])
+                self.assertLessEqual(final_density, exp[1])
 
 if __name__ == '__main__':
     unittest.main()

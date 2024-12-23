@@ -364,5 +364,207 @@ class TestParameterImpacts(unittest.TestCase):
         self.assert_significant_impact(results, 'peak_population', min_ratio=1.2)
         self.assert_significant_impact(results, 'natural_deaths', min_ratio=1.2)
 
+class TestEnvironmentPresets(unittest.TestCase):
+    """Test suite for validating environment preset parameters and their impacts."""
+    
+    def setUp(self):
+        """Set up baseline parameters for environment tests"""
+        self.base_params = {
+            'territorySize': 1000,
+            'densityThreshold': 1.2,
+            'baseFoodCapacity': 0.8,
+            'waterAvailability': 0.8,
+            'shelterQuality': 0.7,
+            'caretakerSupport': 0.5,
+            'feedingConsistency': 0.7,
+            'urbanization_impact': 0.2,
+            'disease_transmission_rate': 0.1,
+            'environmental_stress': 0.15,
+            'adult_survival_rate': 0.85,
+            'kitten_survival_rate': 0.7
+        }
+        
+        # Define environment presets with expected characteristics
+        self.environment_presets = {
+            'urban': {
+                'params': {
+                    'baseFoodCapacity': 0.6,
+                    'waterAvailability': 0.5,
+                    'shelterQuality': 0.4,
+                    'caretakerSupport': 0.3,
+                    'feedingConsistency': 0.4,
+                    'urbanization_impact': 0.8,
+                    'disease_transmission_rate': 0.3,
+                    'environmental_stress': 0.7
+                },
+                'expected': {
+                    'resource_range': (0.3, 0.5),  # Expected resource availability range
+                    'mortality_types': {
+                        'urban': (0.4, 0.6),       # Expected proportion of urban deaths
+                        'disease': (0.2, 0.4),     # Expected proportion of disease deaths
+                        'natural': (0.1, 0.3)      # Expected proportion of natural deaths
+                    },
+                    'carrying_capacity_range': (100, 300)  # Expected carrying capacity range
+                }
+            },
+            'forest': {
+                'params': {
+                    'baseFoodCapacity': 0.7,
+                    'waterAvailability': 0.8,
+                    'shelterQuality': 0.8,
+                    'caretakerSupport': 0.1,
+                    'feedingConsistency': 0.2,
+                    'urbanization_impact': 0.1,
+                    'disease_transmission_rate': 0.2,
+                    'environmental_stress': 0.3
+                },
+                'expected': {
+                    'resource_range': (0.6, 0.8),
+                    'mortality_types': {
+                        'urban': (0.05, 0.15),
+                        'disease': (0.15, 0.35),
+                        'natural': (0.5, 0.7)
+                    },
+                    'carrying_capacity_range': (400, 600)
+                }
+            },
+            'beach': {
+                'params': {
+                    'baseFoodCapacity': 0.5,
+                    'waterAvailability': 0.9,
+                    'shelterQuality': 0.5,
+                    'caretakerSupport': 0.2,
+                    'feedingConsistency': 0.3,
+                    'urbanization_impact': 0.3,
+                    'disease_transmission_rate': 0.15,
+                    'environmental_stress': 0.4
+                },
+                'expected': {
+                    'resource_range': (0.4, 0.6),
+                    'mortality_types': {
+                        'urban': (0.2, 0.4),
+                        'disease': (0.1, 0.3),
+                        'natural': (0.4, 0.6)
+                    },
+                    'carrying_capacity_range': (200, 400)
+                }
+            },
+            'residential': {
+                'params': {
+                    'baseFoodCapacity': 0.7,
+                    'waterAvailability': 0.6,
+                    'shelterQuality': 0.6,
+                    'caretakerSupport': 0.7,
+                    'feedingConsistency': 0.8,
+                    'urbanization_impact': 0.4,
+                    'disease_transmission_rate': 0.2,
+                    'environmental_stress': 0.3
+                },
+                'expected': {
+                    'resource_range': (0.6, 0.8),
+                    'mortality_types': {
+                        'urban': (0.2, 0.4),
+                        'disease': (0.15, 0.35),
+                        'natural': (0.3, 0.5)
+                    },
+                    'carrying_capacity_range': (300, 500)
+                }
+            }
+        }
+        
+        self.simulation_months = 24
+        self.initial_population = 50
+        self.num_iterations = 10
+
+    def test_environment_resource_availability(self):
+        """Test that each environment has appropriate resource availability."""
+        for env_name, env_data in self.environment_presets.items():
+            params = self.base_params.copy()
+            params.update(env_data['params'])
+            
+            resource_availability = calculateResourceAvailability(
+                params['baseFoodCapacity'],
+                params['waterAvailability'],
+                params['shelterQuality'],
+                params['caretakerSupport'],
+                params['feedingConsistency']
+            )
+            
+            expected_min, expected_max = env_data['expected']['resource_range']
+            self.assertGreaterEqual(
+                resource_availability, expected_min,
+                f"{env_name} environment: Resource availability {resource_availability} below expected minimum {expected_min}"
+            )
+            self.assertLessEqual(
+                resource_availability, expected_max,
+                f"{env_name} environment: Resource availability {resource_availability} above expected maximum {expected_max}"
+            )
+
+    def test_environment_carrying_capacity(self):
+        """Test that each environment supports appropriate carrying capacity."""
+        for env_name, env_data in self.environment_presets.items():
+            params = self.base_params.copy()
+            params.update(env_data['params'])
+            
+            # Calculate resource factor first
+            resource_factor = calculateResourceAvailability(
+                params['baseFoodCapacity'],
+                params['waterAvailability'],
+                params['shelterQuality'],
+                params['caretakerSupport'],
+                params['feedingConsistency']
+            )
+            
+            carrying_capacity = calculateCarryingCapacity(
+                params['territorySize'],
+                params['densityThreshold'],
+                resource_factor
+            )
+            
+            expected_min, expected_max = env_data['expected']['carrying_capacity_range']
+            self.assertGreaterEqual(
+                carrying_capacity, expected_min,
+                f"{env_name} environment: Carrying capacity {carrying_capacity} below expected minimum {expected_min}"
+            )
+            self.assertLessEqual(
+                carrying_capacity, expected_max,
+                f"{env_name} environment: Carrying capacity {carrying_capacity} above expected maximum {expected_max}"
+            )
+
+    def test_environment_mortality_patterns(self):
+        """Test that each environment shows expected patterns of mortality."""
+        for env_name, env_data in self.environment_presets.items():
+            params = self.base_params.copy()
+            params.update(env_data['params'])
+            
+            # Run multiple simulations to get average mortality patterns
+            total_deaths = {'urban': 0, 'disease': 0, 'natural': 0}
+            
+            for _ in range(self.num_iterations):
+                result = simulatePopulation(params, self.initial_population, self.simulation_months)
+                total_deaths['urban'] += result['urbanDeaths']
+                total_deaths['disease'] += result['diseaseDeaths']
+                total_deaths['natural'] += result['naturalDeaths']
+            
+            # Calculate proportions
+            total_all_deaths = sum(total_deaths.values())
+            if total_all_deaths > 0:
+                death_proportions = {
+                    cause: deaths / total_all_deaths
+                    for cause, deaths in total_deaths.items()
+                }
+                
+                # Check each mortality type is within expected range
+                for cause, (expected_min, expected_max) in env_data['expected']['mortality_types'].items():
+                    proportion = death_proportions[cause]
+                    self.assertGreaterEqual(
+                        proportion, expected_min,
+                        f"{env_name} environment: {cause} death proportion {proportion:.2f} below expected minimum {expected_min}"
+                    )
+                    self.assertLessEqual(
+                        proportion, expected_max,
+                        f"{env_name} environment: {cause} death proportion {proportion:.2f} above expected maximum {expected_max}"
+                    )
+
 if __name__ == '__main__':
     unittest.main()

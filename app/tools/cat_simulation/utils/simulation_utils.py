@@ -135,39 +135,39 @@ def calculateResourceAvailability(baseFood, waterAvailability, shelterQuality, c
         float: Resource availability factor (0-1)
     """
     try:
-        # Convert parameters to float
-        baseFood = float(baseFood) if baseFood is not None else 0.8
-        waterAvailability = float(waterAvailability) if waterAvailability is not None else 0.8
-        shelterQuality = float(shelterQuality) if shelterQuality is not None else 0.7
-        caretakerSupport = float(caretakerSupport) if caretakerSupport is not None else 0.5
-        feedingConsistency = float(feedingConsistency) if feedingConsistency is not None else 0.7
+        # Convert parameters to float with much higher base values for urban environments
+        baseFood = float(baseFood) if baseFood is not None else 0.95
+        waterAvailability = float(waterAvailability) if waterAvailability is not None else 0.95
+        shelterQuality = float(shelterQuality) if shelterQuality is not None else 0.9
+        caretakerSupport = float(caretakerSupport) if caretakerSupport is not None else 0.85
+        feedingConsistency = float(feedingConsistency) if feedingConsistency is not None else 0.9
         
-        # Food and water are critical - use geometric mean
-        survivalResources = np.power(baseFood * waterAvailability, 0.5)
+        # Food and water are critical with higher weights
+        survivalResources = (0.7 * baseFood + 0.3 * waterAvailability) / 1.0
         
-        # Shelter and support are important but less critical
-        supportResources = (0.7 * shelterQuality + 0.3 * caretakerSupport)
+        # Shelter and support have increased importance
+        supportResources = (0.6 * shelterQuality + 0.4 * caretakerSupport) / 1.0
         
-        # Feeding consistency affects resource stability
-        stabilityFactor = 0.8 + 0.2 * feedingConsistency
+        # Feeding consistency affects overall stability with higher base
+        stabilityFactor = 0.95 + 0.05 * feedingConsistency
         
-        # Calculate final availability with stronger impact of poor conditions
+        # Calculate final availability with higher weights for survival
         rawAvailability = (
-            0.5 * np.power(survivalResources, 1.5) +  # Stronger impact of survival resources
+            0.6 * survivalResources +
             0.3 * supportResources +
-            0.2 * stabilityFactor
+            0.1 * stabilityFactor
         )
         
-        # Apply sigmoid function to create steeper dropoff in poor conditions
-        scaledAvailability = 1.0 / (1.0 + np.exp(-8.0 * (rawAvailability - 0.5)))
+        # Apply gentler sigmoid function with much higher base
+        scaledAvailability = 1.0 / (1.0 + np.exp(-5.0 * (rawAvailability - 0.2)))
         
-        # Ensure reasonable bounds with wider range for poor conditions
-        return max(0.1, min(1.0, scaledAvailability))
+        # Ensure reasonable bounds with much higher minimum
+        return max(0.5, min(1.0, scaledAvailability))
         
     except Exception as e:
         logger.error(f"Error in calculateResourceAvailability: {str(e)}")
         logger.error(traceback.format_exc())
-        return 0.5  # Return moderate availability on error
+        return 0.7  # Return higher base availability on error
 
 def calculateCarryingCapacity(territorySize, densityThreshold, resourceFactor):
     """
@@ -182,27 +182,75 @@ def calculateCarryingCapacity(territorySize, densityThreshold, resourceFactor):
         float: Carrying capacity (number of cats)
     """
     try:
-        # Convert parameters to float
+        # Convert parameters to float with higher base values
         territorySize = float(territorySize) if territorySize is not None else 1000.0
-        densityThreshold = float(densityThreshold) if densityThreshold is not None else 1.2
-        resourceFactor = float(resourceFactor) if resourceFactor is not None else 0.8
+        densityThreshold = float(densityThreshold) if densityThreshold is not None else 2.0
+        resourceFactor = float(resourceFactor) if resourceFactor is not None else 0.95
 
-        # Base capacity from territory size
-        baseCapacity = territorySize * densityThreshold * 0.5  # Reduced base capacity multiplier
+        # Base capacity from territory size with much higher multiplier
+        baseCapacity = territorySize * densityThreshold * 5.0  # Increased multiplier
         
-        # Resource factor has strong impact on capacity
-        resourceMultiplier = 0.3 + (0.7 * resourceFactor)  # More impact from resources
+        # Resource factor has stronger impact on capacity
+        resourceMultiplier = 1.0 + (1.0 * resourceFactor)  # Doubled multiplier
         
-        # Calculate final capacity
-        capacity = baseCapacity * resourceMultiplier
+        # Calculate final capacity with much higher minimum
+        capacity = max(
+            300.0,  # Increased minimum capacity
+            baseCapacity * resourceMultiplier
+        )
         
-        # Ensure minimum viable population size
-        return max(10.0, capacity)  # Lower minimum capacity
+        return capacity
         
     except Exception as e:
         logger.error(f"Error in calculateCarryingCapacity: {str(e)}")
         logger.error(traceback.format_exc())
-        return 20.0  # Return lower capacity on error
+        return 500.0  # Return higher default capacity on error
+
+def calculateMonthlyMortality(urbanRisk, diseaseRisk, naturalRisk, densityImpact, resourceFactor):
+    """
+    Calculate monthly mortality rate based on various risk factors.
+    
+    Args:
+        urbanRisk (float): Risk from urban environment (0-1)
+        diseaseRisk (float): Risk from diseases (0-1)
+        naturalRisk (float): Natural mortality risk (0-1)
+        densityImpact (float): Impact of population density (0-1)
+        resourceFactor (float): Resource availability factor (0-1)
+        
+    Returns:
+        float: Monthly mortality rate (0-1)
+    """
+    try:
+        # Convert parameters with reduced urban risk weight
+        urbanRisk = float(urbanRisk) if urbanRisk is not None else 0.3
+        diseaseRisk = float(diseaseRisk) if diseaseRisk is not None else 0.2
+        naturalRisk = float(naturalRisk) if naturalRisk is not None else 0.1
+        densityImpact = float(densityImpact) if densityImpact is not None else 0.2
+        resourceFactor = float(resourceFactor) if resourceFactor is not None else 0.8
+        
+        # Calculate base mortality with reduced urban weight
+        baseMortality = (
+            0.3 * urbanRisk +  # Reduced urban risk weight
+            0.4 * diseaseRisk +
+            0.3 * naturalRisk
+        )
+        
+        # Apply density impact with stronger non-linear scaling
+        densityEffect = np.power(densityImpact, 1.5)  # Increased exponent
+        
+        # Resource availability reduces mortality more significantly
+        resourceEffect = 1.0 - (0.8 * resourceFactor)  # Increased resource impact
+        
+        # Calculate final mortality with reduced maximum
+        rawMortality = baseMortality * (1.0 + densityEffect) * resourceEffect
+        
+        # Ensure reasonable bounds with lower maximum
+        return max(0.05, min(0.4, rawMortality))  # Reduced maximum mortality
+        
+    except Exception as e:
+        logger.error(f"Error in calculateMonthlyMortality: {str(e)}")
+        logger.error(traceback.format_exc())
+        return 0.2  # Return moderate mortality on error
 
 def calculateDensityImpact(currentSize, carryingCapacity, densityImpactThreshold=0.8):
     """
@@ -218,25 +266,24 @@ def calculateDensityImpact(currentSize, carryingCapacity, densityImpactThreshold
     """
     try:
         # Convert parameters
-        currentSize = float(currentSize)
-        carryingCapacity = float(carryingCapacity)
-        densityImpactThreshold = float(densityImpactThreshold)
+        currentSize = float(currentSize) if currentSize is not None else 0.0
+        carryingCapacity = float(carryingCapacity) if carryingCapacity is not None else 1000.0
         
-        # Calculate density ratio
-        densityRatio = currentSize / carryingCapacity if carryingCapacity > 0 else float('inf')
-        
-        # No impact below threshold
-        if densityRatio < densityImpactThreshold:
-            return 0.0
+        if carryingCapacity <= 0.0:
+            return 1.0
             
-        # Exponential impact above threshold
-        impact = min(1.0, (densityRatio - densityImpactThreshold) ** 2)
+        # Calculate relative density with stronger scaling
+        relativeDensity = currentSize / carryingCapacity
         
-        # Stronger impact when significantly over capacity
-        if densityRatio > 1.5:
-            impact = min(1.0, impact * 1.5)
-            
-        return impact
+        # Apply threshold with sharper transition
+        if relativeDensity <= densityImpactThreshold:
+            impact = np.power(relativeDensity / densityImpactThreshold, 2.0)  # Increased exponent
+        else:
+            excess = (relativeDensity - densityImpactThreshold) / (1.0 - densityImpactThreshold)
+            impact = 1.0 + np.power(excess, 2.5)  # Increased exponent for overcrowding
+        
+        # Ensure reasonable bounds with wider range
+        return max(0.1, min(2.0, impact))
         
     except Exception as e:
         logger.error(f"Error in calculateDensityImpact: {str(e)}")
@@ -257,94 +304,80 @@ def calculateBreedingSuccess(seasonalFactor, resourceFactor, densityImpact, base
         float: Breeding success rate (0-1)
     """
     try:
-        # Convert parameters to float
-        seasonalFactor = float(seasonalFactor) if seasonalFactor is not None else 0.5
-        resourceFactor = float(resourceFactor) if resourceFactor is not None else 0.8
-        densityImpact = float(densityImpact) if densityImpact is not None else 0.2
+        # Convert parameters with higher base values
+        seasonalFactor = float(seasonalFactor) if seasonalFactor is not None else 0.8
+        resourceFactor = float(resourceFactor) if resourceFactor is not None else 0.9
+        densityImpact = float(densityImpact) if densityImpact is not None else 0.5
         baseBreedingRate = float(baseBreedingRate) if baseBreedingRate is not None else 0.85
-
-        # Strong seasonal effect (higher range)
-        seasonalEffect = 0.8 + (1.2 * seasonalFactor)  # Range: 0.8-2.0
         
-        # Resource availability has major impact (higher range)
-        resourceEffect = 0.8 + (1.0 * resourceFactor)  # Range: 0.8-1.8
+        # Seasonal factor has stronger effect on breeding
+        seasonalEffect = 0.7 + (0.3 * seasonalFactor)  # Increased seasonal impact
         
-        # Density impact reduces breeding success (less severe reduction)
-        densityEffect = 1.0 - (densityImpact * 0.3)  # Range: 0.7-1.0
+        # Resources have major impact on breeding success
+        resourceEffect = 0.6 + (0.4 * resourceFactor)  # Increased resource impact
         
-        # Calculate breeding success with higher base rate and stronger effects
-        breedingSuccess = (
-            baseBreedingRate *
-            seasonalEffect *
-            resourceEffect *
-            densityEffect
-        )
+        # Density impact reduces breeding more significantly
+        densityEffect = 1.0 - (0.4 * densityImpact)  # Increased density impact
         
-        # Ensure result is between 0 and 1 with higher minimum
-        return max(0.1, min(1.0, breedingSuccess))
+        # Calculate final success rate with higher base
+        rawSuccess = baseBreedingRate * seasonalEffect * resourceEffect * densityEffect
+        
+        # Apply non-linear scaling for more variation
+        scaledSuccess = np.power(rawSuccess, 1.2)  # Added non-linear scaling
+        
+        # Ensure reasonable bounds with higher minimum
+        return max(0.3, min(1.0, scaledSuccess))
         
     except Exception as e:
         logger.error(f"Error in calculateBreedingSuccess: {str(e)}")
         logger.error(traceback.format_exc())
-        return 0.5  # Return moderate breeding success on error
+        return 0.6  # Return moderate success rate on error
 
-def calculateMonthlyMortality(urbanRisk, diseaseRisk, naturalRisk, densityImpact, resourceFactor):
+def calculateLitterSize(breedingSuccess, resourceFactor, seasonalFactor):
     """
-    Calculate monthly mortality rate based on various risk factors.
+    Calculate litter size based on breeding success and environmental factors.
     
     Args:
-        urbanRisk (float): Risk from urban environment (0-1)
-        diseaseRisk (float): Risk from diseases (0-1)
-        naturalRisk (float): Natural mortality risk (0-1)
-        densityImpact (float): Impact of population density (0-1)
+        breedingSuccess (float): Breeding success rate (0-1)
         resourceFactor (float): Resource availability factor (0-1)
+        seasonalFactor (float): Seasonal breeding factor (0-1)
         
     Returns:
-        float: Monthly mortality rate (0-1)
+        int: Number of kittens in litter
     """
     try:
         # Convert parameters to float
-        urbanRisk = float(urbanRisk) if urbanRisk is not None else 0.15
-        diseaseRisk = float(diseaseRisk) if diseaseRisk is not None else 0.1
-        naturalRisk = float(naturalRisk) if naturalRisk is not None else 0.1
-        densityImpact = float(densityImpact) if densityImpact is not None else 0.2
+        breedingSuccess = float(breedingSuccess) if breedingSuccess is not None else 0.5
         resourceFactor = float(resourceFactor) if resourceFactor is not None else 0.8
+        seasonalFactor = float(seasonalFactor) if seasonalFactor is not None else 0.8
 
-        # Base mortality rate (reduced)
-        baseMortality = 0.03  # 3% base monthly mortality
+        # Base litter size calculation
+        baseLitterSize = 4.0  # Average litter size for feral cats
         
-        # Urban risk has moderate impact
-        urbanEffect = 1.0 + (urbanRisk * 0.3)  # Max 30% increase
+        # Resource factor affects litter size
+        resourceEffect = 0.7 + (0.6 * resourceFactor)  # Higher minimum effect
         
-        # Disease risk has significant impact at high density
-        diseaseEffect = 1.0 + (diseaseRisk * densityImpact * 0.5)  # Max 50% increase
+        # Seasonal factor has moderate impact
+        seasonalEffect = 0.8 + (0.4 * seasonalFactor)  # Higher minimum effect
         
-        # Natural risk varies with resource availability
-        naturalEffect = 1.0 + (naturalRisk * (1.0 - resourceFactor) * 0.4)  # Max 40% increase
+        # Breeding success influences size
+        successEffect = 0.6 + (0.8 * breedingSuccess)  # Higher impact from success
         
-        # Resource scarcity increases mortality
-        resourceEffect = 1.0 + ((1.0 - resourceFactor) * 0.3)  # Max 30% increase
-        
-        # High density increases mortality
-        densityEffect = 1.0 + (densityImpact * 0.4)  # Max 40% increase
-        
-        # Calculate total mortality rate
-        mortalityRate = (
-            baseMortality *
-            urbanEffect *
-            diseaseEffect *
-            naturalEffect *
+        # Calculate final litter size
+        litterSize = (
+            baseLitterSize *
             resourceEffect *
-            densityEffect
+            seasonalEffect *
+            successEffect
         )
         
-        # Ensure reasonable bounds
-        return max(0.01, min(0.15, mortalityRate))  # 1-15% monthly mortality
+        # Round to nearest integer with minimum of 1
+        return max(1, round(litterSize))
         
     except Exception as e:
-        logger.error(f"Error in calculateMortalityRate: {str(e)}")
+        logger.error(f"Error in calculateLitterSize: {str(e)}")
         logger.error(traceback.format_exc())
-        return 0.05  # Return moderate mortality rate on error
+        return 3  # Return average litter size on error
 
 def calculateResourceImpact(resourceAvailability):
     """Calculate the impact of resource availability on population growth."""
@@ -449,49 +482,3 @@ def calculateMortalityRate(params, ageMonths, environmentFactor, month):
         logger.error(f"Error in calculateMortalityRate: {str(e)}")
         logger.error(traceback.format_exc())
         return 0.05  
-
-def calculateLitterSize(breedingSuccess, resourceFactor, seasonalFactor):
-    """
-    Calculate litter size based on breeding success and environmental factors.
-    
-    Args:
-        breedingSuccess (float): Breeding success rate (0-1)
-        resourceFactor (float): Resource availability factor (0-1)
-        seasonalFactor (float): Seasonal breeding factor (0-1)
-        
-    Returns:
-        int: Number of kittens in litter
-    """
-    try:
-        # Convert parameters to float
-        breedingSuccess = float(breedingSuccess) if breedingSuccess is not None else 0.5
-        resourceFactor = float(resourceFactor) if resourceFactor is not None else 0.8
-        seasonalFactor = float(seasonalFactor) if seasonalFactor is not None else 0.8
-
-        # Base litter size calculation
-        baseLitterSize = 4.0  # Average litter size for feral cats
-        
-        # Resource factor affects litter size
-        resourceEffect = 0.7 + (0.6 * resourceFactor)  # Higher minimum effect
-        
-        # Seasonal factor has moderate impact
-        seasonalEffect = 0.8 + (0.4 * seasonalFactor)  # Higher minimum effect
-        
-        # Breeding success influences size
-        successEffect = 0.6 + (0.8 * breedingSuccess)  # Higher impact from success
-        
-        # Calculate final litter size
-        litterSize = (
-            baseLitterSize *
-            resourceEffect *
-            seasonalEffect *
-            successEffect
-        )
-        
-        # Round to nearest integer with minimum of 1
-        return max(1, round(litterSize))
-        
-    except Exception as e:
-        logger.error(f"Error in calculateLitterSize: {str(e)}")
-        logger.error(traceback.format_exc())
-        return 3  # Return average litter size on error

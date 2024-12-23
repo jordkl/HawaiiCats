@@ -32,6 +32,9 @@ function collectAdvancedParameters() {
         // Resource factors
         resourceCompetition: parseFloat(document.getElementById('resourceCompetition')?.value || '0.2'),
         resourceScarcityImpact: parseFloat(document.getElementById('resourceScarcityImpact')?.value || '0.25'),
+        caretakerSupport: parseFloat(document.getElementById('caretakerSupport')?.value || '0.5'),
+        feedingConsistency: parseFloat(document.getElementById('feedingConsistency')?.value || '0.9'),
+        foodCostPerCat: parseFloat(document.getElementById('foodCostPerCat')?.value || '15.0'),
 
         // Colony density
         densityImpactThreshold: parseFloat(document.getElementById('densityImpactThreshold')?.value || '1.2'),
@@ -107,93 +110,93 @@ function applyPreset(preset) {
         residential: {
             territory: 2000,
             density: 1.2,
-            baseFoodCapacity: 0.8,
-            foodScalingFactor: 0.7,
-            environmentalStress: 0.2,
-            resourceCompetition: 0.3,
-            resourceScarcityImpact: 0.3,
-            baseHabitatQuality: 0.7,
-            urbanizationImpact: 0.4,
-            diseaseTransmissionRate: 0.15,
-            monthlyAbandonment: 3
+            baseFoodCapacity: 0.8,      // Good food availability from residents
+            foodScalingFactor: 0.7,     // Decent scaling as residents often increase food with more cats
+            environmentalStress: 0.2,    // Moderate stress from human activity
+            resourceCompetition: 0.3,    // Moderate competition
+            resourceScarcityImpact: 0.3, // Moderate impact
+            baseHabitatQuality: 0.7,     // Good shelter options
+            urbanizationImpact: 0.4,     // Moderate traffic/urban risks
+            diseaseTransmissionRate: 0.15, // Moderate disease risk
+            monthlyAbandonment: 3        // Higher abandonment in residential areas
         },
         street: {
             territory: 1000,
             density: 1.5,
-            baseFoodCapacity: 0.3,
-            foodScalingFactor: 0.3,
-            environmentalStress: 0.5,
-            resourceCompetition: 0.6,
-            resourceScarcityImpact: 0.6,
-            baseHabitatQuality: 0.3,
-            urbanizationImpact: 0.7,
-            diseaseTransmissionRate: 0.3,
-            monthlyAbandonment: 4
+            baseFoodCapacity: 0.3,      // Limited food sources
+            foodScalingFactor: 0.3,     // Poor scaling with population
+            environmentalStress: 0.5,    // High stress from traffic/noise
+            resourceCompetition: 0.6,    // High competition for limited resources
+            resourceScarcityImpact: 0.6, // High impact from scarcity
+            baseHabitatQuality: 0.3,     // Poor shelter options
+            urbanizationImpact: 0.8,     // Very high traffic/urban risks
+            diseaseTransmissionRate: 0.4, // High disease risk from poor conditions
+            monthlyAbandonment: 4        // Highest abandonment rate
         },
         park: {
             territory: 5000,
             density: 0.8,
-            baseFoodCapacity: 0.5,
-            foodScalingFactor: 0.5,
-            environmentalStress: 0.2,
-            resourceCompetition: 0.3,
-            resourceScarcityImpact: 0.3,
-            baseHabitatQuality: 0.8,
-            urbanizationImpact: 0.2,
-            diseaseTransmissionRate: 0.1,
-            monthlyAbandonment: 2
+            baseFoodCapacity: 0.5,      // Moderate natural food sources
+            foodScalingFactor: 0.5,     // Moderate scaling
+            environmentalStress: 0.2,    // Low stress
+            resourceCompetition: 0.3,    // Moderate competition
+            resourceScarcityImpact: 0.3, // Moderate impact
+            baseHabitatQuality: 0.8,     // Good natural shelter
+            urbanizationImpact: 0.2,     // Low traffic risk
+            diseaseTransmissionRate: 0.2, // Moderate disease risk from wildlife
+            monthlyAbandonment: 2        // Lower abandonment
         },
         industrial: {
             territory: 3000,
             density: 1.0,
-            baseFoodCapacity: 0.9,
-            foodScalingFactor: 0.8,
-            environmentalStress: 0.3,
-            resourceCompetition: 0.2,
-            resourceScarcityImpact: 0.2,
-            baseHabitatQuality: 0.6,
-            urbanizationImpact: 0.5,
-            diseaseTransmissionRate: 0.15,
-            monthlyAbandonment: 3
+            baseFoodCapacity: 0.6,      // Moderate food from workers/dumpsters
+            foodScalingFactor: 0.5,     // Moderate scaling
+            environmentalStress: 0.4,    // Higher stress from machinery/activity
+            resourceCompetition: 0.4,    // Moderate competition
+            resourceScarcityImpact: 0.4, // Moderate impact
+            baseHabitatQuality: 0.5,     // Moderate shelter in buildings/equipment
+            urbanizationImpact: 0.6,     // Higher risks from machinery/vehicles
+            diseaseTransmissionRate: 0.3, // Higher disease risk from poor conditions
+            monthlyAbandonment: 2        // Lower abandonment in industrial areas
         },
         parking: {
             territory: 1500,
             density: 1.3,
-            baseFoodCapacity: 0.4,
-            foodScalingFactor: 0.4,
-            environmentalStress: 0.4,
-            resourceCompetition: 0.5,
-            resourceScarcityImpact: 0.5,
-            baseHabitatQuality: 0.4,
-            urbanizationImpact: 0.6,
-            diseaseTransmissionRate: 0.2,
-            monthlyAbandonment: 3
+            baseFoodCapacity: 0.4,      // Limited food sources
+            foodScalingFactor: 0.4,     // Poor scaling
+            environmentalStress: 0.4,    // High stress from vehicles
+            resourceCompetition: 0.5,    // High competition
+            resourceScarcityImpact: 0.5, // High impact
+            baseHabitatQuality: 0.4,     // Poor shelter options
+            urbanizationImpact: 0.7,     // Very high traffic risk
+            diseaseTransmissionRate: 0.3, // Higher disease risk
+            monthlyAbandonment: 2        // Moderate abandonment
         },
         forest: {
             territory: 8000,
             density: 0.5,
-            baseFoodCapacity: 0.4,
-            foodScalingFactor: 0.4,
-            environmentalStress: 0.1,
-            resourceCompetition: 0.4,
-            resourceScarcityImpact: 0.4,
-            baseHabitatQuality: 0.9,
-            urbanizationImpact: 0.1,
-            diseaseTransmissionRate: 0.1,
-            monthlyAbandonment: 1
+            baseFoodCapacity: 0.6,      // Moderate natural food sources
+            foodScalingFactor: 0.5,     // Moderate scaling with hunting
+            environmentalStress: 0.2,    // Low human-related stress
+            resourceCompetition: 0.4,    // Competition with wildlife
+            resourceScarcityImpact: 0.4, // Moderate impact
+            baseHabitatQuality: 0.9,     // Excellent natural shelter
+            urbanizationImpact: 0.1,     // Very low traffic risk
+            diseaseTransmissionRate: 0.4, // Higher disease risk from wildlife/exposure
+            monthlyAbandonment: 1        // Lowest abandonment rate
         },
         beach: {
             territory: 4000,
             density: 0.7,
-            baseFoodCapacity: 0.5,
-            foodScalingFactor: 0.5,
-            environmentalStress: 0.3,
-            resourceCompetition: 0.4,
-            resourceScarcityImpact: 0.4,
-            baseHabitatQuality: 0.5,
-            urbanizationImpact: 0.3,
-            diseaseTransmissionRate: 0.15,
-            monthlyAbandonment: 2
+            baseFoodCapacity: 0.5,      // Moderate food from tourists/fishing
+            foodScalingFactor: 0.5,     // Moderate scaling
+            environmentalStress: 0.3,    // Moderate stress from weather/tourists
+            resourceCompetition: 0.4,    // Moderate competition
+            resourceScarcityImpact: 0.4, // Moderate impact
+            baseHabitatQuality: 0.5,     // Limited shelter options
+            urbanizationImpact: 0.3,     // Low traffic risk
+            diseaseTransmissionRate: 0.3, // Moderate disease risk from exposure
+            monthlyAbandonment: 2        // Moderate abandonment from tourists
         },
         custom: {
             territory: 2000,

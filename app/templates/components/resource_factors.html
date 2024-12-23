@@ -2,8 +2,16 @@
 <div class="space-y-4">
     <h4 class="text-base font-medium text-hawaii-blue">Resource Factors</h4>
 
-    <!-- Base Food Capacity -->
+    <div><!-- Food Cost per Cat -->
     <div>
+        <div class="flex justify-between">
+            <label for="foodCostPerCat" class="parameter-label">Food Cost per Cat (Monthly)</label>
+            <span id="foodCostPerCatValue" class="parameter-value">$15.00</span>
+        </div>
+        <input type="range" id="foodCostPerCat" min="0" max="50" value="15" step="0.5"
+               oninput="document.getElementById('foodCostPerCatValue').textContent='$' + parseFloat(this.value).toFixed(2)">
+        <p class="parameter-description">Base monthly cost to feed one cat</p>
+    </div>
         <div class="flex justify-between">
             <label for="baseFoodCapacity" class="parameter-label">Base Food Capacity</label>
             <span id="baseFoodCapacityValue" class="parameter-value">0.95</span>
@@ -27,12 +35,12 @@
     <!-- Caretaker Support -->
     <div>
         <div class="flex justify-between">
-            <label for="caretakerSupport" class="parameter-label">Caretaker Support</label>
-            <span id="caretakerSupportValue" class="parameter-value">1.0</span>
+            <label for="caretakerSupport" class="parameter-label">Feedings Per Week</label>
+            <span id="caretakerSupportValue" class="parameter-value">3</span>
         </div>
-        <input type="range" id="caretakerSupport" min="0" max="1" value="1.0" step="0.1"
+        <input type="range" id="caretakerSupport" min="0" max="21" value="3" step="1"
                oninput="document.getElementById('caretakerSupportValue').textContent=this.value">
-        <p class="parameter-description">Level of caretaker support and feeding</p>
+        <p class="parameter-description">Number of times the colony is fed per week (up to 3 times per day)</p>
     </div>
 
     <!-- Feeding Consistency -->

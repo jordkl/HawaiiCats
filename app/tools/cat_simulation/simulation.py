@@ -117,6 +117,7 @@ def simulatePopulation(params, currentSize, months=12, sterilizedCount=0, monthl
         adultDeaths = 0
         totalBirths = 0
         monthlyData = []  # Track monthly statistics
+        total_costs = 0  # Initialize total costs
 
         # Initial population
         sterilized = sterilizedCount
@@ -151,7 +152,14 @@ def simulatePopulation(params, currentSize, months=12, sterilizedCount=0, monthl
             'adult_deaths': 0,
             'density_impact': (sterilized + unsterilized) / carrying_capacity if carrying_capacity > 0 else 1.0,
             'resource_factor': resource_factor,
-            'carrying_capacity': carrying_capacity
+            'carrying_capacity': carrying_capacity,
+            'monthly_costs': {
+                'food': 0,
+                'sterilization': 0,
+                'medical': 0,
+                'shelter': 0,
+                'emergency': 0
+            }
         })
 
         for month in range(months):
@@ -364,6 +372,49 @@ def simulatePopulation(params, currentSize, months=12, sterilizedCount=0, monthl
                 # Handle monthly abandonments
                 unsterilized += monthlyAbandonment
                 
+                # Calculate monthly costs
+                current_total = sterilized + unsterilized
+                
+                # Food costs based on food cost per cat and resource factors
+                base_food_cost = float(params.get('food_cost_per_cat', '15.0'))  # Default $15 per cat
+                feedings_per_week = float(params.get('caretaker_support', '3'))  # Default 3x per week
+                
+                # If there are no feedings, there are no food costs
+                if feedings_per_week == 0:
+                    monthly_food_cost = 0
+                else:
+                    # Calculate food cost multiplier based on resource factors
+                    base_food_capacity = float(params.get('base_food_capacity', '0.95'))
+                    food_scaling = float(params.get('food_scaling_factor', '0.9'))
+                    feeding_consistency = float(params.get('feeding_consistency', '0.9'))
+                    
+                    # Convert feedings per week to a relative scale (14 feedings = 1.0, being 2x per day)
+                    feeding_level = min(feedings_per_week / 14.0, 1.5)  # Cap at 1.5x cost for 3x daily feedings
+                    
+                    # Calculate multipliers (higher values in parameters REDUCE cost)
+                    food_multiplier = 1.0
+                    food_multiplier *= (2.0 - base_food_capacity)  # Less natural food = higher costs
+                    food_multiplier *= (2.0 - food_scaling)        # Less efficient scaling = higher costs
+                    food_multiplier *= (2.0 - feeding_consistency) # Less consistency = higher costs
+                    
+                    # Adjust monthly cost based on feeding frequency
+                    # More frequent feeding increases costs proportionally, but with diminishing returns
+                    monthly_food_cost = current_total * base_food_cost * food_multiplier * feeding_level
+                
+                # Sterilization costs from UI input
+                sterilization_cost_per_cat = float(params.get('sterilization_cost_per_cat', '50.0'))  # Default $50 if not specified
+                monthly_sterilization_cost = new_sterilizations * sterilization_cost_per_cat
+                
+                # Update total costs
+                monthly_costs = {
+                    'food': monthly_food_cost,
+                    'sterilization': monthly_sterilization_cost,
+                    'medical': 0,  # Removed
+                    'shelter': 0,  # Removed
+                    'emergency': 0  # Removed
+                }
+                total_costs += monthly_food_cost + monthly_sterilization_cost
+                
                 # Store monthly data
                 monthlyData.append({
                     'month': month + 1,
@@ -378,7 +429,8 @@ def simulatePopulation(params, currentSize, months=12, sterilizedCount=0, monthl
                     'adult_deaths': adult_deaths_this_month,
                     'density_impact': density_impact,
                     'resource_factor': resource_factor,
-                    'carrying_capacity': carrying_capacity
+                    'carrying_capacity': carrying_capacity,
+                    'monthly_costs': monthly_costs
                 })
 
             except Exception as e:
@@ -398,7 +450,15 @@ def simulatePopulation(params, currentSize, months=12, sterilizedCount=0, monthl
             'kittenDeaths': kittenDeaths,
             'adultDeaths': adultDeaths,
             'totalBirths': totalBirths,
-            'monthlyData': monthlyData  # Changed from monthlyPopulations to monthlyData
+            'monthlyData': monthlyData,
+            'totalCosts': float(total_costs),  
+            'costBreakdown': {  
+                'food': sum(float(data.get('monthly_costs', {}).get('food', 0)) for data in monthlyData),
+                'sterilization': sum(float(data.get('monthly_costs', {}).get('sterilization', 0)) for data in monthlyData),
+                'medical': 0,  # Removed
+                'shelter': 0,  # Removed
+                'emergency': 0  # Removed
+            }
         }
         
     except Exception as e:

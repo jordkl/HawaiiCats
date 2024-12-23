@@ -103,7 +103,10 @@ def calculatePopulation():
             'baseHabitatQuality': ('base_habitat_quality', '0.8'),
             'urbanizationImpact': ('urbanization_impact', '0.2'),
             'diseaseTransmissionRate': ('disease_transmission_rate', '0.1'),
-            'monthlyAbandonment': ('monthly_abandonment', '2.0')
+            'monthlyAbandonment': ('monthly_abandonment', '2.0'),
+            'caretakerSupport': ('caretaker_support', '0.5'),
+            'feedingConsistency': ('feeding_consistency', '0.9'),
+            'foodCostPerCat': ('food_cost_per_cat', '15.0')
         }
         
         # Process each parameter
@@ -113,6 +116,10 @@ def calculatePopulation():
             if isinstance(raw_value, list):
                 raw_value = raw_value[0] if raw_value else default
             snake_case_params[snake_case] = str(raw_value).strip()
+
+        # Add sterilization cost directly from request data
+        sterilization_cost = data.get('sterilizationCost', 50.0)
+        snake_case_params['sterilization_cost_per_cat'] = str(sterilization_cost)
 
         # Log converted parameters
         logDebug('DEBUG', f"Converted advanced parameters: {json.dumps(snake_case_params, indent=2)}")
@@ -152,7 +159,8 @@ def calculatePopulation():
                     'finalPopulation': result['finalPopulation'],
                     'populationChange': population_change,
                     'sterilizationRate': result.get('sterilizationRate', 0),
-                    'totalCost': result.get('totalCost', 0),
+                    'totalCost': result.get('totalCosts', 0),
+                    'costBreakdown': result.get('costBreakdown', {}),
                     'totalDeaths': result.get('totalDeaths', 0),
                     'kittenDeaths': result.get('kittenDeaths', 0),
                     'adultDeaths': result.get('adultDeaths', 0),

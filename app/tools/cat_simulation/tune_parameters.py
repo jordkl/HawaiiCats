@@ -100,7 +100,51 @@ class ParameterTuner:
             'test_territory_size': ['territorySize', 'densityThreshold'],
             'test_tropical_breeding_rate': ['seasonalBreedingAmplitude', 'breeding_rate'],
             'test_tropical_population_growth': ['breeding_rate', 'kittens_per_litter', 'litters_per_year', 'adult_survival_rate', 'kitten_survival_rate', 'female_ratio', 'baseFoodCapacity', 'waterAvailability'],
-            'test_urbanization_impact': ['urbanization_impact', 'adult_survival_rate']
+            'test_urbanization_impact': ['urbanization_impact', 'adult_survival_rate'],
+            # Adding environment preset tests
+            'test_environment_resource_availability': ['baseFoodCapacity', 'waterAvailability', 'shelterQuality', 'caretakerSupport', 'feedingConsistency'],
+            'test_environment_carrying_capacity': ['territorySize', 'densityThreshold', 'baseFoodCapacity', 'waterAvailability', 'shelterQuality'],
+            'test_environment_mortality_patterns': ['urbanization_impact', 'disease_transmission_rate', 'environmental_stress']
+        }
+        
+        # Environment-specific parameter ranges
+        self.environment_ranges = {
+            'urban': {
+                'baseFoodCapacity': (0.6, 0.9),     # Higher food availability in urban areas
+                'waterAvailability': (0.7, 0.9),     # Good water access
+                'shelterQuality': (0.6, 0.8),        # Moderate to good shelter
+                'caretakerSupport': (0.5, 0.8),      # Variable caretaker support
+                'feedingConsistency': (0.6, 0.9),    # More consistent feeding
+                'territorySize': (500, 2000),        # Smaller territories
+                'densityThreshold': (1.5, 3.0),      # Higher density tolerance
+                'urbanization_impact': (0.3, 0.5),   # Moderate urban impact
+                'disease_transmission_rate': (0.2, 0.4),  # Higher disease risk
+                'environmental_stress': (0.3, 0.5)    # Moderate environmental stress
+            },
+            'suburban': {
+                'baseFoodCapacity': (0.4, 0.7),      # Moderate food availability
+                'waterAvailability': (0.5, 0.8),      # Variable water access
+                'shelterQuality': (0.4, 0.7),         # Variable shelter
+                'caretakerSupport': (0.3, 0.6),       # Less caretaker support
+                'feedingConsistency': (0.4, 0.7),     # Less consistent feeding
+                'territorySize': (2000, 5000),        # Larger territories
+                'densityThreshold': (1.0, 2.0),       # Moderate density tolerance
+                'urbanization_impact': (0.2, 0.4),    # Lower urban impact
+                'disease_transmission_rate': (0.1, 0.3),  # Moderate disease risk
+                'environmental_stress': (0.2, 0.4)     # Lower environmental stress
+            },
+            'rural': {
+                'baseFoodCapacity': (0.2, 0.5),      # Lower food availability
+                'waterAvailability': (0.3, 0.6),      # Limited water access
+                'shelterQuality': (0.2, 0.5),         # Basic shelter
+                'caretakerSupport': (0.1, 0.4),       # Minimal caretaker support
+                'feedingConsistency': (0.2, 0.5),     # Inconsistent feeding
+                'territorySize': (5000, 10000),       # Very large territories
+                'densityThreshold': (0.5, 1.5),       # Lower density tolerance
+                'urbanization_impact': (0.1, 0.3),    # Minimal urban impact
+                'disease_transmission_rate': (0.1, 0.2),  # Lower disease risk
+                'environmental_stress': (0.1, 0.3)     # Higher environmental stress
+            }
         }
         
         # Initialize parameters to midpoint of ranges
@@ -230,6 +274,67 @@ class ParameterTuner:
                 traceback.print_exc()
                 break
 
+    def tune_environment(self, environment_type, max_iterations=100):
+        """Tune parameters specifically for an environment type."""
+        print(f"\nTuning parameters for {environment_type} environment...")
+        
+        # Use environment-specific parameter ranges
+        old_ranges = self.param_ranges
+        self.param_ranges = self.environment_ranges[environment_type]
+        
+        # Track environment-specific best parameters
+        env_best_params = None
+        env_best_failures = float('inf')
+        
+        for iteration in range(max_iterations):
+            try:
+                print(f"Iteration {iteration}: ", end='')
+                
+                # Generate random parameters within environment-specific ranges
+                current_params = {
+                    param: random.uniform(range_min, range_max)
+                    for param, (range_min, range_max) in self.param_ranges.items()
+                }
+                
+                # Run environment-specific tests
+                failures = []
+                for test in ['test_environment_resource_availability',
+                           'test_environment_carrying_capacity',
+                           'test_environment_mortality_patterns']:
+                    if not run_test(test, current_params):
+                        failures.append(test)
+                
+                # Update if this is the best so far for this environment
+                if len(failures) < env_best_failures:
+                    env_best_failures = len(failures)
+                    env_best_params = current_params
+                    print(f"\nNew best parameters for {environment_type} environment with {len(failures)} failing tests:")
+                    for param, value in current_params.items():
+                        print(f"  {param}: {value}")
+                    print("\nFailing tests:", failures)
+                else:
+                    print(f"{len(failures)} failing tests")
+                
+            except Exception as e:
+                print(f"\nError in iteration {iteration}: {str(e)}")
+                traceback.print_exc()
+                continue
+        
+        # Restore original parameter ranges
+        self.param_ranges = old_ranges
+        return env_best_params, env_best_failures
+
 if __name__ == '__main__':
     tuner = ParameterTuner()
+    
+    # Tune parameters for each environment type
+    for env_type in ['urban', 'suburban', 'rural']:
+        best_params, failures = tuner.tune_environment(env_type)
+        
+        print(f"\nFinal best parameters for {env_type} environment:")
+        for param, value in best_params.items():
+            print(f"  {param}: {value}")
+        print(f"Number of failing tests: {failures}")
+        
+    # Run general parameter tuning
     tuner.tune()
