@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Submit Cat Sighting - Hawaii Cats{% endblock %}
+{% block title %}Add Sighting - Hawaii Cats{% endblock %}
 
 {% block head %}
 {{ super() }}
@@ -11,78 +11,154 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-8 text-gray-900 dark:text-white">Submit a Cat Sighting</h1>
+    <h1 class="text-3xl font-bold mb-8 text-gray-900 dark:text-white">Add Sighting</h1>
     
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- Map Section -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
-            <h2 class="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Select Location</h2>
+    <form id="sightingForm" class="space-y-8">
+        <!-- Location Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Location</h2>
             <div id="map" class="w-full h-96 rounded-lg mb-4"></div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Click on the map to set the location of your cat sighting</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Click on the map to set the location of your cat sighting</p>
+            
+            <input type="hidden" id="latitude" name="latitude" required>
+            <input type="hidden" id="longitude" name="longitude" required>
+            
+            <div class="mt-4">
+                <label for="locationType" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Location Type</label>
+                <select id="locationType" name="locationType" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+                    <option value="street">Street</option>
+                    <option value="alley">Alley</option>
+                    <option value="park">Park</option>
+                    <option value="residential">Residential</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
         </div>
 
-        <!-- Form Section -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
-            <form id="sightingForm" class="space-y-6">
-                <input type="hidden" id="latitude" name="latitude" required>
-                <input type="hidden" id="longitude" name="longitude" required>
+        <!-- Photo Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Photos</h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Upload up to 5 photos</p>
+            <input type="file" id="photos" name="photos" accept="image/*" multiple
+                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-gray-700 dark:file:text-gray-300">
+        </div>
 
-                <div>
-                    <label for="visibleCats" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Number of Cats Seen</label>
-                    <input type="number" id="visibleCats" name="visibleCats" min="1" required
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                </div>
-
-                <div>
-                    <label for="locationType" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Location Type</label>
-                    <select id="locationType" name="locationType" required
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="residential">Residential Area</option>
-                        <option value="park">Park</option>
-                        <option value="beach">Beach</option>
-                        <option value="business">Business Area</option>
-                        <option value="other">Other</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="timeSpent" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Time Spent Observing</label>
-                    <select id="timeSpent" name="timeSpent" required
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="quick">Quick Glance (< 1 min)</option>
-                        <option value="brief">Brief (1-5 mins)</option>
-                        <option value="moderate">Moderate (5-15 mins)</option>
-                        <option value="extended">Extended (> 15 mins)</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="movementLevel" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Cat Movement Level</label>
-                    <select id="movementLevel" name="movementLevel" required
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="stationary">Stationary</option>
-                        <option value="low">Low Movement</option>
-                        <option value="moderate">Moderate Movement</option>
-                        <option value="high">High Movement</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Additional Notes</label>
-                    <textarea id="notes" name="notes" rows="3"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            placeholder="Any additional observations or details..."></textarea>
-                </div>
-
-                <div>
-                    <button type="submit"
-                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        Submit Sighting
+        <!-- Colony Size Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Colony Size</h2>
+            
+            <!-- Cat Count Input -->
+            <div class="mb-6">
+                <label for="visibleCats" class="block text-sm font-medium text-gray-700 dark:text-gray-300">How many cats did you see?</label>
+                <div class="mt-2 flex items-center space-x-4">
+                    <button type="button" id="decrementCats" class="p-2 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                        </svg>
+                    </button>
+                    <input type="number" id="visibleCats" name="visibleCats" min="1" max="400" value="1" required
+                           class="w-20 text-center rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+                    <button type="button" id="incrementCats" class="p-2 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
                     </button>
                 </div>
-            </form>
+            </div>
+
+            <!-- Visibility Assessment -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Visibility</label>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">How well could you see the area?</p>
+                <div class="flex space-x-2">
+                    <label class="flex-1">
+                        <input type="radio" name="visibility" value="clear" class="hidden peer" required>
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Clear View</div>
+                    </label>
+                    <label class="flex-1">
+                        <input type="radio" name="visibility" value="partial" class="hidden peer">
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Partial View</div>
+                    </label>
+                    <label class="flex-1">
+                        <input type="radio" name="visibility" value="limited" class="hidden peer">
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Limited View</div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Movement Assessment -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Cat Movement</label>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Were the cats moving around a lot?</p>
+                <div class="flex space-x-2">
+                    <label class="flex-1">
+                        <input type="radio" name="movementLevel" value="stationary" class="hidden peer" required>
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Stationary</div>
+                    </label>
+                    <label class="flex-1">
+                        <input type="radio" name="movementLevel" value="moderate" class="hidden peer">
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Some Movement</div>
+                    </label>
+                    <label class="flex-1">
+                        <input type="radio" name="movementLevel" value="high" class="hidden peer">
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">High Movement</div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Observation Time -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Observation Time</label>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">How long did you observe the area?</p>
+                <div class="flex space-x-2">
+                    <label class="flex-1">
+                        <input type="radio" name="timeSpent" value="brief" class="hidden peer" required>
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Brief (<5 min)</div>
+                    </label>
+                    <label class="flex-1">
+                        <input type="radio" name="timeSpent" value="short" class="hidden peer">
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Short (5-15 min)</div>
+                    </label>
+                    <label class="flex-1">
+                        <input type="radio" name="timeSpent" value="extended" class="hidden peer">
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Extended (>15 min)</div>
+                    </label>
+                </div>
+            </div>
         </div>
-    </div>
+
+        <!-- Additional Details Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Additional Details</h2>
+            
+            <!-- Feeding Status -->
+            <div class="mb-6">
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="isFeeding" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                    <span class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">Cats Are Being Fed Here</span>
+                </label>
+            </div>
+
+            <!-- Notes Field -->
+            <div>
+                <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes (optional)</label>
+                <textarea id="notes" name="notes" rows="4"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                        placeholder="Any additional observations or details..."></textarea>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex justify-end">
+            <button type="submit"
+                    class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Save Sighting
+            </button>
+        </div>
+    </form>
 </div>
 {% endblock %}
 
@@ -110,6 +186,48 @@
         }
     });
 
+    // Handle cat count increment/decrement
+    const catCountInput = document.getElementById('visibleCats');
+    const incrementBtn = document.getElementById('incrementCats');
+    const decrementBtn = document.getElementById('decrementCats');
+
+    function updateCatCount(delta) {
+        let currentValue = parseInt(catCountInput.value) || 0;
+        currentValue = Math.max(1, Math.min(400, currentValue + delta));
+        catCountInput.value = currentValue;
+    }
+
+    incrementBtn.addEventListener('click', () => updateCatCount(1));
+    decrementBtn.addEventListener('click', () => updateCatCount(-1));
+
+    // Handle long press for rapid adjustment
+    let pressTimer;
+    let isIncrementing = false;
+
+    function startIncrementing(delta) {
+        isIncrementing = true;
+        function increment() {
+            if (isIncrementing) {
+                updateCatCount(delta);
+                setTimeout(increment, 100);
+            }
+        }
+        pressTimer = setTimeout(increment, 500);
+    }
+
+    function stopIncrementing() {
+        isIncrementing = false;
+        clearTimeout(pressTimer);
+    }
+
+    incrementBtn.addEventListener('mousedown', () => startIncrementing(1));
+    incrementBtn.addEventListener('mouseup', stopIncrementing);
+    incrementBtn.addEventListener('mouseleave', stopIncrementing);
+
+    decrementBtn.addEventListener('mousedown', () => startIncrementing(-1));
+    decrementBtn.addEventListener('mouseup', stopIncrementing);
+    decrementBtn.addEventListener('mouseleave', stopIncrementing);
+
     // Handle form submission
     document.getElementById('sightingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -125,6 +243,8 @@
             locationType: formData.get('locationType'),
             timeSpent: formData.get('timeSpent'),
             movementLevel: formData.get('movementLevel'),
+            visibility: formData.get('visibility'),
+            isFeeding: formData.get('isFeeding') === 'on',
             notes: formData.get('notes'),
             timestamp: new Date().toISOString(),
             species: 'cat'
