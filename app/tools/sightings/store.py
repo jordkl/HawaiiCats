@@ -206,6 +206,45 @@ class CatSightingsStore:
             print(f"Stack trace: {traceback.format_exc()}")
             raise
 
+    def add_sighting(self, sighting_data):
+        """Add a new sighting to the store"""
+        try:
+            # Generate a unique ID for the sighting
+            sighting_id = f"sighting_{int(time.time() * 1000)}"
+            sighting_data['id'] = sighting_id
+            
+            # Add timestamp if not present
+            if 'timestamp' not in sighting_data:
+                sighting_data['timestamp'] = datetime.now().isoformat()
+            
+            # Load current data
+            local_data = self._load_local_data()
+            
+            # Add new sighting
+            local_data.append(sighting_data)
+            
+            # Save to local storage
+            self._save_local_data(local_data)
+            
+            # If Firebase is enabled, add to Firestore
+            if ENABLE_FIREBASE_SYNC and self.db is not None:
+                # Convert coordinate to GeoPoint for Firestore
+                if 'coordinate' in sighting_data:
+                    coord = sighting_data['coordinate']
+                    sighting_data['coordinate'] = GeoPoint(
+                        coord['latitude'],
+                        coord['longitude']
+                    )
+                
+                # Add to Firestore
+                self.db.collection('sightings').document(sighting_id).set(sighting_data)
+            
+            return sighting_id
+        except Exception as e:
+            print(f"Error adding sighting: {str(e)}")
+            print(f"Stack trace: {traceback.format_exc()}")
+            raise
+
     def force_sync(self):
         """Force an immediate sync with Firebase"""
         if ENABLE_FIREBASE_SYNC and self.db is not None:
