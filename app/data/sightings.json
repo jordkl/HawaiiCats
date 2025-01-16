@@ -619,5 +619,21 @@
     "isFeeding": false,
     "userName": "jordan1",
     "id": "wLn88M6vGI2E1jtsYGSc"
+  },
+  {
+    "coordinate": {
+      "latitude": 21.2825764529221,
+      "longitude": -157.82950401306155
+    },
+    "visibleCats": 40,
+    "locationType": "alley",
+    "timeSpent": "short",
+    "movementLevel": "moderate",
+    "visibility": "clear",
+    "isFeeding": false,
+    "notes": "",
+    "timestamp": "2025-01-15T20:49:25-10:00",
+    "species": "cat",
+    "id": "sighting_1737010603218"
   }
 ]

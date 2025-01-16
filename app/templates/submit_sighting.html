@@ -4,9 +4,9 @@
 
 {% block head %}
 {{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/map.css') }}">
-<script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
-<link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/map-theme.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -73,17 +73,23 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Visibility</label>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">How well could you see the area?</p>
                 <div class="flex space-x-2">
-                    <label class="flex-1">
-                        <input type="radio" name="visibility" value="clear" class="hidden peer" required>
-                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Clear View</div>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="visibility" value="clear" required 
+                               class="absolute w-0 h-0 opacity-0 peer">
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white 
+                                  hover:bg-gray-50 dark:hover:bg-gray-700">Clear View</div>
                     </label>
-                    <label class="flex-1">
-                        <input type="radio" name="visibility" value="partial" class="hidden peer">
-                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Partial View</div>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="visibility" value="partial" 
+                               class="absolute w-0 h-0 opacity-0 peer">
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white 
+                                  hover:bg-gray-50 dark:hover:bg-gray-700">Partial View</div>
                     </label>
-                    <label class="flex-1">
-                        <input type="radio" name="visibility" value="limited" class="hidden peer">
-                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Limited View</div>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="visibility" value="limited" 
+                               class="absolute w-0 h-0 opacity-0 peer">
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white 
+                                  hover:bg-gray-50 dark:hover:bg-gray-700">Limited View</div>
                     </label>
                 </div>
             </div>
@@ -93,17 +99,23 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Cat Movement</label>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Were the cats moving around a lot?</p>
                 <div class="flex space-x-2">
-                    <label class="flex-1">
-                        <input type="radio" name="movementLevel" value="stationary" class="hidden peer" required>
-                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Stationary</div>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="movementLevel" value="stationary" required 
+                               class="absolute w-0 h-0 opacity-0 peer">
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white 
+                                  hover:bg-gray-50 dark:hover:bg-gray-700">Stationary</div>
                     </label>
-                    <label class="flex-1">
-                        <input type="radio" name="movementLevel" value="moderate" class="hidden peer">
-                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Some Movement</div>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="movementLevel" value="moderate" 
+                               class="absolute w-0 h-0 opacity-0 peer">
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white 
+                                  hover:bg-gray-50 dark:hover:bg-gray-700">Some Movement</div>
                     </label>
-                    <label class="flex-1">
-                        <input type="radio" name="movementLevel" value="high" class="hidden peer">
-                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">High Movement</div>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="movementLevel" value="high" 
+                               class="absolute w-0 h-0 opacity-0 peer">
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white 
+                                  hover:bg-gray-50 dark:hover:bg-gray-700">High Movement</div>
                     </label>
                 </div>
             </div>
@@ -113,17 +125,23 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Observation Time</label>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">How long did you observe the area?</p>
                 <div class="flex space-x-2">
-                    <label class="flex-1">
-                        <input type="radio" name="timeSpent" value="brief" class="hidden peer" required>
-                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Brief (<5 min)</div>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="timeSpent" value="brief" required 
+                               class="absolute w-0 h-0 opacity-0 peer">
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white 
+                                  hover:bg-gray-50 dark:hover:bg-gray-700">Brief (<5 min)</div>
                     </label>
-                    <label class="flex-1">
-                        <input type="radio" name="timeSpent" value="short" class="hidden peer">
-                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Short (5-15 min)</div>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="timeSpent" value="short" 
+                               class="absolute w-0 h-0 opacity-0 peer">
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white 
+                                  hover:bg-gray-50 dark:hover:bg-gray-700">Short (5-15 min)</div>
                     </label>
-                    <label class="flex-1">
-                        <input type="radio" name="timeSpent" value="extended" class="hidden peer">
-                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer">Extended (>15 min)</div>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="timeSpent" value="extended" 
+                               class="absolute w-0 h-0 opacity-0 peer">
+                        <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white 
+                                  hover:bg-gray-50 dark:hover:bg-gray-700">Extended (>15 min)</div>
                     </label>
                 </div>
             </div>
@@ -152,123 +170,145 @@
         </div>
 
         <!-- Submit Button -->
-        <div class="flex justify-end">
-            <button type="submit"
-                    class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Save Sighting
+        <div class="mt-8 flex justify-end">
+            <button type="submit" 
+                    class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                Submit Sighting
             </button>
         </div>
     </form>
+</div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Initialize the map
-    const map = initializeMap('map');
-    let marker = null;
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize map using our theme
+        const map = initializeMap('map', [21.3099, -157.8581], 11);
+        let marker = null;
 
-    // Handle map clicks to set location
-    map.on('click', (e) => {
-        const lngLat = e.lngLat;
-        
-        // Update hidden form fields
-        document.getElementById('latitude').value = lngLat.lat;
-        document.getElementById('longitude').value = lngLat.lng;
-
-        // Update or create marker
-        if (marker) {
-            marker.setLngLat(lngLat);
-        } else {
-            marker = new mapboxgl.Marker()
-                .setLngLat(lngLat)
-                .addTo(map);
-        }
-    });
-
-    // Handle cat count increment/decrement
-    const catCountInput = document.getElementById('visibleCats');
-    const incrementBtn = document.getElementById('incrementCats');
-    const decrementBtn = document.getElementById('decrementCats');
-
-    function updateCatCount(delta) {
-        let currentValue = parseInt(catCountInput.value) || 0;
-        currentValue = Math.max(1, Math.min(400, currentValue + delta));
-        catCountInput.value = currentValue;
-    }
-
-    incrementBtn.addEventListener('click', () => updateCatCount(1));
-    decrementBtn.addEventListener('click', () => updateCatCount(-1));
-
-    // Handle long press for rapid adjustment
-    let pressTimer;
-    let isIncrementing = false;
-
-    function startIncrementing(delta) {
-        isIncrementing = true;
-        function increment() {
-            if (isIncrementing) {
-                updateCatCount(delta);
-                setTimeout(increment, 100);
+        // Handle map clicks to set location
+        map.on('click', function(e) {
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+            
+            // Update hidden form fields
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+            
+            // Update or add marker
+            if (marker) {
+                marker.setLatLng(e.latlng);
+            } else {
+                marker = L.marker(e.latlng).addTo(map);
             }
+        });
+
+        // Cat count increment/decrement logic
+        const incrementBtn = document.getElementById('incrementCats');
+        const decrementBtn = document.getElementById('decrementCats');
+        const catCountInput = document.getElementById('visibleCats');
+        
+        function updateCatCount(delta) {
+            const currentValue = parseInt(catCountInput.value);
+            const newValue = Math.max(1, Math.min(400, currentValue + delta));
+            catCountInput.value = newValue;
         }
-        pressTimer = setTimeout(increment, 500);
-    }
 
-    function stopIncrementing() {
-        isIncrementing = false;
-        clearTimeout(pressTimer);
-    }
+        let incrementInterval;
+        
+        function startIncrementing(delta) {
+            updateCatCount(delta);
+            incrementInterval = setInterval(() => updateCatCount(delta), 150);
+        }
+        
+        function stopIncrementing() {
+            clearInterval(incrementInterval);
+        }
 
-    incrementBtn.addEventListener('mousedown', () => startIncrementing(1));
-    incrementBtn.addEventListener('mouseup', stopIncrementing);
-    incrementBtn.addEventListener('mouseleave', stopIncrementing);
+        incrementBtn.addEventListener('mousedown', () => startIncrementing(1));
+        incrementBtn.addEventListener('mouseup', stopIncrementing);
+        incrementBtn.addEventListener('mouseleave', stopIncrementing);
+        
+        decrementBtn.addEventListener('mousedown', () => startIncrementing(-1));
+        decrementBtn.addEventListener('mouseup', stopIncrementing);
+        decrementBtn.addEventListener('mouseleave', stopIncrementing);
 
-    decrementBtn.addEventListener('mousedown', () => startIncrementing(-1));
-    decrementBtn.addEventListener('mouseup', stopIncrementing);
-    decrementBtn.addEventListener('mouseleave', stopIncrementing);
+        // Handle form submission
+        document.getElementById('sightingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-    // Handle form submission
-    document.getElementById('sightingForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+            // Validate required fields
+            const requiredFields = ['latitude', 'longitude', 'locationType', 'visibility', 'movementLevel', 'timeSpent'];
+            let isValid = true;
+            let firstInvalidField = null;
 
-        // Get form data
-        const formData = new FormData(e.target);
-        const data = {
-            coordinate: {
-                latitude: parseFloat(formData.get('latitude')),
-                longitude: parseFloat(formData.get('longitude'))
-            },
-            visibleCats: parseInt(formData.get('visibleCats')),
-            locationType: formData.get('locationType'),
-            timeSpent: formData.get('timeSpent'),
-            movementLevel: formData.get('movementLevel'),
-            visibility: formData.get('visibility'),
-            isFeeding: formData.get('isFeeding') === 'on',
-            notes: formData.get('notes'),
-            timestamp: new Date().toISOString(),
-            species: 'cat'
-        };
+            requiredFields.forEach(field => {
+                const elements = document.getElementsByName(field);
+                let fieldValid = false;
 
-        try {
-            const response = await fetch('/api/sightings', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
+                if (elements.length > 1) {
+                    // Radio buttons
+                    fieldValid = Array.from(elements).some(el => el.checked);
+                } else {
+                    // Single input
+                    const element = document.getElementById(field);
+                    fieldValid = element && element.value;
+                }
+
+                if (!fieldValid) {
+                    isValid = false;
+                    if (!firstInvalidField) {
+                        firstInvalidField = field;
+                    }
+                }
             });
 
-            if (response.ok) {
-                alert('Sighting submitted successfully!');
-                window.location.href = '/catmap';
-            } else {
-                throw new Error('Failed to submit sighting');
+            if (!isValid) {
+                alert(`Please fill in all required fields. Missing: ${firstInvalidField}`);
+                return;
             }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Failed to submit sighting. Please try again.');
-        }
+
+            // Get form data
+            const formData = new FormData(e.target);
+            const data = {
+                coordinate: {
+                    latitude: parseFloat(formData.get('latitude')),
+                    longitude: parseFloat(formData.get('longitude'))
+                },
+                visibleCats: parseInt(formData.get('visibleCats')),
+                locationType: formData.get('locationType'),
+                timeSpent: formData.get('timeSpent'),
+                movementLevel: formData.get('movementLevel'),
+                visibility: formData.get('visibility'),
+                isFeeding: formData.get('isFeeding') === 'on',
+                notes: formData.get('notes') || '',
+                timestamp: "2025-01-15T20:49:25-10:00",
+                species: 'cat'
+            };
+
+            try {
+                const response = await fetch('/api/sightings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    alert('Sighting submitted successfully!');
+                    window.location.href = '/catmap';
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to submit sighting');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to submit sighting: ' + error.message);
+            }
+        });
     });
 </script>
 {% endblock %}
