@@ -3,76 +3,185 @@
 {% block title %}Cat Map{% endblock %}
 
 {% block head %}
-<!-- Disclaimer Section -->
-<div class="mt-8 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
-    <p class="text-sm text-gray-600 dark:text-gray-300">
-        <strong class="dark:text-white">Test Deployment Notice:</strong> This is a test deployment to evaluate iOS app synchronization with the web interface. 
-        Sightings displayed on this map should not be considered reliable and may be edited or removed at any time. 
-        The official CatMap with complete colony sightings will launch on July 1, 2025.
-    </p>
-</div>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="{{ url_for('static', filename='js/map-theme.js') }}"></script>
-    <style>
-        #map {
-            height: 400px; /* Smaller on mobile */
-            height: min(60vh, 600px); /* Responsive height */
-            width: 100%;
-            border-radius: 0.5rem;
-        }
-        .colony-popup {
-            max-width: 300px;
-        }
-        .sightings-container {
-            height: min(50vh, 600px); /* Responsive height */
-            display: flex;
-            flex-direction: column;
-        }
-        .sightings-list {
-            flex-grow: 1;
-            overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
-            padding-right: 0.5rem; /* Add padding for scrollbar */
-        }
-        .sightings-list::-webkit-scrollbar {
-            width: 6px;
-        }
-        .sightings-list::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .sightings-list::-webkit-scrollbar-thumb {
-            background-color: rgba(156, 163, 175, 0.5);
-            border-radius: 3px;
-        }
-        @media (max-width: 768px) {
-            #map {
-                height: 50vh; /* Viewport-based height on mobile */
-                margin-bottom: 1rem;
-            }
-            .sightings-container {
-                height: auto; /* Auto height on mobile */
-                max-height: 50vh; /* But limit maximum height */
-            }
-        }
-    </style>
+{{ super() }}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js"></script>
+<script src="{{ url_for('static', filename='js/map-theme.js') }}"></script>
+<style>
+    #map {
+        height: min(60vh, 600px);
+        width: 100%;
+        border-radius: 0.5rem;
+    }
+    
+    .map-controls {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1000;
+        background: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        width: 300px;
+    }
+    
+    .dark .map-controls {
+        background: #1f2937;
+        color: white;
+    }
+    
+    .colony-filters {
+        display: none;
+        margin-top: 1rem;
+    }
+    
+    .colony-filters.active {
+        display: block;
+    }
+    
+    .slider-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
+    }
+    
+    .slider-value {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+    
+    .dark .slider-value {
+        color: #9ca3af;
+    }
+    
+    input[type="range"] {
+        width: 100%;
+        margin: 0.5rem 0;
+    }
+    
+    .view-toggle {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .view-toggle button {
+        flex: 1;
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .view-toggle button.active {
+        background-color: #2563eb;
+        color: white;
+    }
+    
+    .dark .view-toggle button.active {
+        background-color: #3b82f6;
+    }
+    
+    .view-toggle button:not(.active) {
+        background-color: #f3f4f6;
+        color: #374151;
+    }
+    
+    .dark .view-toggle button:not(.active) {
+        background-color: #374151;
+        color: #d1d5db;
+    }
+    
+    .sightings-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .sighting-item {
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .dark .sighting-item {
+        border-bottom-color: #374151;
+    }
+    
+    .sighting-item:last-child {
+        border-bottom: none;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 md:p-0">
-    <div class="md:col-span-2">
-        <div id="map" class="shadow-lg"></div>
+<div class="container mx-auto px-4 py-6">
+    <!-- Disclaimer Section -->
+    <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+            <strong class="dark:text-white">Test Deployment Notice:</strong> This is a test deployment to evaluate iOS app synchronization with the web interface. 
+            Sightings displayed on this map should not be considered reliable and may be edited or removed at any time. 
+            The official CatMap with complete colony sightings will launch on July 1, 2025.
+        </p>
     </div>
-    <div>
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sightings-container transition-colors duration-200">
-            <h2 class="text-lg font-semibold mb-2 md:mb-4 text-gray-900 dark:text-white">10 Most Recent Sightings</h2>
-            <div id="connectionStatus" class="text-sm mb-2 md:mb-4 text-gray-600 dark:text-gray-400">
+
+    <div class="relative">
+        <div id="map"></div>
+        
+        <!-- Map Controls -->
+        <div class="map-controls">
+            <div class="view-toggle">
+                <button id="sightingsView" class="active">Sightings</button>
+                <button id="coloniesView">Colonies</button>
+            </div>
+            
+            <!-- Colony Filters -->
+            <div id="colonyFilters" class="colony-filters">
+                <div class="mb-4">
+                    <div class="slider-label">
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Min. Sightings</span>
+                        <span class="slider-value" id="minSightingsValue">3</span>
+                    </div>
+                    <input type="range" id="minSightings" min="1" max="10" value="3"
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                </div>
+                
+                <div class="mb-4">
+                    <div class="slider-label">
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Min. Avg. Cats</span>
+                        <span class="slider-value" id="minAvgCatsValue">2.0</span>
+                    </div>
+                    <input type="range" id="minAvgCats" min="1" max="10" value="2" step="0.5"
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                </div>
+                
+                <div class="mb-4">
+                    <div class="slider-label">
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Min. Days Active</span>
+                        <span class="slider-value" id="minDaysActiveValue">14</span>
+                    </div>
+                    <input type="range" id="minDaysActive" min="1" max="90" value="14"
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                </div>
+                
+                <button id="updateColonies" 
+                        class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Update Colonies
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sightings List -->
+    <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+        <div class="p-4">
+            <div id="connectionStatus" class="text-sm mb-4 text-gray-600 dark:text-gray-400">
                 Checking API connection...
             </div>
-            <div id="sightingsList" class="space-y-2 md:space-y-4 sightings-list">
-                <!-- Sightings will be populated here -->
-            </div>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Sightings</h2>
+            <div id="sightingsList" class="mt-4 space-y-4"></div>
         </div>
     </div>
 </div>
@@ -80,273 +189,298 @@
 
 {% block scripts %}
 <script>
-    // Initialize the map using our theme helper
-    const map = initializeMap('map');
+    let map, markersLayer, colonyLayer, markers;
     
-    // Store markers
-    let markers = new Map();
-
-    // Function to format timestamp
-    function formatDate(timestamp) {
-        if (!timestamp) return 'Unknown';
+    // Initialize map and layers
+    function initMap() {
+        map = initializeMap('map');
+        markersLayer = L.layerGroup().addTo(map);
+        colonyLayer = L.layerGroup();
+        markers = new Map();
+        
+        // Load initial sightings
+        loadSightings();
+    }
+    
+    // Color scale for cat density
+    function getColor(count) {
+        return count > 200 ? '#b91c1c' :  // Very high (>200 cats)
+               count > 100 ? '#dc2626' :  // High (100-200 cats)
+               count > 50  ? '#ef4444' :  // Moderate-high (50-100 cats)
+               count > 25  ? '#f87171' :  // Moderate (25-50 cats)
+               count > 10  ? '#fca5a5' :  // Low-moderate (10-25 cats)
+                           '#fecaca';     // Low (<10 cats)
+    }
+    
+    // Toggle between sightings and colonies view
+    document.addEventListener('DOMContentLoaded', function() {
+        initMap();
+        
+        document.getElementById('sightingsView').addEventListener('click', function() {
+            this.classList.add('active');
+            document.getElementById('coloniesView').classList.remove('active');
+            document.getElementById('colonyFilters').classList.remove('active');
+            map.removeLayer(colonyLayer);
+            map.addLayer(markersLayer);
+        });
+        
+        document.getElementById('coloniesView').addEventListener('click', function() {
+            this.classList.add('active');
+            document.getElementById('sightingsView').classList.remove('active');
+            document.getElementById('colonyFilters').classList.add('active');
+            map.removeLayer(markersLayer);
+            map.addLayer(colonyLayer);
+            updateColonies();
+        });
+        
+        // Update UI when sliders change
+        document.getElementById('minSightings').addEventListener('input', function(e) {
+            document.getElementById('minSightingsValue').textContent = e.target.value;
+        });
+        
+        document.getElementById('minAvgCats').addEventListener('input', function(e) {
+            document.getElementById('minAvgCatsValue').textContent = e.target.value;
+        });
+        
+        document.getElementById('minDaysActive').addEventListener('input', function(e) {
+            document.getElementById('minDaysActiveValue').textContent = e.target.value;
+        });
+        
+        document.getElementById('updateColonies').addEventListener('click', updateColonies);
+        
+        // Update colony filters
+        document.getElementById('minSightings').addEventListener('input', function() {
+            document.getElementById('minSightingsValue').textContent = this.value;
+        });
+        
+        document.getElementById('minAvgCats').addEventListener('input', function() {
+            document.getElementById('minAvgCatsValue').textContent = this.value;
+        });
+        
+        document.getElementById('minDaysActive').addEventListener('input', function() {
+            document.getElementById('minDaysActiveValue').textContent = this.value;
+        });
+    });
+    
+    // Fetch and display colonies
+    async function updateColonies() {
+        const minSightings = document.getElementById('minSightings').value;
+        const minAvgCats = document.getElementById('minAvgCats').value;
+        const minDaysActive = document.getElementById('minDaysActive').value;
         
         try {
-            // Handle Firebase Timestamp object
-            if (timestamp.toDate) {
-                const date = timestamp.toDate();
-                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-            }
+            const response = await fetch(`/api/colonies?min_sightings=${minSightings}&min_avg_cats=${minAvgCats}&min_days_active=${minDaysActive}`);
+            const colonies = await response.json();
             
-            // Handle ISO string timestamp
-            const date = new Date(timestamp);
-            if (isNaN(date.getTime())) return 'Unknown';
-            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            if (colonyLayer) {
+                map.removeLayer(colonyLayer);
+            }
+            colonyLayer = L.layerGroup();
+            
+            // Group colonies by proximity
+            const hexGroups = new Map(); // Map to store colonies by hex index
+            
+            // First, create hexagons for each colony
+            colonies.forEach(colony => {
+                if (!colony.latitude || !colony.longitude) {
+                    console.warn('Colony missing coordinates:', colony);
+                    return;
+                }
+                
+                const h3Index = h3.latLngToCell(parseFloat(colony.latitude), parseFloat(colony.longitude), 9);
+                
+                // Store colony data with its hex
+                if (!hexGroups.has(h3Index)) {
+                    hexGroups.set(h3Index, {
+                        colonies: [],
+                        totalCats: 0,
+                        avgBreedingRate: 0,
+                        avgSurvivalRate: 0,
+                        avgCaretakerSupport: 0
+                    });
+                }
+                
+                const group = hexGroups.get(h3Index);
+                group.colonies.push(colony);
+                group.totalCats += (colony.current_size || colony.currentSize || 0);
+                group.avgBreedingRate += colony.breeding_rate || 0;
+                group.avgSurvivalRate += colony.adult_survival_rate || 0;
+                group.avgCaretakerSupport += colony.caretaker_support || 0;
+            });
+            
+            // Calculate averages for each hex
+            hexGroups.forEach((group, h3Index) => {
+                const count = group.colonies.length;
+                group.avgBreedingRate /= count;
+                group.avgSurvivalRate /= count;
+                group.avgCaretakerSupport /= count;
+            });
+            
+            // Try to compact adjacent hexes
+            const hexIndexes = Array.from(hexGroups.keys());
+            const compactedSet = h3.compactCells(hexIndexes);
+            
+            // Create polygons for each compacted hex
+            compactedSet.forEach(h3Index => {
+                // Get all original hexes that were compacted into this one
+                const uncompacted = h3.uncompactCells([h3Index], 9);
+                
+                // Aggregate data from all contained colonies
+                const containedGroups = uncompacted
+                    .filter(hex => hexGroups.has(hex))
+                    .map(hex => hexGroups.get(hex));
+                
+                if (containedGroups.length === 0) return;
+                
+                const totalCats = containedGroups.reduce((sum, g) => sum + g.totalCats, 0);
+                const avgBreedingRate = containedGroups.reduce((sum, g) => sum + g.avgBreedingRate, 0) / containedGroups.length;
+                const avgSurvivalRate = containedGroups.reduce((sum, g) => sum + g.avgSurvivalRate, 0) / containedGroups.length;
+                const avgCaretakerSupport = containedGroups.reduce((sum, g) => sum + g.avgCaretakerSupport, 0) / containedGroups.length;
+                
+                // Get the boundary of the compacted hex
+                const boundary = h3.cellToBoundary(h3Index);
+                const polygonCoords = boundary.map(coord => [coord[0], coord[1]]);
+                
+                const polygon = L.polygon(polygonCoords, {
+                    color: getColor(totalCats),
+                    weight: 1,
+                    opacity: 0.8,
+                    fillOpacity: 0.35
+                });
+                
+                // Add popup with aggregated colony info
+                const popupContent = `
+                    <div class="text-sm">
+                        <p><strong>Total Cats:</strong> ${totalCats}</p>
+                        <p><strong>Colonies:</strong> ${containedGroups.reduce((sum, g) => sum + g.colonies.length, 0)}</p>
+                        <p><strong>Avg. Breeding Rate:</strong> ${(avgBreedingRate * 100).toFixed(1)}%</p>
+                        <p><strong>Avg. Survival Rate:</strong> ${(avgSurvivalRate * 100).toFixed(1)}%</p>
+                        <p><strong>Avg. Caretaker Support:</strong> ${(avgCaretakerSupport * 100).toFixed(1)}%</p>
+                    </div>
+                `;
+                polygon.bindPopup(popupContent);
+                
+                colonyLayer.addLayer(polygon);
+            });
+            
+            colonyLayer.addTo(map);
+            
         } catch (error) {
-            console.error('Error formatting date:', error);
-            return 'Unknown';
+            console.error('Error fetching colonies:', error);
         }
     }
-
-    // Function to format cat count information
-    function formatCatCount(data) {
-        if (data.bestCount) {
-            return `${data.bestCount} cats`;
-        } else if (data.minCount && data.maxCount) {
-            return `${data.minCount}-${data.maxCount} cats`;
-        } else if (data.minCount) {
-            return `At least ${data.minCount} cats`;
-        } else if (data.maxCount) {
-            return `Up to ${data.maxCount} cats`;
+    
+    // Add marker to map helper
+    function addMarkerToMap(sighting) {
+        if (!sighting || !sighting.coordinate || !sighting.coordinate.latitude || !sighting.coordinate.longitude) {
+            console.warn('Invalid sighting:', sighting);
+            return;
         }
-        return 'Cats present';
+        
+        const marker = L.marker([
+            parseFloat(sighting.coordinate.latitude), 
+            parseFloat(sighting.coordinate.longitude)
+        ]);
+        
+        marker.bindPopup(createPopupContent(sighting));
+        markersLayer.addLayer(marker);
+        markers.set(sighting.id, marker);
     }
-
-    // Function to format location information
-    function formatLocation(locationType) {
-        return locationType || 'Location not specified';
-    }
-
-    // Function to create popup content
+    
+    // Create popup content helper
     function createPopupContent(sighting) {
-        // Helper function to safely get count with fallback
-        const getCount = (count) => count || 'Unknown';
-        
-        // Get details from either top-level or nested details object
-        const details = sighting.details || {};
-        const data = {
-            bestCount: sighting.bestCount || details.bestCount,
-            minCount: sighting.minCount || details.minCount,
-            maxCount: sighting.maxCount || details.maxCount,
-            locationType: sighting.locationType || details.locationType,
-            movementLevel: sighting.movementLevel || details.movementLevel,
-            timeSpent: sighting.timeSpent || details.timeSpent,
-            isFeeding: sighting.isFeeding || details.isFeeding,
-            notes: sighting.notes || details.notes
-        };
-
-        // Create details list with only available information
-        const detailsList = [];
-        
-        // Always add a cat count entry, even if just "Cats present"
-        detailsList.push(formatCatCount(data));
-        
-        // Add location if available
-        if (data.locationType) {
-            detailsList.push(`At ${formatLocation(data.locationType)}`);
-        }
-        
-        // Add movement information if available
-        if (data.movementLevel) {
-            detailsList.push(`Movement: ${data.movementLevel}`);
-        }
-        
-        // Add time spent if available
-        if (data.timeSpent) {
-            detailsList.push(`Time spent: ${data.timeSpent}`);
-        }
-        
-        // Add feeding status if true
-        if (data.isFeeding) {
-            detailsList.push('Feeding observed');
-        }
-
         return `
-            <div class="colony-popup">
-                <h3 class="font-medium text-lg dark:text-white">${sighting.colonyName || 'Unnamed Colony'}</h3>
-                <div class="mt-2">
-                    <ul class="list-disc pl-5">
-                        ${detailsList.map(detail => `<li>${detail}</li>`).join('')}
-                    </ul>
-                </div>
-                ${data.notes ? `<div class="mt-2"><strong class="dark:text-white">Notes:</strong><br>${data.notes}</div>` : ''}
-                <div class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                    Reported by: ${sighting.userName || 'Anonymous'}
-                    <br>
-                    Time: ${formatDate(sighting.timestamp)}
-                </div>
+            <div class="text-sm">
+                <p class="font-semibold">${formatDate(sighting.timestamp)}</p>
+                <p>Number of cats: ${sighting.best_count}</p>
+                <p>Location type: ${sighting.location_type || 'Not specified'}</p>
+                ${sighting.notes ? `<p class="mt-2">Notes: ${sighting.notes}</p>` : ''}
+                ${sighting.is_feeding ? '<p class="text-blue-600 dark:text-blue-400">Feeding location</p>' : ''}
             </div>
         `;
     }
-
-    // Function to add marker to map
-    function addMarkerToMap(sighting) {
-        if (!sighting.coordinate) return;
-        
-        const marker = L.marker([sighting.coordinate.latitude, sighting.coordinate.longitude])
-            .bindPopup(createPopupContent(sighting))
-            .addTo(map);
-        
-        markers.set(sighting.id, marker);
-        return marker;
+    
+    // Format date helper
+    function formatDate(timestamp) {
+        if (!timestamp) return 'Unknown date';
+        return new Date(timestamp).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     }
-
-    // Function to update sightings list
+    
+    // Update sightings list helper
     function updateSightingsList(sighting) {
-        const list = document.getElementById('sightingsList');
-        const details = sighting.details || {};
-        const data = {
-            bestCount: sighting.bestCount || details.bestCount,
-            minCount: sighting.minCount || details.minCount,
-            maxCount: sighting.maxCount || details.maxCount,
-            locationType: sighting.locationType || details.locationType
-        };
+        const sightingsList = document.getElementById('sightingsList');
+        if (!sightingsList) return;
         
-        const div = document.createElement('div');
-        div.className = 'bg-gray-50 dark:bg-gray-700 rounded-lg p-4 transition-colors duration-200';
-        div.innerHTML = `
+        const sightingElement = document.createElement('div');
+        sightingElement.className = 'sighting-item cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700';
+        sightingElement.innerHTML = `
             <div class="flex justify-between items-start">
                 <div>
-                    <p class="text-sm text-gray-900 dark:text-white">
-                        ${formatCatCount(data)}
-                        ${data.locationType ? `at ${formatLocation(data.locationType)}` : ''}
-                    </p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                        ${formatDate(sighting.timestamp)}
-                    </p>
+                    <p class="font-semibold text-gray-900 dark:text-white">${formatDate(sighting.timestamp)}</p>
+                    <p class="text-gray-600 dark:text-gray-400">Number of cats: ${sighting.best_count}</p>
+                    <p class="text-gray-500 dark:text-gray-500">Location type: ${sighting.location_type || 'Not specified'}</p>
+                    ${sighting.is_feeding ? '<p class="text-blue-600 dark:text-blue-400">Feeding location</p>' : ''}
                 </div>
-                <button onclick="focusMarker('${sighting.id}')" 
-                        class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-500 text-sm">
-                    View
-                </button>
             </div>
         `;
-        list.insertBefore(div, list.firstChild);
+        
+        sightingElement.addEventListener('click', () => {
+            const marker = markers.get(sighting.id);
+            if (marker) {
+                map.setView(marker.getLatLng(), 16);
+                marker.openPopup();
+            }
+        });
+        
+        sightingsList.appendChild(sightingElement);
     }
-
-    // Function to focus on a marker
-    function focusMarker(sightingId) {
-        const marker = markers.get(sightingId);
-        if (marker) {
-            map.setView(marker.getLatLng(), 15);
-            marker.openPopup();
-        }
-    }
-
-    // Load and display sightings
+    
+    // Load sightings helper
     async function loadSightings() {
         try {
-            console.log('Fetching sightings from local API...');
-            const response = await fetch(`${window.location.protocol}//${window.location.host}/sightings`);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
+            const response = await fetch('/api/sightings');
             const sightings = await response.json();
             console.log('Received sightings:', sightings);
             
-            // Clear existing markers and list
-            clearMarkersAndList();
-            
-            // Display sightings
-            displaySightings(sightings);
-            
-            // Update connection status
             const statusDiv = document.getElementById('connectionStatus');
-            statusDiv.textContent = 'Connected to API';
-            statusDiv.className = 'text-sm text-green-600 dark:text-green-400 mb-4';
+            if (statusDiv) {
+                statusDiv.textContent = 'Connected to API';
+                statusDiv.className = 'text-sm mb-4 text-green-600 dark:text-green-400';
+            }
+            
+            // Clear existing markers and list
+            markersLayer.clearLayers();
+            markers.clear();
+            const sightingsList = document.getElementById('sightingsList');
+            if (sightingsList) {
+                sightingsList.innerHTML = '';
+            }
+            
+            // Add new markers and list items
+            sightings.forEach(sighting => {
+                addMarkerToMap(sighting);
+                updateSightingsList(sighting);
+            });
+            
+            // Ensure markers layer is added to map
+            if (!map.hasLayer(markersLayer)) {
+                map.addLayer(markersLayer);
+            }
             
         } catch (error) {
             console.error('Error loading sightings:', error);
             const statusDiv = document.getElementById('connectionStatus');
-            statusDiv.textContent = 'Error connecting to API';
-            statusDiv.className = 'text-sm text-red-600 dark:text-red-400 mb-4';
+            if (statusDiv) {
+                statusDiv.textContent = 'Error connecting to API';
+                statusDiv.className = 'text-sm mb-4 text-red-600 dark:text-red-400';
+            }
         }
     }
-
-    // Function to manually trigger a sync with Firebase
-    async function syncWithFirebase() {
-        const statusDiv = document.getElementById('connectionStatus');
-        
-        try {
-            statusDiv.innerHTML = '<span class="text-blue-600 dark:text-blue-400">Syncing with Firebase...</span>';
-            
-            const response = await fetch('/sightings/force_sync', {
-                method: 'POST'
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            // Reload sightings after sync
-            await loadSightings();
-            
-        } catch (error) {
-            console.error('Error syncing with Firebase:', error);
-            statusDiv.innerHTML = `<span class="text-red-600 dark:text-red-400">✗ Error syncing: ${error.message}</span>`;
-        }
-    }
-
-    // Add sync button to the UI
-    document.addEventListener('DOMContentLoaded', function() {
-        const statusDiv = document.getElementById('connectionStatus');
-        const syncButton = document.createElement('button');
-        syncButton.className = 'ml-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-500';
-        syncButton.innerHTML = '🔄 Sync';
-        syncButton.onclick = syncWithFirebase;
-        statusDiv.parentNode.insertBefore(syncButton, statusDiv.nextSibling);
-    });
-
-    // Function to clear markers and sightings list
-    function clearMarkersAndList() {
-        // Clear existing markers
-        markers.forEach(marker => marker.remove());
-        markers.clear();
-
-        // Clear sightings list
-        const sightingsList = document.getElementById('sightingsList');
-        sightingsList.innerHTML = '';
-    }
-
-    // Function to display sightings
-    function displaySightings(sightings) {
-        // Sort sightings by timestamp in descending order (most recent first)
-        sightings.sort((a, b) => b.timestamp - a.timestamp);
-        
-        // Take only the 10 most recent sightings
-        const recentSightings = sightings.slice(0, 10);
-        
-        // Clear existing markers and list
-        clearMarkersAndList();
-        
-        // Add all markers to the map
-        sightings.forEach(sighting => {
-            if (sighting.coordinate) {
-                addMarkerToMap(sighting);
-            }
-        });
-        
-        // Update the list with only recent sightings
-        recentSightings.forEach(sighting => {
-            if (sighting.coordinate) {
-                updateSightingsList(sighting);
-            }
-        });
-    }
-
-    // Load sightings when the page loads
-    loadSightings();
-    
 </script>
 {% endblock %}

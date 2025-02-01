@@ -635,5 +635,37 @@
     "timestamp": "2025-01-15T20:49:25-10:00",
     "species": "cat",
     "id": "sighting_1737010603218"
+  },
+  {
+    "coordinate": {
+      "latitude": 21.26698007677979,
+      "longitude": -157.69317041660406
+    },
+    "visibleCats": 10,
+    "locationType": "street",
+    "timeSpent": "brief",
+    "movementLevel": "stationary",
+    "visibility": "clear",
+    "isFeeding": true,
+    "notes": "",
+    "timestamp": "2025-01-15T20:49:25-10:00",
+    "species": "cat",
+    "id": "sighting_1737014980521"
+  },
+  {
+    "coordinate": {
+      "latitude": 21.307287323905406,
+      "longitude": -157.92443050794608
+    },
+    "visibleCats": 1,
+    "locationType": "street",
+    "timeSpent": "brief",
+    "movementLevel": "stationary",
+    "visibility": "clear",
+    "isFeeding": false,
+    "notes": "",
+    "timestamp": "2025-01-15T20:49:25-10:00",
+    "species": "cat",
+    "id": "sighting_1737015003217"
   }
 ]

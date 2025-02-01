@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}Cat Colonies - Hawaii Cats{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js"></script>
+<script src="{{ url_for('static', filename='js/map-theme.js') }}"></script>
+<style>
+    #map {
+        height: calc(100vh - 4rem);
+        width: 100%;
+    }
+    
+    .colony-controls {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1000;
+        background: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        width: 300px;
+    }
+    
+    .colony-info {
+        position: absolute;
+        bottom: 1rem;
+        right: 1rem;
+        z-index: 1000;
+        background: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        width: 300px;
+        display: none;
+    }
+    
+    .dark .colony-controls,
+    .dark .colony-info {
+        background: #1f2937;
+        color: white;
+    }
+    
+    .slider-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
+    }
+    
+    .slider-value {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+    
+    .dark .slider-value {
+        color: #9ca3af;
+    }
+    
+    input[type="range"] {
+        width: 100%;
+        margin: 0.5rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="relative">
+    <div id="map"></div>
+    
+    <!-- Colony Controls -->
+    <div class="colony-controls">
+        <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Colony Filters</h2>
+        
+        <!-- Min Sightings -->
+        <div class="mb-4">
+            <div class="slider-label">
+                <span class="text-sm text-gray-700 dark:text-gray-300">Minimum Sightings</span>
+                <span class="slider-value" id="minSightingsValue">3</span>
+            </div>
+            <input type="range" id="minSightings" min="1" max="10" value="3"
+                   class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+        </div>
+        
+        <!-- Min Average Cats -->
+        <div class="mb-4">
+            <div class="slider-label">
+                <span class="text-sm text-gray-700 dark:text-gray-300">Min Avg. Cats</span>
+                <span class="slider-value" id="minAvgCatsValue">2.0</span>
+            </div>
+            <input type="range" id="minAvgCats" min="1" max="10" value="2" step="0.5"
+                   class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+        </div>
+        
+        <!-- Min Days Active -->
+        <div class="mb-4">
+            <div class="slider-label">
+                <span class="text-sm text-gray-700 dark:text-gray-300">Min Days Active</span>
+                <span class="slider-value" id="minDaysActiveValue">14</span>
+            </div>
+            <input type="range" id="minDaysActive" min="1" max="90" value="14"
+                   class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+        </div>
+        
+        <button id="updateColonies" 
+                class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            Update Map
+        </button>
+    </div>
+    
+    <!-- Colony Info Panel -->
+    <div id="colonyInfo" class="colony-info">
+        <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Colony Details</h3>
+        <div id="colonyStats" class="space-y-2">
+            <!-- Stats will be inserted here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize map
+    const map = L.map('map').setView([21.3099, -157.8581], 12);
+    initializeMapTheme(map);
+    
+    let colonyLayer = null;
+    let selectedHexagon = null;
+    
+    // Color scale for cat density
+    function getColor(count) {
+        return count > 20 ? '#b91c1c' :  // Very high
+               count > 15 ? '#dc2626' :  // High
+               count > 10 ? '#ef4444' :  // Moderate-high
+               count > 5  ? '#f87171' :  // Moderate
+               count > 2  ? '#fca5a5' :  // Low-moderate
+                          '#fecaca';     // Low
+    }
+    
+    // Update UI when sliders change
+    document.getElementById('minSightings').addEventListener('input', function(e) {
+        document.getElementById('minSightingsValue').textContent = e.target.value;
+    });
+    
+    document.getElementById('minAvgCats').addEventListener('input', function(e) {
+        document.getElementById('minAvgCatsValue').textContent = e.target.value;
+    });
+    
+    document.getElementById('minDaysActive').addEventListener('input', function(e) {
+        document.getElementById('minDaysActiveValue').textContent = e.target.value;
+    });
+    
+    // Fetch and display colonies
+    async function updateColonies() {
+        const minSightings = document.getElementById('minSightings').value;
+        const minAvgCats = document.getElementById('minAvgCats').value;
+        const minDaysActive = document.getElementById('minDaysActive').value;
+        
+        try {
+            const response = await fetch(`/api/colonies?min_sightings=${minSightings}&min_avg_cats=${minAvgCats}&min_days_active=${minDaysActive}`);
+            const colonies = await response.json();
+            
+            // Remove existing colony layer
+            if (colonyLayer) {
+                map.removeLayer(colonyLayer);
+            }
+            
+            // Create new colony layer
+            colonyLayer = L.layerGroup();
+            
+            colonies.forEach(colony => {
+                // Create polygon from boundary coordinates
+                const polygon = L.polygon(colony.boundary.map(coord => [coord.lat, coord.lng]), {
+                    color: getColor(colony.stats.avg_cats_per_sighting),
+                    weight: 1,
+                    opacity: 0.8,
+                    fillOpacity: 0.35
+                });
+                
+                // Add click handler
+                polygon.on('click', () => showColonyInfo(colony));
+                
+                colonyLayer.addLayer(polygon);
+            });
+            
+            colonyLayer.addTo(map);
+            
+        } catch (error) {
+            console.error('Error fetching colonies:', error);
+        }
+    }
+    
+    // Display colony information
+    function showColonyInfo(colony) {
+        const infoPanel = document.getElementById('colonyInfo');
+        const statsDiv = document.getElementById('colonyStats');
+        
+        // Format dates
+        const firstSeen = new Date(colony.stats.first_seen).toLocaleDateString();
+        const lastSeen = new Date(colony.stats.last_seen).toLocaleDateString();
+        
+        statsDiv.innerHTML = `
+            <div class="text-sm">
+                <p class="flex justify-between">
+                    <span class="text-gray-600 dark:text-gray-400">Total Cats:</span>
+                    <span class="font-medium">${colony.stats.total_cats}</span>
+                </p>
+                <p class="flex justify-between">
+                    <span class="text-gray-600 dark:text-gray-400">Sightings:</span>
+                    <span class="font-medium">${colony.stats.sighting_count}</span>
+                </p>
+                <p class="flex justify-between">
+                    <span class="text-gray-600 dark:text-gray-400">Avg. Cats/Sighting:</span>
+                    <span class="font-medium">${colony.stats.avg_cats_per_sighting.toFixed(1)}</span>
+                </p>
+                <p class="flex justify-between">
+                    <span class="text-gray-600 dark:text-gray-400">Feeding Locations:</span>
+                    <span class="font-medium">${colony.stats.feeding_locations}</span>
+                </p>
+                <p class="flex justify-between">
+                    <span class="text-gray-600 dark:text-gray-400">First Seen:</span>
+                    <span class="font-medium">${firstSeen}</span>
+                </p>
+                <p class="flex justify-between">
+                    <span class="text-gray-600 dark:text-gray-400">Last Seen:</span>
+                    <span class="font-medium">${lastSeen}</span>
+                </p>
+                <p class="flex justify-between">
+                    <span class="text-gray-600 dark:text-gray-400">Days Active:</span>
+                    <span class="font-medium">${colony.stats.days_active}</span>
+                </p>
+            </div>
+        `;
+        
+        infoPanel.style.display = 'block';
+    }
+    
+    // Initial load
+    document.getElementById('updateColonies').addEventListener('click', updateColonies);
+    updateColonies();
+</script>
+{% endblock %}
