@@ -67,6 +67,7 @@ def add_sighting():
         if not data:
             return jsonify({"error": "No data provided"}), 400
             
+        print("Received sighting data:", data)  # Debug log
         store = get_store()
         
         # Ensure required fields are present and valid
@@ -92,8 +93,11 @@ def add_sighting():
                 'timeSpent': data.get('timeSpent'),
                 'notes': data.get('notes', ''),
                 'photoUrls': data.get('photoUrls', []),
-                'timestamp': data.get('timestamp') or datetime.utcnow().isoformat()
+                'timestamp': data.get('timestamp') or datetime.utcnow().isoformat(),
+                'submitterName': data.get('submitterName', ''),
+                'submitterEmail': data.get('submitterEmail', '')
             }
+            print("Processed sighting data:", sighting_data)  # Debug log
         except (ValueError, TypeError) as e:
             return jsonify({"error": f"Invalid data format: {str(e)}"}), 400
         
@@ -103,10 +107,12 @@ def add_sighting():
         # Force a sync with Firebase
         store.force_sync()
         
+        # Return success with the sighting ID
         return jsonify({
+            "status": "success",
             "message": "Sighting added successfully",
             "id": sighting_id
-        }), 201
+        }), 200
     except Exception as e:
         print(f"Error adding sighting: {str(e)}")
         return jsonify({"error": str(e)}), 500

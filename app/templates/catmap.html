@@ -121,9 +121,7 @@
     <!-- Disclaimer Section -->
     <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
         <p class="text-sm text-gray-600 dark:text-gray-300">
-            <strong class="dark:text-white">Test Deployment Notice:</strong> This is a test deployment to evaluate iOS app synchronization with the web interface. 
-            Sightings displayed on this map should not be considered reliable and may be edited or removed at any time. 
-            The official CatMap with complete colony sightings will launch on July 1, 2025.
+            <strong class="dark:text-white">Test Deployment Notice:</strong> Deployment Notice: This is a pre-release version of our web interface. Submissions from our iOS and web forms after 2/4/2025 are automatically published and cannot be edited. Previous sighting history will be integrated and published on July 1, 2025. Please verify submission details and review our terms and privacy policy for more information.
         </p>
     </div>
 
@@ -215,6 +213,13 @@
     // Toggle between sightings and colonies view
     document.addEventListener('DOMContentLoaded', function() {
         initMap();
+        
+        // Get highlight parameter from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const highlightId = urlParams.get('highlight');
+        
+        // Load sightings and highlight if specified
+        loadSightings(highlightId);
         
         document.getElementById('sightingsView').addEventListener('click', function() {
             this.classList.add('active');
@@ -448,7 +453,7 @@
 
         const listItem = document.createElement('div');
         listItem.className = 'mb-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow';
-        listItem.setAttribute('data-sighting-id', sighting.id);
+        listItem.setAttribute('id', `sighting-${sighting.id}`);
 
         let details = [];
         if (sighting.visibleCats > 0) details.push(`${sighting.visibleCats} cats seen`);
@@ -527,49 +532,37 @@
     }
     
     // Load sightings helper
-    async function loadSightings() {
+    async function loadSightings(highlightId = null) {
         try {
             const response = await fetch('/api/sightings');
             const sightings = await response.json();
-            console.log('DEBUG: Received sightings:', sightings);
             
-            const statusDiv = document.getElementById('connectionStatus');
-            if (statusDiv) {
-                statusDiv.textContent = 'Connected to API';
-                statusDiv.className = 'text-sm mb-4 text-green-600 dark:text-green-400';
-            }
-            
-            // Clear existing markers and list
             markersLayer.clearLayers();
-            markers.clear();
-            const sightingsList = document.getElementById('sightingsList');
-            if (sightingsList) {
-                sightingsList.innerHTML = '';
-            }
+            document.getElementById('sightingsList').innerHTML = '';
             
-            // Add new markers and list items
             sightings.forEach(sighting => {
-                console.log('DEBUG: Processing sighting:', sighting);
-                if (sighting.coordinate && sighting.coordinate.latitude && sighting.coordinate.longitude) {
-                    addMarkerToMap(sighting);
-                    updateSightingsList(sighting);
-                } else {
-                    console.warn('Invalid coordinate data for sighting:', sighting);
+                const marker = addMarkerToMap(sighting);
+                updateSightingsList(sighting);
+                
+                // If this is the highlighted sighting, focus on it
+                if (highlightId && sighting.id === highlightId) {
+                    marker.openPopup();
+                    map.setView([sighting.coordinate.latitude, sighting.coordinate.longitude], 16);
+                    
+                    // Scroll the sighting into view in the list
+                    const sightingElement = document.getElementById(`sighting-${sighting.id}`);
+                    if (sightingElement) {
+                        sightingElement.scrollIntoView({ behavior: 'smooth' });
+                        sightingElement.classList.add('bg-blue-50', 'dark:bg-blue-900');
+                        setTimeout(() => {
+                            sightingElement.classList.remove('bg-blue-50', 'dark:bg-blue-900');
+                        }, 3000);
+                    }
                 }
             });
             
-            // Ensure markers layer is added to map
-            if (!map.hasLayer(markersLayer)) {
-                map.addLayer(markersLayer);
-            }
-            
         } catch (error) {
             console.error('Error loading sightings:', error);
-            const statusDiv = document.getElementById('connectionStatus');
-            if (statusDiv) {
-                statusDiv.textContent = 'Error connecting to API';
-                statusDiv.className = 'text-sm mb-4 text-red-600 dark:text-red-400';
-            }
         }
     }
 </script>
