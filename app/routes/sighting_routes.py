@@ -15,7 +15,7 @@ def catmap():
 def submit_sighting():
     return render_template('submit_sighting.html')
 
-@bp.route('/sightings')
+@bp.route('/api/sightings', methods=['GET'])
 def get_sightings():
     try:
         store = get_store()
