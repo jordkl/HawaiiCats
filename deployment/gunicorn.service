@@ -7,13 +7,15 @@ After=network.target
 WorkingDirectory=/home/flask/Hawaii_Cats
 Environment="PATH=/home/flask/Hawaii_Cats/venv/bin"
 Environment="PYTHONPATH=/home/flask/Hawaii_Cats:/home/flask/Hawaii_Cats/app"
-ExecStart=/home/flask/Hawaii_Cats/venv/bin/gunicorn --name=hawaii_cats --pythonpath=/home/flask/Hawaii_Cats --bind unix:/run/gunicorn/gunicorn.socket --config /etc/gunicorn.d/gunicorn.py main:app
+ExecStartPre=/bin/rm -f /home/flask/Hawaii_Cats/run/gunicorn.socket
+ExecStartPre=/bin/mkdir -p /home/flask/Hawaii_Cats/run
+ExecStartPre=/bin/chown -R www-data:www-data /home/flask/Hawaii_Cats/run
+ExecStartPre=/bin/chmod 755 /home/flask/Hawaii_Cats/run
+ExecStart=/home/flask/Hawaii_Cats/venv/bin/gunicorn --name=hawaii_cats --pythonpath=/home/flask/Hawaii_Cats --bind unix:/home/flask/Hawaii_Cats/run/gunicorn.socket --config /etc/gunicorn.d/gunicorn.py main:app
 Restart=always
 SyslogIdentifier=gunicorn
 User=www-data
 Group=www-data
-RuntimeDirectory=gunicorn
-RuntimeDirectoryMode=0755
 
 [Install]
 WantedBy=multi-user.target
