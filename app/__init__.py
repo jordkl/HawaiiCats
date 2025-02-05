@@ -56,7 +56,15 @@ def create_app():
             raise FileNotFoundError(f"Firebase credentials file not found. Checked: {', '.join(cred_paths)}")
             
         cred = credentials.Certificate(cred_path)
-        firebase_admin.initialize_app(cred)
+        storage_bucket = os.getenv('FIREBASE_STORAGE_BUCKET', 'catmap-e5581.appspot.com')
+        if not storage_bucket:
+            raise ValueError("FIREBASE_STORAGE_BUCKET environment variable is not set")
+            
+        print(f"Initializing Firebase with storage bucket: {storage_bucket}")
+        firebase_admin.initialize_app(cred, {
+            'storageBucket': storage_bucket
+        })
+        print("Firebase initialized successfully")
 
     # Add Firebase configuration to Flask app
     app.config['FIREBASE_API_KEY'] = os.getenv('FIREBASE_API_KEY')

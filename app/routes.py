@@ -1,6 +1,9 @@
 from flask import Blueprint, jsonify, request, render_template
 from datetime import datetime
 from .colony_analysis import ColonyAnalyzer
+from firebase_admin import storage, db
+import uuid
+import os
 
 # Initialize blueprint
 bp = Blueprint('main', __name__)
@@ -65,22 +68,84 @@ def get_colony_details(h3_index):
         'sightings': sightings
     })
 
+@bp.route('/api/upload', methods=['POST'])
+def upload_image():
+    """Upload an image to Firebase Storage."""
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+        
+    file = request.files['file']
+    if not file:
+        return jsonify({'error': 'No file selected'}), 400
+        
+    # Check if the file is an image
+    if not file.content_type.startswith('image/'):
+        return jsonify({'error': 'File must be an image'}), 400
+        
+    try:
+        # Generate a unique filename
+        file_extension = os.path.splitext(file.filename)[1]
+        unique_filename = f"sighting_photos/{str(uuid.uuid4())}{file_extension}"
+        
+        # Get a reference to the storage bucket
+        bucket = storage.bucket()
+        blob = bucket.blob(unique_filename)
+        
+        # Upload the file
+        blob.upload_from_file(file, content_type=file.content_type)
+        
+        # Make the file publicly accessible
+        blob.make_public()
+        
+        return jsonify({
+            'url': blob.public_url,
+            'filename': unique_filename
+        })
+        
+    except Exception as e:
+        print(f"Error uploading file: {str(e)}")
+        return jsonify({'error': 'Failed to upload file'}), 500
+
 @bp.route('/api/sightings', methods=['POST'])
 def add_sighting():
     """Add a new cat sighting."""
-    data = request.json
-    
-    # Add H3 index to the sighting data
-    h3_index = colony_analyzer.get_hex_index(
-        data['latitude'],
-        data['longitude']
-    )
-    data['h3_index'] = h3_index
-    data['timestamp'] = datetime.utcnow().isoformat()
-    
-    # TODO: Save to database
-    
-    return jsonify({
-        'message': 'Sighting added successfully',
-        'h3_index': h3_index
-    })
+    try:
+        data = request.json
+        
+        # Add H3 index to the sighting data
+        h3_index = colony_analyzer.get_hex_index(
+            float(data['latitude']),
+            float(data['longitude'])
+        )
+        
+        # Prepare sighting data
+        sighting_data = {
+            'h3_index': h3_index,
+            'timestamp': datetime.utcnow().isoformat(),
+            'latitude': float(data['latitude']),
+            'longitude': float(data['longitude']),
+            'locationType': data['locationType'],
+            'isFeeding': data.get('isFeeding', False),
+            'feedingTime': data.get('feedingTime') if data.get('isFeeding', False) else None,
+            'visibleCats': int(data['visibleCats']),
+            'earNotchesCount': int(data.get('earNotchesCount', 0)),
+            'visibility': data['visibility'],
+            'movementLevel': data['movementLevel'],
+            'timeSpent': data['timeSpent'],
+            'hasProtectedSpecies': data.get('hasProtectedSpecies', False),
+            'notes': data.get('notes', ''),
+            'photoUrls': data.get('photoUrls', [])
+        }
+        
+        # Save to Firebase Realtime Database
+        new_sighting_ref = db.reference('sightings').push(sighting_data)
+        
+        return jsonify({
+            'message': 'Sighting added successfully',
+            'h3_index': h3_index,
+            'sightingId': new_sighting_ref.key
+        })
+        
+    except Exception as e:
+        print(f"Error adding sighting: {str(e)}")
+        return jsonify({'error': str(e)}), 500

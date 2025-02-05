@@ -33,7 +33,7 @@
             Submit Sighting
         </button>
     </div>
-    <form id="sightingForm" class="sighting-grid">
+    <form id="sightingForm" class="sighting-grid" enctype="multipart/form-data">
         <!-- Left Column: Map and Location -->
         <div class="space-y-4">
             <!-- Map Section -->
@@ -61,9 +61,34 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Being Fed Here?</label>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="isFeeding" class="sr-only peer">
+                            <input type="checkbox" id="isFeeding" name="isFeeding" class="sr-only peer">
                             <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"></div>
                         </label>
+                    </div>
+
+                    <!-- Feeding Time (conditionally shown) -->
+                    <div id="feedingTimeSection" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Feeding Time</label>
+                        <div class="flex space-x-2 mt-2">
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="feedingTime" value="morning" class="absolute w-0 h-0 opacity-0 peer">
+                                <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    Morning
+                                </div>
+                            </label>
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="feedingTime" value="afternoon" class="absolute w-0 h-0 opacity-0 peer">
+                                <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    Afternoon
+                                </div>
+                            </label>
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="feedingTime" value="evening" class="absolute w-0 h-0 opacity-0 peer">
+                                <div class="text-center p-2 border rounded-md peer-checked:bg-blue-500 peer-checked:text-white hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    Evening
+                                </div>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -74,8 +99,9 @@
                     <h2 class="text-lg font-medium text-gray-900 dark:text-white">Photos</h2>
                     <span class="text-sm text-gray-500 dark:text-gray-400">Up to 5 photos</span>
                 </div>
-                <input type="file" id="photos" name="photos" accept="image/*" multiple
+                <input type="file" id="photos" name="photos" accept="image/*" multiple max="5"
                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-gray-700 dark:file:text-gray-300">
+                <div id="imagePreview" class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4"></div>
             </div>
         </div>
 
@@ -100,6 +126,47 @@
                         </svg>
                     </button>
                 </div>
+            </div>
+
+            <!-- Ear Notches Count -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Number of Cats with Ear Notches</label>
+                <div class="flex items-center space-x-4">
+                    <button type="button" id="decrementNotches" 
+                            class="p-2 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                        </svg>
+                    </button>
+                    <input type="number" id="earNotchesCount" name="earNotchesCount" min="0" max="400" value="0" required
+                           class="w-20 text-center rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+                    <button type="button" id="incrementNotches" 
+                            class="p-2 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Protected Species Present -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Protected Species Present?</label>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="hasProtectedSpecies" name="hasProtectedSpecies" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"></div>
+                </label>
+                <div id="protectedSpeciesNote" class="hidden mt-2 text-sm text-amber-600 dark:text-amber-400">
+                    Please describe the protected species (e.g., Monk Seal, Sea Turtle, Nene, Shearwater) in the notes section below.
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div>
+                <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Additional Notes</label>
+                <textarea id="notes" name="notes" rows="3" 
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                    placeholder="Add any additional observations..."></textarea>
             </div>
 
             <!-- Assessment Grid -->
@@ -179,13 +246,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Notes -->
-            <div>
-                <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Additional Notes</label>
-                <textarea id="notes" name="notes" rows="3" placeholder="Any other details about the sighting..."
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"></textarea>
-            </div>
         </div>
     </form>
 </div>
@@ -194,6 +254,81 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('sightingForm');
+        const photos = document.getElementById('photos');
+        
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const data = {
+                latitude: document.getElementById('latitude').value || null,
+                longitude: document.getElementById('longitude').value || null,
+                locationType: document.getElementById('locationType').value,
+                visibleCats: parseInt(document.getElementById('visibleCats').value) || 0,
+                earNotchesCount: parseInt(document.getElementById('earNotchesCount').value) || 0,
+                isFeeding: document.getElementById('isFeeding').checked,
+                feedingTime: document.querySelector('input[name="feedingTime"]:checked')?.value || null,
+                hasProtectedSpecies: document.getElementById('hasProtectedSpecies').checked,
+                visibility: document.querySelector('input[name="visibility"]:checked')?.value || null,
+                movementLevel: document.querySelector('input[name="movementLevel"]:checked')?.value || null,
+                timeSpent: document.querySelector('input[name="timeSpent"]:checked')?.value || null,
+                notes: document.getElementById('notes')?.value || '',
+                photoUrls: []
+            };
+            
+            // Validate required fields
+            if (!data.latitude || !data.longitude) {
+                alert('Please select a location on the map');
+                return;
+            }
+            
+            try {
+                // Upload photos first if any are selected
+                const files = Array.from(photos.files);
+                if (files.length > 0) {
+                    for (const file of files) {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        
+                        const uploadResponse = await fetch('/api/upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (!uploadResponse.ok) {
+                            const error = await uploadResponse.json();
+                            throw new Error(error.error || 'Error uploading image');
+                        }
+                        
+                        const result = await uploadResponse.json();
+                        if (result.url) {
+                            data.photoUrls.push(result.url);
+                        }
+                    }
+                }
+                
+                // Submit the sighting data
+                const response = await fetch('/api/sightings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    window.location.href = '/';
+                } else {
+                    throw new Error(result.error || 'Error submitting sighting');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert(error.message || 'Error submitting sighting. Please try again.');
+            }
+        });
+        
         // Initialize map using our theme
         const map = initializeMap('map', [21.3099, -157.8581], 11);
         let marker = null;
@@ -245,79 +380,81 @@
         decrementBtn.addEventListener('mouseup', stopIncrementing);
         decrementBtn.addEventListener('mouseleave', stopIncrementing);
 
-        // Handle form submission
-        document.getElementById('sightingForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Handle ear notches count
+        const notchesInput = document.getElementById('earNotchesCount');
+        const decrementNotchesBtn = document.getElementById('decrementNotches');
+        const incrementNotchesBtn = document.getElementById('incrementNotches');
 
-            // Validate required fields
-            const requiredFields = ['latitude', 'longitude', 'locationType', 'visibility', 'movementLevel', 'timeSpent'];
-            let isValid = true;
-            let firstInvalidField = null;
+        function updateNotchesCount(delta) {
+            const currentValue = parseInt(notchesInput.value) || 0;
+            const newValue = Math.max(0, Math.min(currentValue + delta, parseInt(notchesInput.max)));
+            notchesInput.value = newValue;
+        }
 
-            requiredFields.forEach(field => {
-                const elements = document.getElementsByName(field);
-                let fieldValid = false;
+        let notchesInterval;
+        
+        function startNotchesIncrementing(delta) {
+            updateNotchesCount(delta);
+            notchesInterval = setInterval(() => updateNotchesCount(delta), 150);
+        }
+        
+        function stopNotchesIncrementing() {
+            clearInterval(notchesInterval);
+        }
 
-                if (elements.length > 1) {
-                    // Radio buttons
-                    fieldValid = Array.from(elements).some(el => el.checked);
-                } else {
-                    // Single input
-                    const element = document.getElementById(field);
-                    fieldValid = element && element.value;
+        incrementNotchesBtn.addEventListener('mousedown', () => startNotchesIncrementing(1));
+        incrementNotchesBtn.addEventListener('mouseup', stopNotchesIncrementing);
+        incrementNotchesBtn.addEventListener('mouseleave', stopNotchesIncrementing);
+        
+        decrementNotchesBtn.addEventListener('mousedown', () => startNotchesIncrementing(-1));
+        decrementNotchesBtn.addEventListener('mouseup', stopNotchesIncrementing);
+        decrementNotchesBtn.addEventListener('mouseleave', stopNotchesIncrementing);
+
+        // Handle feeding time visibility
+        const isFeeding = document.getElementById('isFeeding');
+        const feedingTimeSection = document.getElementById('feedingTimeSection');
+
+        isFeeding.addEventListener('change', function() {
+            feedingTimeSection.classList.toggle('hidden', !this.checked);
+            // If unchecked, clear the feeding time selection
+            if (!this.checked) {
+                document.querySelectorAll('input[name="feedingTime"]').forEach(radio => radio.checked = false);
+            }
+        });
+
+        // Handle protected species visibility
+        const hasProtectedSpecies = document.getElementById('hasProtectedSpecies');
+        const protectedSpeciesNote = document.getElementById('protectedSpeciesNote');
+        const notesTextarea = document.getElementById('notes');
+
+        hasProtectedSpecies.addEventListener('change', function() {
+            protectedSpeciesNote.classList.toggle('hidden', !this.checked);
+            if (this.checked) {
+                notesTextarea.placeholder = "Please describe the protected species present and any additional observations...";
+            } else {
+                notesTextarea.placeholder = "Add any additional observations...";
+            }
+        });
+
+        // Handle image preview
+        document.getElementById('photos').addEventListener('change', function(e) {
+            const previewContainer = document.getElementById('imagePreview');
+            previewContainer.innerHTML = '';
+            
+            const files = Array.from(this.files).slice(0, 5);
+            
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'relative aspect-square';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview" class="w-full h-full object-cover rounded-lg">
+                    `;
+                    previewContainer.appendChild(div);
                 }
-
-                if (!fieldValid) {
-                    isValid = false;
-                    if (!firstInvalidField) {
-                        firstInvalidField = field;
-                    }
-                }
+                reader.readAsDataURL(file);
             });
-
-            if (!isValid) {
-                alert(`Please fill in all required fields. Missing: ${firstInvalidField}`);
-                return;
-            }
-
-            // Get form data
-            const formData = new FormData(e.target);
-            const data = {
-                coordinate: {
-                    latitude: parseFloat(formData.get('latitude')),
-                    longitude: parseFloat(formData.get('longitude'))
-                },
-                visibleCats: parseInt(formData.get('visibleCats')),
-                locationType: formData.get('locationType'),
-                timeSpent: formData.get('timeSpent'),
-                movementLevel: formData.get('movementLevel'),
-                visibility: formData.get('visibility'),
-                isFeeding: formData.get('isFeeding') === 'on',
-                notes: formData.get('notes') || '',
-                timestamp: "2025-01-15T20:49:25-10:00",
-                species: 'cat'
-            };
-
-            try {
-                const response = await fetch('/api/sightings', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                if (response.ok) {
-                    alert('Sighting submitted successfully!');
-                    window.location.href = '/catmap';
-                } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Failed to submit sighting');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Failed to submit sighting: ' + error.message);
-            }
         });
     });
 </script>

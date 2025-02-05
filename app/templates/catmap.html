@@ -377,6 +377,7 @@
             return;
         }
         
+        console.log('DEBUG: Adding marker for sighting:', sighting);
         const marker = L.marker([
             parseFloat(sighting.coordinate.latitude), 
             parseFloat(sighting.coordinate.longitude)
@@ -389,15 +390,128 @@
     
     // Create popup content helper
     function createPopupContent(sighting) {
+        console.log('DEBUG: Creating popup for sighting:', sighting);
+        let feedingInfo = '';
+        if (sighting.isFeeding) {
+            feedingInfo = `
+                <p class="text-blue-600 dark:text-blue-400">
+                    Feeding Location
+                    ${sighting.feedingTime ? ` (${sighting.feedingTime})` : ''}
+                </p>
+            `;
+        }
+
+        let photoGallery = '';
+        if (sighting.photoUrls && sighting.photoUrls.length > 0) {
+            photoGallery = `
+                <div class="mt-2">
+                    <div class="flex gap-2 overflow-x-auto">
+                        ${sighting.photoUrls.map(url => `
+                            <img src="${url}" alt="Cat sighting" class="w-20 h-20 object-cover rounded cursor-pointer"
+                                 onclick="window.open('${url}', '_blank')">
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Add additional sighting details
+        let additionalDetails = [];
+        if (sighting.visibility) additionalDetails.push(`Visibility: ${sighting.visibility}`);
+        if (sighting.movementLevel) additionalDetails.push(`Movement: ${sighting.movementLevel}`);
+        if (sighting.timeSpent) additionalDetails.push(`Time Spent: ${sighting.timeSpent}`);
+
         return `
-            <div class="text-sm">
+            <div class="text-sm max-w-xs">
                 <p class="font-semibold">${formatDate(sighting.timestamp)}</p>
-                <p>Number of cats: ${sighting.best_count}</p>
-                <p>Location type: ${sighting.location_type || 'Not specified'}</p>
-                ${sighting.notes ? `<p class="mt-2">Notes: ${sighting.notes}</p>` : ''}
-                ${sighting.is_feeding ? '<p class="text-blue-600 dark:text-blue-400">Feeding location</p>' : ''}
+                <div class="mt-2">
+                    <p>Number of cats: ${sighting.visibleCats || 0}</p>
+                    <p>Cats with ear notches: ${sighting.earNotchesCount || 0}</p>
+                    <p>Location type: ${sighting.locationType || 'Not specified'}</p>
+                    ${additionalDetails.length > 0 ? 
+                        `<p class="mt-1">${additionalDetails.join(' • ')}</p>` : ''}
+                    ${feedingInfo}
+                    ${sighting.hasProtectedSpecies ? 
+                        '<p class="text-yellow-600 dark:text-yellow-400">Protected Species Present</p>' : ''}
+                </div>
+                ${sighting.notes ? `<p class="mt-2 text-gray-600 dark:text-gray-400">Notes: ${sighting.notes}</p>` : ''}
+                ${photoGallery}
             </div>
         `;
+    }
+    
+    // Update sightings list helper
+    function updateSightingsList(sighting) {
+        console.log('DEBUG: Updating list with sighting:', sighting);
+        const sightingsList = document.getElementById('sightingsList');
+        if (!sightingsList) return;
+
+        const listItem = document.createElement('div');
+        listItem.className = 'mb-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow';
+        listItem.setAttribute('data-sighting-id', sighting.id);
+
+        let details = [];
+        if (sighting.visibleCats > 0) details.push(`${sighting.visibleCats} cats seen`);
+        if (sighting.earNotchesCount > 0) details.push(`${sighting.earNotchesCount} with ear notches`);
+        if (sighting.locationType && sighting.locationType !== 'Not specified') details.push(sighting.locationType);
+
+        let additionalDetails = [];
+        if (sighting.visibility && sighting.visibility !== 'Not specified') additionalDetails.push(sighting.visibility);
+        if (sighting.movementLevel && sighting.movementLevel !== 'Not specified') additionalDetails.push(sighting.movementLevel);
+        if (sighting.timeSpent && sighting.timeSpent !== 'Not specified') additionalDetails.push(sighting.timeSpent);
+
+        listItem.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div class="flex-grow">
+                    <p class="font-semibold text-gray-900 dark:text-white">
+                        ${formatDate(sighting.timestamp)}
+                    </p>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        ${details.join(' • ')}
+                    </p>
+                    ${additionalDetails.length > 0 ? `
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">
+                            ${additionalDetails.join(' • ')}
+                        </p>
+                    ` : ''}
+                    ${sighting.isFeeding ? `
+                        <p class="mt-1 text-sm text-blue-600 dark:text-blue-400">
+                            Feeding Location
+                            ${sighting.feedingTime ? ` (${sighting.feedingTime})` : ''}
+                        </p>
+                    ` : ''}
+                    ${sighting.hasProtectedSpecies ? `
+                        <p class="mt-1 text-sm text-yellow-600 dark:text-yellow-400">
+                            Protected Species Present
+                        </p>
+                    ` : ''}
+                    ${sighting.notes ? `
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                            ${sighting.notes}
+                        </p>
+                    ` : ''}
+                    ${sighting.photoUrls && sighting.photoUrls.length > 0 ? `
+                        <div class="ml-4 flex-shrink-0">
+                            <img src="${sighting.photoUrls[0]}" alt="Cat sighting" 
+                                 class="w-16 h-16 object-cover rounded cursor-pointer"
+                                 onclick="window.open('${sighting.photoUrls[0]}', '_blank')">
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+
+        // Add click handler to center map on marker
+        listItem.addEventListener('click', () => {
+            const marker = markers.get(sighting.id);
+            if (marker) {
+                map.setView(marker.getLatLng(), 18);
+                marker.openPopup();
+            }
+        });
+
+        // Add to list
+        sightingsList.appendChild(listItem);
     }
     
     // Format date helper
@@ -412,41 +526,12 @@
         });
     }
     
-    // Update sightings list helper
-    function updateSightingsList(sighting) {
-        const sightingsList = document.getElementById('sightingsList');
-        if (!sightingsList) return;
-        
-        const sightingElement = document.createElement('div');
-        sightingElement.className = 'sighting-item cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700';
-        sightingElement.innerHTML = `
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="font-semibold text-gray-900 dark:text-white">${formatDate(sighting.timestamp)}</p>
-                    <p class="text-gray-600 dark:text-gray-400">Number of cats: ${sighting.best_count}</p>
-                    <p class="text-gray-500 dark:text-gray-500">Location type: ${sighting.location_type || 'Not specified'}</p>
-                    ${sighting.is_feeding ? '<p class="text-blue-600 dark:text-blue-400">Feeding location</p>' : ''}
-                </div>
-            </div>
-        `;
-        
-        sightingElement.addEventListener('click', () => {
-            const marker = markers.get(sighting.id);
-            if (marker) {
-                map.setView(marker.getLatLng(), 16);
-                marker.openPopup();
-            }
-        });
-        
-        sightingsList.appendChild(sightingElement);
-    }
-    
     // Load sightings helper
     async function loadSightings() {
         try {
             const response = await fetch('/api/sightings');
             const sightings = await response.json();
-            console.log('Received sightings:', sightings);
+            console.log('DEBUG: Received sightings:', sightings);
             
             const statusDiv = document.getElementById('connectionStatus');
             if (statusDiv) {
@@ -464,8 +549,13 @@
             
             // Add new markers and list items
             sightings.forEach(sighting => {
-                addMarkerToMap(sighting);
-                updateSightingsList(sighting);
+                console.log('DEBUG: Processing sighting:', sighting);
+                if (sighting.coordinate && sighting.coordinate.latitude && sighting.coordinate.longitude) {
+                    addMarkerToMap(sighting);
+                    updateSightingsList(sighting);
+                } else {
+                    console.warn('Invalid coordinate data for sighting:', sighting);
+                }
             });
             
             // Ensure markers layer is added to map

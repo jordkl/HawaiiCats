@@ -135,8 +135,12 @@ class CatSightingsStore:
             for doc in current_docs:
                 data = doc.to_dict()
                 data['id'] = doc.id
+                print(f"DEBUG: Raw Firestore data for {doc.id}:")
+                print(data)
                 # Convert Firestore types to serializable format
                 converted_data = self._convert_firestore_data(data)
+                print(f"DEBUG: Converted data for {doc.id}:")
+                print(converted_data)
                 local_data_dict[doc.id] = converted_data
             
             new_local_data = list(local_data_dict.values())
@@ -156,51 +160,59 @@ class CatSightingsStore:
             sightings = self._load_local_data()
             
             # Normalize location data and remove user information
+            normalized_sightings = []
             for sighting in sightings:
-                # Safely normalize location with coordinate taking priority
-                location = sighting.get('coordinate')
+                print(f"DEBUG: Processing sighting {sighting.get('id')}:")
+                print("Before normalization:", sighting)
                 
+                # Create a new dict for the normalized sighting
+                normalized = {}
+                
+                # Copy basic fields with defaults
+                normalized['id'] = sighting.get('id')
+                normalized['timestamp'] = sighting.get('timestamp')
+                normalized['visibleCats'] = int(sighting.get('visibleCats', 0))
+                normalized['earNotchesCount'] = int(sighting.get('earNotchesCount', 0))
+                normalized['locationType'] = sighting.get('locationType', 'Not specified')
+                normalized['visibility'] = sighting.get('visibility', 'Not specified')
+                normalized['movementLevel'] = sighting.get('movementLevel', 'Not specified')
+                normalized['timeSpent'] = sighting.get('timeSpent', 'Not specified')
+                normalized['notes'] = sighting.get('notes', '')
+                normalized['isFeeding'] = bool(sighting.get('isFeeding', False))
+                normalized['hasProtectedSpecies'] = bool(sighting.get('hasProtectedSpecies', False))
+                normalized['photoUrls'] = list(sighting.get('photoUrls', []))
+                normalized['feedingTime'] = sighting.get('feedingTime')
+                
+                # Handle coordinate
+                location = sighting.get('coordinate')
                 if location:
-                    # Try different possible location property names
                     lat = location.get('_latitude') or location.get('latitude') or location.get('lat')
                     lng = location.get('_longitude') or location.get('longitude') or location.get('lng')
                     
                     if lat is not None and lng is not None:
-                        # Ensure coordinates are floats and in the standard format
                         try:
                             lat = float(lat)
                             lng = float(lng)
                             if -90 <= lat <= 90 and -180 <= lng <= 180:
-                                sighting['coordinate'] = {
+                                normalized['coordinate'] = {
                                     'latitude': lat,
                                     'longitude': lng
                                 }
                             else:
-                                print(f"Invalid coordinate values for sighting {sighting.get('id')}: lat={lat}, lng={lng}")
-                                sighting['coordinate'] = None
+                                normalized['coordinate'] = None
                         except (ValueError, TypeError):
-                            print(f"Error converting coordinates for sighting {sighting.get('id')}: lat={lat}, lng={lng}")
-                            sighting['coordinate'] = None
+                            normalized['coordinate'] = None
                     else:
-                        print(f"Missing lat/lng values for sighting {sighting.get('id')}")
-                        sighting['coordinate'] = None
+                        normalized['coordinate'] = None
                 else:
-                    print(f"No coordinate data found for sighting {sighting.get('id')}")
-                    sighting['coordinate'] = None
+                    normalized['coordinate'] = None
                 
-                # Normalize timestamp
-                timestamp_obj = sighting.get('timestamp')
-                if isinstance(timestamp_obj, dict) and '_timestamp' in timestamp_obj:
-                    sighting['timestamp'] = timestamp_obj['_timestamp']
-                
-                # Remove user-specific information
-                sighting.pop('userId', None)
-                sighting.pop('userLocation', None)
-                sighting.pop('userEmail', None)
-                sighting.pop('userName', None)
+                print("After normalization:", normalized)
+                normalized_sightings.append(normalized)
             
-            print(f"Found {len(sightings)} sightings in local storage")
-            return sightings
+            print(f"Found {len(normalized_sightings)} sightings in local storage")
+            return normalized_sightings
+            
         except Exception as e:
             print(f"Error getting sightings: {str(e)}")
             print(f"Stack trace: {traceback.format_exc()}")
@@ -217,6 +229,27 @@ class CatSightingsStore:
             if 'timestamp' not in sighting_data:
                 sighting_data['timestamp'] = datetime.now().isoformat()
             
+            # Create coordinate GeoPoint from latitude/longitude
+            if 'latitude' in sighting_data and 'longitude' in sighting_data:
+                sighting_data['coordinate'] = {
+                    'latitude': float(sighting_data['latitude']),
+                    'longitude': float(sighting_data['longitude'])
+                }
+                # Remove individual lat/lng fields to avoid duplication
+                sighting_data.pop('latitude', None)
+                sighting_data.pop('longitude', None)
+            
+            # Ensure numeric fields are properly typed
+            sighting_data['visibleCats'] = int(sighting_data.get('visibleCats', 0))
+            sighting_data['earNotchesCount'] = int(sighting_data.get('earNotchesCount', 0))
+            
+            # Ensure boolean fields are properly typed
+            sighting_data['isFeeding'] = bool(sighting_data.get('isFeeding', False))
+            sighting_data['hasProtectedSpecies'] = bool(sighting_data.get('hasProtectedSpecies', False))
+            
+            # Ensure arrays are properly initialized
+            sighting_data['photoUrls'] = list(sighting_data.get('photoUrls', []))
+            
             # Load current data
             local_data = self._load_local_data()
             
@@ -228,16 +261,18 @@ class CatSightingsStore:
             
             # If Firebase is enabled, add to Firestore
             if ENABLE_FIREBASE_SYNC and self.db is not None:
+                firestore_data = sighting_data.copy()
+                
                 # Convert coordinate to GeoPoint for Firestore
-                if 'coordinate' in sighting_data:
-                    coord = sighting_data['coordinate']
-                    sighting_data['coordinate'] = GeoPoint(
+                if 'coordinate' in firestore_data:
+                    coord = firestore_data['coordinate']
+                    firestore_data['coordinate'] = GeoPoint(
                         coord['latitude'],
                         coord['longitude']
                     )
                 
                 # Add to Firestore
-                self.db.collection('sightings').document(sighting_id).set(sighting_data)
+                self.db.collection('sightings').document(sighting_id).set(firestore_data)
             
             return sighting_id
         except Exception as e:
