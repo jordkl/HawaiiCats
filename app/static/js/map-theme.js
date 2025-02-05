@@ -1,15 +1,47 @@
 // Function to initialize map with Palantir-like dark theme
-function initializeMap(elementId, initialView = [21.3069, -157.8583], initialZoom = 10) {
+function initializeMap(elementId, initialView = [20.2927, -156.3737], initialZoom = 7) {
     const map = L.map(elementId, {
         zoomControl: true,
         scrollWheelZoom: true
     }).setView(initialView, initialZoom);
     
-    // Using CARTO's dark matter style which resembles Palantir's aesthetic
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    // Base layers
+    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd'
+    });
+
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    });
+
+    const lightLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd'
+    });
+
+    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    });
+
+    // Add dark layer by default
+    darkLayer.addTo(map);
+
+    // Create layer control
+    const baseLayers = {
+        "Dark": darkLayer,
+        "Satellite": satelliteLayer,
+        "Light": lightLayer,
+        "Street": streetLayer
+    };
+
+    L.control.layers(baseLayers, null, {
+        position: 'topright',
+        collapsed: false
     }).addTo(map);
     
     return map;
@@ -41,14 +73,26 @@ mapStyles.textContent = `
         color: #60a5fa;
     }
     
-    .leaflet-control-zoom a {
-        background-color: #242424;
-        color: #e5e7eb;
-        border-color: #404040;
+    .leaflet-control-zoom a,
+    .leaflet-control-layers-toggle,
+    .leaflet-control-layers {
+        background-color: #242424 !important;
+        color: #e5e7eb !important;
+        border-color: #404040 !important;
     }
     
-    .leaflet-control-zoom a:hover {
-        background-color: #323232;
+    .leaflet-control-layers {
+        padding: 6px 8px;
+        border-radius: 4px;
+    }
+    
+    .leaflet-control-layers label {
+        color: #e5e7eb;
+    }
+    
+    .leaflet-control-zoom a:hover,
+    .leaflet-control-layers-toggle:hover {
+        background-color: #323232 !important;
     }
     
     .leaflet-bar {
@@ -83,6 +127,17 @@ mapStyles.textContent = `
     .leaflet-bar a:focus {
         outline: none;
         box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+    }
+
+    /* Layer control specific styles */
+    .leaflet-control-layers-expanded {
+        background-color: #242424;
+        border-color: #404040;
+        color: #e5e7eb;
+    }
+
+    .leaflet-control-layers-separator {
+        border-top-color: #404040;
     }
 `;
 document.head.appendChild(mapStyles);
