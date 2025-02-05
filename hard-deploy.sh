@@ -19,7 +19,7 @@ echo "Force pulling latest changes from GitHub..."
 echo "Creating required directories..."
 mkdir -p /home/flask/Hawaii_Cats/logs
 mkdir -p /tmp/hawaiicats_logs
-sudo mkdir -p /run/gunicorn
+mkdir -p /home/flask/Hawaii_Cats/run
 
 # Set correct permissions
 echo "Setting correct permissions..."
@@ -27,8 +27,10 @@ sudo chown -R www-data:www-data /home/flask/Hawaii_Cats
 sudo chmod -R 755 /home/flask/Hawaii_Cats
 sudo chown www-data:www-data /tmp/hawaiicats_logs
 sudo chmod 755 /tmp/hawaiicats_logs
-sudo chown www-data:www-data /run/gunicorn
-sudo chmod 755 /run/gunicorn
+
+# Clean up any existing socket file
+echo "Cleaning up socket..."
+sudo rm -f /home/flask/Hawaii_Cats/run/gunicorn.socket
 
 # Install/update Python packages in virtual environment
 echo "Updating Python packages..."
@@ -38,6 +40,9 @@ echo "Updating Python packages..."
 echo "Updating service files..."
 sudo cp deployment/gunicorn.service /etc/systemd/system/hawaii-cats.service
 sudo cp deployment/nginx.conf /etc/nginx/sites-available/hawaii-cats.conf
+
+# Update nginx configuration
+echo "Configuring nginx..."
 sudo ln -sf /etc/nginx/sites-available/hawaii-cats.conf /etc/nginx/sites-enabled/hawaii-cats.conf
 sudo rm -f /etc/nginx/sites-enabled/default
 
@@ -48,6 +53,7 @@ sudo systemctl stop hawaii-cats nginx
 sudo pkill gunicorn || true  # Kill any stray gunicorn processes
 sleep 2  # Wait for processes to stop
 sudo systemctl start hawaii-cats
+sleep 2  # Wait for gunicorn to fully start
 sudo systemctl start nginx
 
 # Health check
