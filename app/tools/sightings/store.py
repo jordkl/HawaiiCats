@@ -182,6 +182,8 @@ class CatSightingsStore:
                 normalized['hasProtectedSpecies'] = bool(sighting.get('hasProtectedSpecies', False))
                 normalized['photoUrls'] = list(sighting.get('photoUrls', []))
                 normalized['feedingTime'] = sighting.get('feedingTime')
+                normalized['submitterName'] = sighting.get('submitterName', '')
+                normalized['submitterEmail'] = sighting.get('submitterEmail', '')
                 
                 # Handle coordinate
                 location = sighting.get('coordinate')
@@ -249,6 +251,10 @@ class CatSightingsStore:
             
             # Ensure arrays are properly initialized
             sighting_data['photoUrls'] = list(sighting_data.get('photoUrls', []))
+            
+            # Ensure submitter fields are properly typed
+            sighting_data['submitterName'] = str(sighting_data.get('submitterName', ''))
+            sighting_data['submitterEmail'] = str(sighting_data.get('submitterEmail', ''))
             
             # Load current data
             local_data = self._load_local_data()

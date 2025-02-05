@@ -27,3 +27,13 @@ def mobile_app():
     """Render the mobile app page"""
     return render_template('mobile_app.html', 
                          recaptcha_site_key=current_app.config['RECAPTCHA_SITE_KEY'])
+
+@bp.route('/terms')
+def terms():
+    """Render the terms page"""
+    return render_template('terms.html')
+
+@bp.route('/privacy')
+def privacy():
+    """Render the privacy page"""
+    return render_template('privacy.html')
